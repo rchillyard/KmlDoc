@@ -25,7 +25,7 @@ object Reflection {
     val clazz = classTag.runtimeClass
     try {
       // NOTE: copy methods have the form copy$default$N(), we need to sort them in order, but must account for the fact
-      // ... that lexical sorting of ...8(), ...9(), ...10() is not correct, so we extract N and sort by N.toInt
+      // ... that lexical sorting of ...8(), ...9(), ...10() is not correct, so we extractOne N and sort by N.toInt
       val copyDefaultMethods = clazz.getMethods.filter(_.getName.startsWith("copy$default$")).sortBy(
         _.getName.drop("copy$default$".length).takeWhile(_ != '(').toInt)
       val fields = clazz.getDeclaredFields.filterNot { f =>

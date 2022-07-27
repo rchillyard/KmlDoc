@@ -26,7 +26,7 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers {
 
   it should "extractor1" in {
     val xml: Elem = <xml id="1"></xml>
-    val id = MyExtractors.extractSimple.extract((xml \ "@id").head)
+    val id = MyExtractors.extractSimple.extractMany((xml \ "@id").head)
     id shouldBe Success(Simple(1))
   }
 

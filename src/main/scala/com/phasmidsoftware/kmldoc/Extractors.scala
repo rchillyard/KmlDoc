@@ -14,13 +14,13 @@ trait Extractors {
   def extractor1[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = new Extractor[T] {
     val p0e: Extractor[P0] = implicitly[Extractor[P0]]
 
-    def extract(node: Node): Try[T] =
+    def extractMany(node: Node): Try[Seq[T]] =
       fieldNames(fields) match {
         case plural(f0, _) :: Nil =>
           //          val value: Try[Seq[P0]] = Extractors.extractSeq[P0](node \ f0)
-          val value = p0e.extract(node)
+          val value = p0e.extractOne(node)
           value map construct
-        //          val pys: Seq[Try[P0]] = for (node <- seq) yield pe.extract(node)
+        //          val pys: Seq[Try[P0]] = for (node <- seq) yield pe.extractOne(node)
         //          val psy: Try[Seq[P0]] = XmlUtils.sequence(pys)
         //          val p: Try[Seq[T]] = psy match {
         //            // TODO use transform
@@ -32,11 +32,12 @@ trait Extractors {
         //          }
         //          p
         case f0 :: Nil =>
-          val value = p0e.extract(node)
+          val value = p0e.extractOne(node)
           value map construct
 
         case fs => Failure(new Exception(s"non-unique field name: $fs"))
       }
+
   }
 
 //  /**
@@ -50,12 +51,12 @@ trait Extractors {
 //   */
   //  def extractor2[P0: Extractor, P1: Extractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] = new Extractor[T] {
   //    val pe: Extractor[P0] = implicitly[Extractor[P0]]
-  //    def extract(node: Node): Try[T] =
+  //    def extractOne(node: Node): Try[T] =
   //        fieldNames(fields) match {
   //          case f0 :: fs =>
   //            for {
-  //              p0 <- pe.extract(node)(f0)
-  //              t <- extractor1(construct.curried(p0), fs).extract(node)
+  //              p0 <- pe.extractOne(node)(f0)
+  //              t <- extractor1(construct.curried(p0), fs).extractOne(node)
   //            } yield t
   //          case _ => Failure(Exception("no field names"))
   //        }
@@ -79,11 +80,11 @@ trait Extractors {
 object Extractors {
 
   implicit object IntExtractor extends Extractor[Int] {
-    def extract(node: Node): Try[Int] = Try(implicitly[Numeric[Int]].parseString(node.text).get)
+//    def extractText[P: (node: Node): Try[Int] = Try(implicitly[Numeric[Int]].parseString(node.text).get)
   }
 
   /**
-   * Method to extract a sequence of objects from a NodeSeq.
+   * Method to extractOne a sequence of objects from a NodeSeq.
    *
    * @param nodeSeq a NodeSeq.
    * @tparam P the type to which each Node should be converted .
@@ -91,7 +92,7 @@ object Extractors {
    */
   def extractSeq[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
     val pe: Extractor[P] = implicitly[Extractor[P]]
-    val pys: Seq[Try[P]] = for (node <- nodeSeq) yield pe.extract(node)
+    val pys: Seq[Try[P]] = for (node <- nodeSeq) yield pe.extractOne(node)
     val psy: Try[Seq[P]] = XmlUtils.sequence(pys)
     psy
     //    psy match {
@@ -112,8 +113,15 @@ object Extractors {
 }
 
 trait Extractor[T] {
-  def extract(node: Node): Try[T]
+  def extractOne(node: Node): Try[T] = extractMany(node) match {
+    case Success(t :: Nil) => Success(t)
+    case Success(x) => Failure(new Exception(s"extractOne: not unique: $x"))
+    case Failure(x) => Failure(x)
+  }
 
+  def extractMany(node: Node): Try[Seq[T]]
+
+  def extractText[P : { def parseString(x: String): Option[P] }]  (node: Node): Try[P] = Try(parseString(node.text).get)
 
 }
 
