@@ -37,9 +37,7 @@ object KML {
   }
 }
 
-object XmlUtils {
-  def maybeString(ns: NodeSeq): Option[String] = ns.headOption.map(n => n.text)
-}
+
 
 object Test extends App {
   val kml: KML = KML.loadKML(KML.getClass.getResource("sample.kml"))

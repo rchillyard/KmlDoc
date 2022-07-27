@@ -2,7 +2,8 @@ name := "KMLDoc"
 
 version := "1.0"
 
-scalaVersion := "3.1.0"
+//scalaVersion := "3.1.0"
+scalaVersion := "2.13.8"
 
 Compile / doc / scalacOptions ++= Seq("-Vimplicits", "-deprecation", "-Ywarn-dead-code", "-Ywarn-value-discard", "-Ywarn-unused")
 scalacOptions ++= Seq("-encoding", "UTF-8")
