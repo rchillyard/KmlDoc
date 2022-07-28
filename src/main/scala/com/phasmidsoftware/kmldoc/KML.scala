@@ -1,6 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.kmldoc.XmlUtils.maybeString
+import com.phasmidsoftware.xml.Utilities.maybeString
 
 import java.net.URL
 import scala.xml.{Elem, Node, NodeSeq, XML}

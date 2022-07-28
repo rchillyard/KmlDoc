@@ -1,4 +1,4 @@
-package com.phasmidsoftware.kmldoc
+package com.phasmidsoftware.xml
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -12,11 +12,19 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers {
 
   case class Empty()
 
+  case class Document(empties: Seq[Empty])
+
   object MyExtractors extends Extractors {
 
-    import Extractors._
+    import com.phasmidsoftware.xml.Extractors._
+
+    implicit val extractEmpty: Extractor[Empty] = extractor0[Empty](_ => Empty())
 
     implicit val extractSimple: Extractor[Simple] = extractor1(Simple)
+
+    implicit val extractEmpties: Extractor[Seq[Empty]] = extractorSeq[Empty]("empty")
+
+    implicit val extractDocument: Extractor[Document] = extractor1(Document)
   }
 
 
@@ -25,9 +33,9 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers {
   it should "extractorSeq" in {
     implicit val ee: Extractor[Empty] = MyExtractors.extractor0[Empty](_ => Empty())
     val xml: Elem = <xml>
-      <doc></doc> <doc></doc>
+      <empty></empty> <empty></empty>
     </xml>
-    val extractedSeq: Try[Seq[Empty]] = MyExtractors.extractorSeq[Empty]("doc").extract(xml)
+    val extractedSeq: Try[Seq[Empty]] = MyExtractors.extractorSeq[Empty]("empty").extract(xml)
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
   }
 
@@ -37,10 +45,18 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers {
     extracted shouldBe Success(Empty())
   }
 
-  it should "extractor1" in {
+  it should "extractor1A" in {
     val xml: Elem = <xml id="1"></xml>
     val extracted = MyExtractors.extractSimple.extract((xml \ "@id").head)
     extracted shouldBe Success(Simple(1))
+  }
+
+  it should "extractor1B" in {
+    val xml: Elem = <xml id="1">
+      <empty></empty> <empty></empty>
+    </xml>
+    val extracted = MyExtractors.extractDocument.extract(xml)
+    extracted shouldBe Success(Document(List(Empty(), Empty())))
   }
 
 }

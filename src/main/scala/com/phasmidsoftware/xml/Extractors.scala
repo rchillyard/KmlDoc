@@ -1,4 +1,4 @@
-package com.phasmidsoftware.kmldoc
+package com.phasmidsoftware.xml
 
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -10,7 +10,7 @@ trait Extractors {
 
   def extractorSeq[P: Extractor](attribute: String): Extractor[Seq[P]] = (node: Node) => Extractors.extractSeq[P](node \ attribute)
 
-  def extractor0[T <: Product : ClassTag](construct: Unit => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => Success(construct())
+  def extractor0[T <: Product : ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
 
   def extractor1[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = new Extractor[T] {
     val p0e: Extractor[P0] = implicitly[Extractor[P0]]
@@ -22,7 +22,7 @@ trait Extractors {
           val value = p0e.extract(node)
           value map construct
         //          val pys: Seq[Try[P0]] = for (node <- seq) yield pe.extract(node)
-        //          val psy: Try[Seq[P0]] = XmlUtils.sequence(pys)
+        //          val psy: Try[Seq[P0]] = Utilities.sequence(pys)
         //          val p: Try[Seq[T]] = psy match {
         //            // TODO use transform
         //            case Success(ps) =>
@@ -36,7 +36,7 @@ trait Extractors {
           val value = p0e.extract(node)
           value map construct
 
-        case fs => Failure(new Exception(s"non-unique field name: $fs"))
+        case fs => Failure(XmlException(s"non-unique field name: $fs"))
       }
   }
 
@@ -58,7 +58,7 @@ trait Extractors {
   //              p0 <- pe.extract(node)(f0)
   //              t <- extractor1(construct.curried(p0), fs).extract(node)
   //            } yield t
-  //          case _ => Failure(Exception("no field names"))
+  //          case _ => Failure(XmlException("no field names"))
   //        }
   //    }
 
@@ -93,7 +93,7 @@ object Extractors {
   def extractSeq[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
     val pe: Extractor[P] = implicitly[Extractor[P]]
     val pys: Seq[Try[P]] = for (node <- nodeSeq) yield pe.extract(node)
-    val psy: Try[Seq[P]] = XmlUtils.sequence(pys)
+    val psy: Try[Seq[P]] = Utilities.sequence(pys)
     psy
     //    psy match {
     //      // TODO use transform
@@ -103,7 +103,7 @@ object Extractors {
     //          val clazz = ps1.head.getClass
     //          if ( clazz.isAssignableFrom(x))
     //            Success(ps1.asInstanceOf[T])
-    //          else Failure(new Exception(s"incorrect type: $clazz cannot be assigned to $q"))
+    //          else Failure(new XmlException(s"incorrect type: $clazz cannot be assigned to $q"))
     //        }
     //        else Success(ps.asInstanceOf[T])
     //      case Failure(x) => Failure(x)
