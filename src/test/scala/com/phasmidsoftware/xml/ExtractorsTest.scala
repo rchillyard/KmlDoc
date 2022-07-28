@@ -17,62 +17,76 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
   /**
    * A case object for testing using extractor0.
    */
-  case object Empty1
+  case object Empty
 
   /**
    * A case class with zero members for testing using extractor0.
    */
-  case class Empty2()
+  case class Junk()
 
   /**
    * Case class for testing using extractor1.
    *
-   * @param empties a list of Empty1 objects.
+   * @param empties a list of Empty objects.
    */
-  case class Document1(empties: Seq[Empty1.type])
+  case class Document1(empties: Seq[Empty.type])
 
   /**
    * Case class similar to Document1, but has two members.
    *
-   * @param _id     the identifier of this Document2.
+   * @param _id     the identifier of this Document2A.
    *                NOTE that the member name starts with an "_" in order that it be treated as an attribute.
-   * @param empties a sequence of Empty1 objects.
+   * @param empties a sequence of Empty objects.
    */
-  case class Document2(_id: Int, empties: Seq[Empty1.type])
+  case class Document2(_id: Int, empties: Seq[Empty.type])
 
   /**
-   * Companion object for Document2.
-   * This allows us to have more control over how we construct an instance of Document2.
+   * Case class similar to Document1, but has two members.
+   *
+   * @param _id     the identifier of this Document2A.
+   *                NOTE that the member name starts with an "_" in order that it be treated as an attribute.
+   * @param empties a sequence of Empty objects.
    */
-  object Document2 {
-    def apply(id: String, empties: Seq[Empty1.type]): Document2 = Document2(id.toInt, empties)
+  case class Document2A(_id: Int, empties: Seq[Empty.type])
+
+  /**
+   * Companion object for Document2A.
+   * This allows us to have more control over how we construct an instance of Document2A.
+   */
+  object Document2A {
+    def apply(id: String, empties: Seq[Empty.type]): Document2A = Document2A(id.toInt, empties)
   }
 
   /**
    * Case class similar to Document1, but has two members.
    *
-   * @param _id     the identifier of this Document2.
-   *                NOTE that the member name starts with an "_" in order that it be treated as an attribute.
-   * @param empties a sequence of Empty1 objects.
+   * @param _id       the identifier of this Document2A.
+   *                  NOTE that the member name starts with an "_" in order that it be treated as an attribute.
+   * @param empties   a sequence of Empty objects.
+   * @param maybeJunk an optional Junk object.
    */
-  case class Document3(_id: Int, empties: Seq[Empty1.type])
+  case class Document3(_id: Int, empties: Seq[Empty.type], maybeJunk: Option[Junk])
 
   import Extractors._
 
   object MyExtractors extends Extractors {
 
-    implicit val extractEmpty1: Extractor[Empty1.type] = extractor0[Empty1.type](_ => Empty1)
+    implicit val extractEmpty1: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
 
-    implicit val extractEmpty2: Extractor[Empty2] = extractor0[Empty2](_ => Empty2())
+    implicit val extractEmpty2: Extractor[Junk] = extractor0[Junk](_ => Junk())
 
-    implicit val extractEmpties: Extractor[Seq[Empty1.type]] = extractorSequence[Empty1.type]("empty")
+    implicit val extractEmpties: Extractor[Seq[Empty.type]] = extractorSequence[Empty.type]("empty")
+
+    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOptional[Junk]("junk")
 
     implicit val extractDocument1: Extractor[Document1] = extractor1(Document1)
 
-    val makeDocument2: (String, Seq[Empty1.type]) => Document2 = Document2.apply _
-    implicit val extractDocument2: Extractor[Document2] = extractor2(makeDocument2)
+    val makeDocument2A: (String, Seq[Empty.type]) => Document2A = Document2A.apply _
+    implicit val extractDocument2A: Extractor[Document2A] = extractor2(makeDocument2A)
 
-    implicit val extractDocument3: Extractor[Document3] = extractor2(Document3)
+    implicit val extractDocument2: Extractor[Document2] = extractor2(Document2)
+
+    implicit val extractDocument3: Extractor[Document3] = extractor3(Document3)
   }
 
   behavior of "Extractors$"
@@ -82,7 +96,7 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
       <empty></empty> <empty></empty>
     </xml>
     import MyExtractors._
-    val extractedSeq: Try[Seq[Empty1.type]] = extractSequence[Empty1.type](xml \ "empty")
+    val extractedSeq: Try[Seq[Empty.type]] = extractSequence[Empty.type](xml \ "empty")
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
   }
 
@@ -94,14 +108,14 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   it should "extractor0A" in {
     val xml: Elem = <xml></xml>
-    val extracted = MyExtractors.extractor0[Empty1.type](_ => Empty1).extract(xml)
-    extracted shouldBe Success(Empty1)
+    val extracted = MyExtractors.extractor0[Empty.type](_ => Empty).extract(xml)
+    extracted shouldBe Success(Empty)
   }
 
   it should "extractor0B" in {
     val xml: Elem = <xml></xml>
-    val extracted = MyExtractors.extractor0[Empty2](_ => Empty2()).extract(xml)
-    extracted shouldBe Success(Empty2())
+    val extracted = MyExtractors.extractor0[Junk](_ => Junk()).extract(xml)
+    extracted shouldBe Success(Junk())
   }
 
   it should "extractor1A" in {
@@ -121,23 +135,40 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
       <empty></empty> <empty></empty>
     </xml>
     val extracted = MyExtractors.extractDocument1.extract(xml)
-    extracted shouldBe Success(Document1(List(Empty1, Empty1)))
+    extracted shouldBe Success(Document1(List(Empty, Empty)))
   }
 
   it should "extractor2A" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
-    val extracted = MyExtractors.extractDocument2.extract(xml)
-    extracted shouldBe Success(Document2(1, List(Empty1, Empty1)))
+    val extracted = MyExtractors.extractDocument2A.extract(xml)
+    extracted shouldBe Success(Document2A(1, List(Empty, Empty)))
   }
 
   it should "extractor2B" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
+    val extracted = MyExtractors.extractDocument2.extract(xml)
+    extracted shouldBe Success(Document2(1, List(Empty, Empty)))
+  }
+
+  it should "extractor3A" in {
+    val xml: Elem = <xml id="1">
+      <empty></empty> <empty></empty>
+    </xml>
     val extracted = MyExtractors.extractDocument3.extract(xml)
-    extracted shouldBe Success(Document3(1, List(Empty1, Empty1)))
+    extracted shouldBe Success(Document3(1, List(Empty, Empty), None))
+  }
+
+  it should "extractor3B" in {
+    val xml: Elem = <xml id="1">
+      <empty></empty> <empty></empty>
+      <junk></junk>
+    </xml>
+    val extracted = MyExtractors.extractDocument3.extract(xml)
+    extracted shouldBe Success(Document3(1, List(Empty, Empty), Some(Junk())))
   }
 
   it should "match attribute" in {
@@ -170,11 +201,11 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
   behavior of "Extractors"
 
   it should "extractorSequence" in {
-    implicit val ee: Extractor[Empty1.type] = MyExtractors.extractor0[Empty1.type](_ => Empty1)
+    implicit val ee: Extractor[Empty.type] = MyExtractors.extractor0[Empty.type](_ => Empty)
     val xml: Elem = <xml>
       <empty></empty> <empty></empty>
     </xml>
-    val extractedSeq: Try[Seq[Empty1.type]] = MyExtractors.extractorSequence[Empty1.type]("empty").extract(xml)
+    val extractedSeq: Try[Seq[Empty.type]] = MyExtractors.extractorSequence[Empty.type]("empty").extract(xml)
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
   }
 
