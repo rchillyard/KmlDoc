@@ -8,8 +8,9 @@ import scala.xml.{Node, NodeSeq}
 trait Extractors {
   val plural: Regex = """(\w+)s""".r
 
-
   def extractorSeq[P: Extractor](attribute: String): Extractor[Seq[P]] = (node: Node) => Extractors.extractSeq[P](node \ attribute)
+
+  def extractor0[T <: Product : ClassTag](construct: Unit => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => Success(construct())
 
   def extractor1[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = new Extractor[T] {
     val p0e: Extractor[P0] = implicitly[Extractor[P0]]
@@ -108,15 +109,20 @@ object Extractors {
     //      case Failure(x) => Failure(x)
     //    }
   }
-
 }
 
+/**
+ * Trait to define the behavior of a type which can be constructed from an XML Node.
+ *
+ * @tparam T the type to be constructed.
+ */
 trait Extractor[T] {
+  /**
+   * Method to convert a Node into a Try[T].
+   *
+   * @param node a Node.
+   * @return a Try[T].
+   */
   def extract(node: Node): Try[T]
-
-
 }
 
-trait MultiExtractor[T] extends Extractor[T] {
-
-}
