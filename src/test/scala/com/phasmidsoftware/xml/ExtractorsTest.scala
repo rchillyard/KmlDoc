@@ -14,9 +14,9 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers {
 
   case class Document(empties: Seq[Empty])
 
-  object MyExtractors extends Extractors {
+  import Extractors._
 
-    import com.phasmidsoftware.xml.Extractors._
+  object MyExtractors extends Extractors {
 
     implicit val extractEmpty: Extractor[Empty] = extractor0[Empty](_ => Empty())
 

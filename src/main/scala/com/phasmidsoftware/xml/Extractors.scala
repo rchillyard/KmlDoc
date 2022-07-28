@@ -79,8 +79,27 @@ trait Extractors {
 
 object Extractors {
 
+  implicit object StringExtractor extends Extractor[String] {
+    def extract(node: Node): Try[String] = Success(node.text)
+  }
+
   implicit object IntExtractor extends Extractor[Int] {
-    def extract(node: Node): Try[Int] = Try(implicitly[Numeric[Int]].parseString(node.text).get)
+    def extract(node: Node): Try[Int] = Try(node.text.toInt)
+  }
+
+  implicit object BooleanExtractor extends Extractor[Boolean] {
+    def extract(node: Node): Try[Boolean] = node.text match {
+      case "true" | "yes" | "T" | "Y" => Success(true)
+      case _ => Success(false)
+    }
+  }
+
+  implicit object DoubleExtractor extends Extractor[Double] {
+    def extract(node: Node): Try[Double] = Try(node.text.toDouble)
+  }
+
+  implicit object LongExtractor extends Extractor[Long] {
+    def extract(node: Node): Try[Long] = Try(node.text.toLong)
   }
 
   /**
