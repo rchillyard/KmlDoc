@@ -11,34 +11,45 @@ trait Extractors {
 
   def extractorSequence[P: Extractor](attribute: String): Extractor[Seq[P]] = (node: Node) => Extractors.extractSequence[P](node \ attribute)
 
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case object.
+   *
+   * @param construct a function () => T, usually the apply method of a case object or zero-member case class.
+   * @tparam T the underlying type of the result, a Product.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
   def extractor0[T <: Product : ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
 
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with one member.
+   *
+   * @param construct a function (P0) => T, usually the apply method of a case class.
+   * @tparam P0 the type of the first (only) member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with one member of type P0.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
   def extractor1[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => fieldNames(fields) match {
     case f :: Nil => extractField[P0](f)(node) map construct
-    case fs => Failure(XmlException(s"non-unique field name: $fs"))
+    case fs => Failure(XmlException(s"extractor2: non-unique field name: $fs"))
   }
 
-//  /**
-//   * Method to return a CellParser[T] where T is a 2-ary Product and which is based on a function to convert a (P0,P1) into a T.
-//   *
-//   * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-//   * @tparam P0 the type of the first field of the Product type T.
-//   * @tparam P1 the type of the second field of the Product type T.
-//   * @tparam T  the underlying type of the result, a Product.
-//   * @return a MultiCellParser which converts Strings from a Row into the field types P0 and P1 and thence into a T
-//   */
-  //  def extractor2[P0: Extractor, P1: Extractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] = new Extractor[T] {
-  //    val pe: Extractor[P0] = implicitly[Extractor[P0]]
-  //    def extract(node: Node): Try[T] =
-  //        fieldNames(fields) match {
-  //          case f0 :: fs =>
-  //            for {
-  //              p0 <- pe.extract(node)(f0)
-  //              t <- extractor1(construct.curried(p0), fs).extract(node)
-  //            } yield t
-  //          case _ => Failure(XmlException("no field names"))
-  //        }
-  //    }
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with two members.
+   *
+   * @param construct a function (P0,P1) => T, usually the apply method of a case class.
+   * @tparam P0 the type of the first member of the Product type T.
+   * @tparam P1 the type of the second member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with two members.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractor2[P0: Extractor, P1: Extractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => fieldNames(fields) match {
+    case f0 :: fs =>
+      for {
+        p0 <- extractField[P0](f0)(node)
+        t <- extractor1(construct.curried(p0), fs).extract(node)
+      } yield t
+    case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs"))
+  }
 
   /**
    * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
@@ -113,19 +124,15 @@ object Extractors {
   }
 
   val plural: Regex = """(\w+)s""".r
-  val attribute: Regex = """(_(\w+))""".r
+  val attribute: Regex = """_(\w+)""".r
 
-  def extractField[P: Extractor](f: String)(node: Node): Try[P] = f match {
+  def extractField[P: Extractor](field: String)(node: Node): Try[P] = field match {
     // NOTE child nodes are positional. They do not necessarily match names.
-    case plural(_, _) =>
-      implicitly[Extractor[P]].extract(node)
+    case plural(_) => implicitly[Extractor[P]].extract(node)
     // NOTE attributes must match names where the case class member name starts with "_"
-    case attribute(_, f) =>
-      println(s"$f")
-      extractSingleton[P](node \ s"@$f")
+    case attribute(x) => extractSingleton[P](node \ s"@$x")
     // NOTE this is a default case which is currently identical to the plural case.
-    case _ =>
-      implicitly[Extractor[P]].extract(node)
+    case _ => implicitly[Extractor[P]].extract(node)
   }
 
 }
