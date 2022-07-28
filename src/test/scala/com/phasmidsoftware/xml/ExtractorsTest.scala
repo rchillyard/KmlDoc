@@ -42,11 +42,20 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   /**
    * Companion object for Document2.
+   * This allows us to have more control over how we construct an instance of Document2.
    */
   object Document2 {
-    def apply(id: String, empties: Seq[Empty1.type]): Document2 =
-      Document2(id.toInt, empties)
+    def apply(id: String, empties: Seq[Empty1.type]): Document2 = Document2(id.toInt, empties)
   }
+
+  /**
+   * Case class similar to Document1, but has two members.
+   *
+   * @param _id     the identifier of this Document2.
+   *                NOTE that the member name starts with an "_" in order that it be treated as an attribute.
+   * @param empties a sequence of Empty1 objects.
+   */
+  case class Document3(_id: Int, empties: Seq[Empty1.type])
 
   import Extractors._
 
@@ -62,6 +71,8 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
     val makeDocument2: (String, Seq[Empty1.type]) => Document2 = Document2.apply _
     implicit val extractDocument2: Extractor[Document2] = extractor2(makeDocument2)
+
+    implicit val extractDocument3: Extractor[Document3] = extractor2(Document3)
   }
 
   behavior of "Extractors$"
@@ -113,12 +124,20 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Document1(List(Empty1, Empty1)))
   }
 
-  it should "extractor2" in {
+  it should "extractor2A" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
     val extracted = MyExtractors.extractDocument2.extract(xml)
-    extracted shouldBe Success(Document2("1", List(Empty1, Empty1)))
+    extracted shouldBe Success(Document2(1, List(Empty1, Empty1)))
+  }
+
+  it should "extractor2B" in {
+    val xml: Elem = <xml id="1">
+      <empty></empty> <empty></empty>
+    </xml>
+    val extracted = MyExtractors.extractDocument3.extract(xml)
+    extracted shouldBe Success(Document3(1, List(Empty1, Empty1)))
   }
 
   it should "match attribute" in {

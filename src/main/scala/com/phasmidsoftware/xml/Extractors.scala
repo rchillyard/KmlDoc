@@ -103,25 +103,8 @@ object Extractors {
    * @tparam P the type to which each Node should be converted .
    * @return a Try of Seq[P].
    */
-  def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
-    val pe: Extractor[P] = implicitly[Extractor[P]]
-    val pys: Seq[Try[P]] = for (node <- nodeSeq) yield pe.extract(node)
-    val psy: Try[Seq[P]] = Utilities.sequence(pys)
-    psy
-    //    psy match {
-    //      // TODO use transform
-    //      case Success(ps) =>
-    //        val ps1: Seq[P] = ps
-    //        if (ps1.nonEmpty) {
-    //          val clazz = ps1.head.getClass
-    //          if ( clazz.isAssignableFrom(x))
-    //            Success(ps1.asInstanceOf[T])
-    //          else Failure(new XmlException(s"incorrect type: $clazz cannot be assigned to $q"))
-    //        }
-    //        else Success(ps.asInstanceOf[T])
-    //      case Failure(x) => Failure(x)
-    //    }
-  }
+  def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
+    Utilities.sequence(for (node <- nodeSeq) yield implicitly[Extractor[P]].extract(node))
 
   val plural: Regex = """(\w+)s""".r
   val attribute: Regex = """_(\w+)""".r
