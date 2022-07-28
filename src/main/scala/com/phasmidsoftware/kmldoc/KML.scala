@@ -1,28 +1,43 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.xml.Utilities.maybeString
+import com.phasmidsoftware.xml.XmlException
 
 import java.net.URL
-import scala.xml.{Elem, Node, NodeSeq, XML}
+import scala.io.Source
+import scala.util.matching.Regex
+import scala.xml.{Elem, XML}
 
-case class KML(xmlns: Option[String], documents: Seq[Document])
+case class KML(_xmlns: Option[String], documents: Seq[Document])
 
-case class Document(name: String, description: Option[String])
+case class Document(name: String, description: Option[String], folders: Seq[Folder])
 
-object Document {
-  def fromXML(node: Node): Document = {
-    val name: NodeSeq = node \ "name"
-    val description: NodeSeq = node \ "description"
-    Document(maybeString(name).getOrElse("unnamed"), maybeString(description))
+case class Folder(name: String, placemarks: Seq[Placemark])
+
+case class Placemark(name: String, description: String, lineStrings: Seq[LineString])
+
+case class LineString(tesselate: String, coordinates: Seq[Coordinates])
+
+case class Coordinates(coordinates: Seq[Coordinate])
+
+object Coordinates {
+  def parse(w: String): Coordinates = {
+    val source = Source.fromString(w)
+    Coordinates((for (line <- source.getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
+  }
+}
+
+case class Coordinate(lat: String, long: String)
+
+object Coordinate {
+  val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+
+  def apply(w: String): Coordinate = w match {
+    case latLong(long, lat, _) => Coordinate(lat, long)
+    case _ => throw XmlException(s"bad coordinate string: $w")
   }
 }
 
 object KML {
-  def fromXML(node: Node): KML = {
-    val xmlns: NodeSeq = node \ "@xmlns"
-    val docs: NodeSeq = node \ "Document"
-    KML(maybeString(xmlns), docs map (n => Document.fromXML(n)))
-  }
 
   def loadKML(resource: URL): KML = {
     require(resource != null)
@@ -32,8 +47,9 @@ object KML {
   def loadKML(file: String): KML = {
     require(file != null)
     val xml: Elem = XML.loadFile(file)
-    val kmls: collection.Seq[KML] = for (kml <- xml \\ "kml") yield KML.fromXML(kml)
-    kmls.head
+    //    val kmls: collection.Seq[KML] = for (kml <- xml \\ "kml") yield KML.fromXML(kml)
+    //    kmls.head
+    KML(None, Nil)
   }
 }
 
