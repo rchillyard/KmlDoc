@@ -1,43 +1,21 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.xml.Extractors.extractField
+
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
 trait Extractors {
-  val plural: Regex = """(\w+)s""".r
 
-  def extractorSeq[P: Extractor](attribute: String): Extractor[Seq[P]] = (node: Node) => Extractors.extractSeq[P](node \ attribute)
+  def extractorSequence[P: Extractor](attribute: String): Extractor[Seq[P]] = (node: Node) => Extractors.extractSequence[P](node \ attribute)
 
   def extractor0[T <: Product : ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
 
-  def extractor1[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = new Extractor[T] {
-    val p0e: Extractor[P0] = implicitly[Extractor[P0]]
-
-    def extract(node: Node): Try[T] =
-      fieldNames(fields) match {
-        case plural(f0, _) :: Nil =>
-          //          val value: Try[Seq[P0]] = Extractors.extractSeq[P0](node \ f0)
-          val value = p0e.extract(node)
-          value map construct
-        //          val pys: Seq[Try[P0]] = for (node <- seq) yield pe.extract(node)
-        //          val psy: Try[Seq[P0]] = Utilities.sequence(pys)
-        //          val p: Try[Seq[T]] = psy match {
-        //            // TODO use transform
-        //            case Success(ps) =>
-        //              val ps1: Seq[P0] = ps
-        //              val q: Seq[T] = ps1 map construct
-        //              Success(q)
-        //            case Failure(x) => Failure(x)
-        //          }
-        //          p
-        case f0 :: Nil =>
-          val value = p0e.extract(node)
-          value map construct
-
-        case fs => Failure(XmlException(s"non-unique field name: $fs"))
-      }
+  def extractor1[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => fieldNames(fields) match {
+    case f :: Nil => extractField[P0](f)(node) map construct
+    case fs => Failure(XmlException(s"non-unique field name: $fs"))
   }
 
 //  /**
@@ -61,7 +39,6 @@ trait Extractors {
   //          case _ => Failure(XmlException("no field names"))
   //        }
   //    }
-
 
   /**
    * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
@@ -102,6 +79,12 @@ object Extractors {
     def extract(node: Node): Try[Long] = Try(node.text.toLong)
   }
 
+  def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] = extractSequence[P](nodeSeq) match {
+    case Success(p :: Nil) => Success(p)
+    case Success(ps) => Failure(XmlException(s"extractSingleton: non-unique value: $ps"))
+    case Failure(x) => Failure(x)
+  }
+
   /**
    * Method to extract a sequence of objects from a NodeSeq.
    *
@@ -109,7 +92,7 @@ object Extractors {
    * @tparam P the type to which each Node should be converted .
    * @return a Try of Seq[P].
    */
-  def extractSeq[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
+  def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
     val pe: Extractor[P] = implicitly[Extractor[P]]
     val pys: Seq[Try[P]] = for (node <- nodeSeq) yield pe.extract(node)
     val psy: Try[Seq[P]] = Utilities.sequence(pys)
@@ -128,6 +111,23 @@ object Extractors {
     //      case Failure(x) => Failure(x)
     //    }
   }
+
+  val plural: Regex = """(\w+)s""".r
+  val attribute: Regex = """(_(\w+))""".r
+
+  def extractField[P: Extractor](f: String)(node: Node): Try[P] = f match {
+    // NOTE child nodes are positional. They do not necessarily match names.
+    case plural(_, _) =>
+      implicitly[Extractor[P]].extract(node)
+    // NOTE attributes must match names where the case class member name starts with "_"
+    case attribute(_, f) =>
+      println(s"$f")
+      extractSingleton[P](node \ s"@$f")
+    // NOTE this is a default case which is currently identical to the plural case.
+    case _ =>
+      implicitly[Extractor[P]].extract(node)
+  }
+
 }
 
 /**
