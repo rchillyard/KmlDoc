@@ -71,13 +71,12 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   object MyExtractors extends Extractors {
 
-    implicit val extractEmpty1: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
+    implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
 
-    implicit val extractEmpty2: Extractor[Junk] = extractor0[Junk](_ => Junk())
+    implicit val extractJunk: Extractor[Junk] = extractor0[Junk](_ => Junk())
 
     implicit val extractEmpties: Extractor[Seq[Empty.type]] = extractorSequence[Empty.type]("empty")
 
-    //    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOptional[Junk]("junk")
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption[Junk]("junk")
 
     implicit val extractDocument1: Extractor[Document1] = extractor1(Document1)
@@ -105,6 +104,15 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     val xml: Elem = <xml id="1"></xml>
     val extracted = extractSingleton[Int](xml \ "@id")
     extracted shouldBe Success(1)
+  }
+
+  it should "extractOptional" in {
+    val xml: Elem = <xml>
+      <empty></empty>
+    </xml>
+    import MyExtractors.extractEmpty
+    val extracted = extractOptional[Empty.type](xml \ "empty")
+    extracted shouldBe Success(Empty)
   }
 
   it should "extractor0A" in {
@@ -176,32 +184,55 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   it should "match attribute" in {
     Extractors.attribute.matches("_id") shouldBe true
-    val z: Matcher = Extractors.attribute.pattern.matcher("_id")
-    z.matches() shouldBe true
-    z.groupCount() shouldBe 1
-    z.group(0) shouldBe "_id"
-    z.group(1) shouldBe "id"
+    val matcher: Matcher = Extractors.attribute.pattern.matcher("_id")
+    matcher.matches() shouldBe true
+    matcher.groupCount() shouldBe 1
+    matcher.group(0) shouldBe "_id"
+    matcher.group(1) shouldBe "id"
   }
 
   it should "match plural" in {
     Extractors.plural.matches("xs") shouldBe true
-    val z: Matcher = Extractors.plural.pattern.matcher("xs")
-    z.matches() shouldBe true
-    z.groupCount() shouldBe 1
-    z.group(0) shouldBe "xs"
-    z.group(1) shouldBe "x"
+    val matcher: Matcher = Extractors.plural.pattern.matcher("xs")
+    matcher.matches() shouldBe true
+    matcher.groupCount() shouldBe 1
+    matcher.group(0) shouldBe "xs"
+    matcher.group(1) shouldBe "x"
   }
 
-  it should "extractField" in {
-    val z: Node => Try[Int] = Extractors.extractField[Int]("_id")
-    z(<xml id="1"></xml>) shouldBe Success(1)
+  it should "match optional" in {
+    Extractors.optional.matches("xs") shouldBe false
+    val matcher: Matcher = Extractors.optional.pattern.matcher("maybexs")
+    matcher.matches() shouldBe true
+    matcher.groupCount() shouldBe 1
+    matcher.group(0) shouldBe "maybexs"
+    matcher.group(1) shouldBe "xs"
   }
 
-  //  it should "extractFieldSequence" in {
-  //    implicit val ee: Extractor[Empty.type] = MyExtractors.extractor0[Empty.type](_ => Empty)
-  //    val z: Node => Try[Seq[Empty.type]] = Extractors.extractFieldSequence[Empty.type]("emptys")
-  //    z(<xml><empty></empty></xml>) shouldBe Success(Seq(Empty))
-  //  }
+  it should "extractField String" in {
+    val we: Node => Try[String] = Extractors.extractField[String]("_id")
+    we(<xml id="xyz"></xml>) shouldBe Success("xyz")
+  }
+
+  it should "extractField Int" in {
+    val ie: Node => Try[Int] = Extractors.extractField[Int]("_id")
+    ie(<xml id="1"></xml>) shouldBe Success(1)
+  }
+
+  it should "extractField Boolean" in {
+    val be: Node => Try[Boolean] = Extractors.extractField[Boolean]("_ok")
+    be(<xml ok="true"></xml>) shouldBe Success(true)
+  }
+
+  it should "extractField Double" in {
+    val de: Node => Try[Double] = Extractors.extractField[Double]("_weight")
+    de(<xml weight="42.0"></xml>) shouldBe Success(42)
+  }
+
+  it should "extractField Long" in {
+    val le: Node => Try[Long] = Extractors.extractField[Long]("_id")
+    le(<xml id="42"></xml>) shouldBe Success(42)
+  }
 
   behavior of "Extractors"
 
