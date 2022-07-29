@@ -13,9 +13,9 @@ case class Document(name: String, description: Option[String], folders: Seq[Fold
 
 case class Folder(name: String, placemarks: Seq[Placemark])
 
-case class Placemark(name: String, description: String, lineStrings: Seq[LineString])
+case class Placemark(name: String, description: String, styleUrl: String, LineStrings: Seq[LineString])
 
-case class LineString(tesselate: String, coordinates: Seq[Coordinates])
+case class LineString(tessellate: String, coordinates: Seq[Coordinates])
 
 case class Coordinates(coordinates: Seq[Coordinate])
 

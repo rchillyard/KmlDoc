@@ -62,10 +62,10 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
    *
    * @param _id       the identifier of this Document2A.
    *                  NOTE that the member name starts with an "_" in order that it be treated as an attribute.
-   * @param empties   a sequence of Empty objects.
-   * @param maybeJunk an optional Junk object.
+   * @param emptys    a sequence of Empty objects.
+   * @param maybejunk an optional Junk object.
    */
-  case class Document3(_id: Int, empties: Seq[Empty.type], maybeJunk: Option[Junk])
+  case class Document3(_id: Int, emptys: Seq[Empty.type], maybejunk: Option[Junk])
 
   import Extractors._
 
@@ -77,7 +77,8 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
     implicit val extractEmpties: Extractor[Seq[Empty.type]] = extractorSequence[Empty.type]("empty")
 
-    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOptional[Junk]("junk")
+    //    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOptional[Junk]("junk")
+    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption[Junk]("junk")
 
     implicit val extractDocument1: Extractor[Document1] = extractor1(Document1)
 
@@ -119,8 +120,10 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "extractor1A" in {
-    val xml: Elem = <xml id="1"></xml>
-    val extracted = MyExtractors.extractor1(Simple1).extract((xml \ "@id").head)
+    val xml: Elem = <xml>
+      <id>1</id>
+    </xml>
+    val extracted = MyExtractors.extractor1(Simple1).extract(xml)
     extracted shouldBe Success(Simple1(1))
   }
 
@@ -190,13 +193,15 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "extractField" in {
-    // TODO make extractField private.
-    //    val extractors: Extractors.type = Extractors
-    //    val extractField = PrivateMethod[Node => Try[Int]](Symbol("extractField"))
-    //    val z: Node => Try[Int] = extractors invokePrivate extractField("_id")
     val z: Node => Try[Int] = Extractors.extractField[Int]("_id")
     z(<xml id="1"></xml>) shouldBe Success(1)
   }
+
+  //  it should "extractFieldSequence" in {
+  //    implicit val ee: Extractor[Empty.type] = MyExtractors.extractor0[Empty.type](_ => Empty)
+  //    val z: Node => Try[Seq[Empty.type]] = Extractors.extractFieldSequence[Empty.type]("emptys")
+  //    z(<xml><empty></empty></xml>) shouldBe Success(Seq(Empty))
+  //  }
 
   behavior of "Extractors"
 
