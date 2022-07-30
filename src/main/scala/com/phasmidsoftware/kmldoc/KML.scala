@@ -57,49 +57,34 @@ object KmlExtractors extends Extractors {
   import Extractors._
 
   implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
-  //  implicit val extractorCoordinatesSequence: Extractor[Seq[Coordinates]] = extractorSequence[Coordinates]("coordinates")
-  //  implicit val extractorLineStringSequence: Extractor[Seq[LineString]] = extractorSequence[LineString]("LineString")
-  //  implicit val extractorPlacemarkSequence: Extractor[Seq[Placemark]] = extractorSequence[Placemark]("Placemark")
-  //  implicit val extractorFolderSequence: Extractor[Seq[Folder]] = extractorSequence[Folder]("Folder")
-
   implicit val extractMaybeDescription: Extractor[Option[String]] = extractorOption[String]("junk")
-
-  implicit val extractorStyle: Extractor[Style] =
-    extractor0[Style](_ => Style()) // TODO flesh this out
-  implicit val extractorStyleSequence: Extractor[Seq[Style]] =
-    extractorSequence[Style]("Style")
-  implicit val extractorStyleMap: Extractor[StyleMap] =
-    extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
-  implicit val extractorStyleMapSequence: Extractor[Seq[StyleMap]] =
-    extractorSequence[StyleMap]("StyleMap")
-  //  implicit val extractorDocumentSequence: Extractor[Seq[Document]] = extractorSequence[Document]("Document")
-  implicit val poo1: MultiExtractor[Seq[String]] = new MultiExtractorBase[String]()
-  implicit val poo2: MultiExtractor[Seq[Coordinates]] = new MultiExtractorBase[Coordinates]()
+  implicit val extractorStyle: Extractor[Style] = extractor0[Style](_ => Style()) // TODO flesh this out
+  implicit val extractorStyleMap: Extractor[StyleMap] = extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
+  implicit val extractorMultiString: MultiExtractor[Seq[String]] = new MultiExtractorBase[String]()
+  implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = new MultiExtractorBase[Coordinates]()
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
-  implicit val poo3: MultiExtractor[Seq[LineString]] = new MultiExtractorBase[LineString]()
+  implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = new MultiExtractorBase[LineString]()
   implicit val extractorPlacemark: Extractor[Placemark] = extractor31(Placemark)
-  implicit val poo4: MultiExtractor[Seq[Placemark]] = new MultiExtractorBase[Placemark]()
+  implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = new MultiExtractorBase[Placemark]()
   implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
-  implicit val poo5: MultiExtractor[Seq[StyleMap]] = new MultiExtractorBase[StyleMap]()
-  implicit val poo6: MultiExtractor[Seq[Style]] = new MultiExtractorBase[Style]()
-  implicit val poo7: MultiExtractor[Seq[Folder]] = new MultiExtractorBase[Folder]()
+  implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = new MultiExtractorBase[StyleMap]()
+  implicit val extractorMultiStyle: MultiExtractor[Seq[Style]] = new MultiExtractorBase[Style]()
+  implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = new MultiExtractorBase[Folder]()
   implicit val extractorDocument: Extractor[Document] = extractor23(Document)
-  implicit val poo8: MultiExtractor[Seq[Document]] = new MultiExtractorBase[Document]()
-
-  implicit val extractorKml: Extractor[KML] =
-    extractor11(KML)
-  implicit val extractorKmlSequence: Extractor[Seq[KML]] =
-    extractorSequence[KML]("kml")
+  implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = new MultiExtractorBase[Document]()
+  implicit val extractorKml: Extractor[KML] = extractor11(KML)
+  implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = new MultiExtractorBase[KML]()
 }
-
 
 object KMLCompanion {
 
+  // TESTME
   def loadKML(resource: URL): KML = {
     require(resource != null)
     loadKML(resource.getPath)
   }
 
+  // TESTME
   def loadKML(file: String): KML = {
     require(file != null)
     val xml: Elem = XML.loadFile(file)
@@ -109,9 +94,8 @@ object KMLCompanion {
   }
 }
 
-
-
 object Test extends App {
+  // TESTME
   val kml: KML = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
   println(s"KML: $kml")
 }

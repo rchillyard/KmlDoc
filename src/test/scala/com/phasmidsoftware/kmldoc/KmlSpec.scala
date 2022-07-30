@@ -34,7 +34,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </coordinates>
     </xml>
 
-    poo2.extract(xml \ "coordinates") match {
+    extractorMultiCoordinates.extract(xml \ "coordinates") match {
       case Success(cs) =>
         cs.size shouldBe 1
         cs.head.coordinates.size shouldBe 2
@@ -70,7 +70,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </coordinates>
       </LineString>
     </xml>
-    poo3.extract(xml \ "LineString") match {
+    extractorMultiLineString.extract(xml \ "LineString") match {
       case Success(ls) =>
         ls.size shouldBe 1
         val lineString = ls.head
@@ -103,7 +103,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </LineString>
       </Placemark>
     </xml>
-    poo4.extract(xml \ "Placemark") match {
+    extractorMultiPlacemark.extract(xml \ "Placemark") match {
       case Success(ps) =>
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
@@ -144,7 +144,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </Placemark>
       </Folder>
     </xml>
-    poo7.extract(xml \ "Folder") match {
+    extractorMultiFolder.extract(xml \ "Folder") match {
       case Success(fs) =>
         fs.size shouldBe 1
         val folder = fs.head
@@ -2790,7 +2790,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </Folder>
       </Document>
     </xml>
-    poo8.extract(xml \ "Document") match {
+    extractorMultiDocument.extract(xml \ "Document") match {
       case Success(ds) =>
         ds.size shouldBe 1
         val document: Document = ds.head
@@ -3206,7 +3206,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </kml>
     </xml>
     (xml \ "kml").size shouldBe 1
-    extractorKmlSequence.extract(xml) match {
+    extractorMultiKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head
@@ -3236,7 +3236,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   ignore should "extract KmlFromFile" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
-    extractorKmlSequence.extract(xml) match {
+    extractorMultiKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head

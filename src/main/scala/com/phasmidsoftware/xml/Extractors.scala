@@ -18,6 +18,8 @@ trait Extractors {
   /**
    * Method to yield an Extractor of Option[P].
    *
+   * TESTME
+   *
    * @param ignored NOTE: unused parameter.
    * @tparam P the underlying type of the result.
    * @return an Extractor of Option[P].
@@ -41,7 +43,8 @@ trait Extractors {
       Extractors.extractSequence[P](node \ label)
 
   /**
-   * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object.
+   * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
+   * NOTE that you will have to specify a lambda for the construct function.
    *
    * @param construct a function () => T, usually the apply method of a case object or zero-member case class.
    * @tparam T the underlying type of the result, a Product.
@@ -55,7 +58,7 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
    * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first (only) member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with one member of type P0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -73,7 +76,7 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
    * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first (only) member of the Product type T.
+   * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with one member of type P0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -90,9 +93,11 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -111,8 +116,8 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -130,9 +135,11 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
+   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -151,9 +158,9 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -172,10 +179,12 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -194,10 +203,12 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
+   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -217,10 +228,10 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -239,11 +250,13 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -262,11 +275,13 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -285,11 +300,13 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
+   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -308,12 +325,14 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
-   * @tparam P4 the type of the fifth member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -332,12 +351,14 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
-   * @tparam P4 the type of the fifth member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -356,12 +377,14 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
-   * @tparam P4 the type of the fifth member of the Product type T.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -380,12 +403,14 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the type of the first member of the Product type T.
-   * @tparam P1 the type of the second member of the Product type T.
-   * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the fourth member of the Product type T.
-   * @tparam P4 the type of the fifth member of the Product type T.
+   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -406,18 +431,6 @@ trait Extractors {
  * Companion object to Extractors.
  */
 object Extractors {
-  /**
-   * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
-   * Note that fields takes precedence and ClassTag[T] is ignored if fields is used.
-   *
-   * @param fields a list of field names to be used instead of the reflected fields of T.
-   * @tparam T the type (typically a case class) from which we will use reflection to get the field names (referred to only if fields is Nil)
-   * @return the field names to be used.
-   */
-  private def fieldNames[T: ClassTag](fields: Seq[String]) = fields match {
-    case Nil => Reflection.extractFieldNames(implicitly[ClassTag[T]]).toList
-    case ps => ps
-  }
 
   /**
    * String extractor.
@@ -463,26 +476,36 @@ object Extractors {
 
   /**
    * String multi extractor.
+   *
+   * TESTME
    */
   implicit object StringMultiExtractor extends MultiExtractorBase[String]
 
   /**
    * Int multi extractor.
+   *
+   * TESTME
    */
   implicit object IntMultiExtractor extends MultiExtractorBase[Int]
 
   /**
    * Boolean multi extractor.
+   *
+   * TESTME
    */
   implicit object BooleanMultiExtractor extends MultiExtractorBase[Boolean]
 
   /**
    * Double multi extractor.
+   *
+   * TESTME
    */
   implicit object DoubleMultiExtractor extends MultiExtractorBase[Double]
 
   /**
    * Long multi extractor.
+   *
+   * TESTME
    */
   implicit object LongMultiExtractor extends MultiExtractorBase[Long]
 
@@ -550,6 +573,19 @@ object Extractors {
       })
 
   /**
+   * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
+   * Note that fields takes precedence and ClassTag[T] is ignored if fields is used.
+   *
+   * @param fields a list of field names to be used instead of the reflected fields of T.
+   * @tparam T the type (typically a case class) from which we will use reflection to get the field names (referred to only if fields is Nil)
+   * @return the field names to be used.
+   */
+  private def fieldNames[T: ClassTag](fields: Seq[String]) = fields match {
+    case Nil => Reflection.extractFieldNames(implicitly[ClassTag[T]]).toList
+    case ps => ps
+  }
+
+  /**
    * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
    * FIXME: why do attributes, optionals, and defaults use the field but not plurals??
@@ -582,7 +618,6 @@ object Extractors {
     }
 
   val logger: Logger = LoggerFactory.getLogger(Extractors.getClass)
-
 }
 
 /**
