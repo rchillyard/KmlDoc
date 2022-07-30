@@ -1,17 +1,30 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.xml.XmlException
+import com.phasmidsoftware.xml.{Extractor, Extractors, XmlException}
 
 import java.net.URL
 import scala.io.Source
+import scala.util.Success
 import scala.util.matching.Regex
-import scala.xml.{Elem, XML}
+import scala.xml.{Elem, Node, XML}
 
-case class KML(_xmlns: Option[String], documents: Seq[Document])
+/**
+ * Case class to define a KML object.
+ *
+ * TODO allow some of the members (not just in KML) to be optional.
+ *
+ * @param _xmlns the xmlns value.
+ * @param documents a sequence of Document.
+ */
+case class KML(_xmlns: String, documents: Seq[Document])
 
-case class Document(name: String, description: Option[String], folders: Seq[Folder])
+case class Document(name: String, description: String, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
 
-case class Folder(name: String, placemarks: Seq[Placemark])
+case class Style()
+
+case class StyleMap()
+
+case class Folder(name: String, Placemarks: Seq[Placemark])
 
 case class Placemark(name: String, description: String, styleUrl: String, LineStrings: Seq[LineString])
 
@@ -37,7 +50,50 @@ object Coordinate {
   }
 }
 
-object KML {
+object KmlExtractors extends Extractors {
+
+  import Extractors._
+
+  implicit val extractorCoordinates: Extractor[Coordinates] =
+    (node: Node) => Success(Coordinates.parse(node.text))
+  implicit val extractorCoordinatesSequence: Extractor[Seq[Coordinates]] =
+    extractorSequence[Coordinates]("coordinates")
+  implicit val extractorLineString: Extractor[LineString] =
+    extractor2(LineString)
+  implicit val extractorLineStringSequence: Extractor[Seq[LineString]] =
+    extractorSequence[LineString]("LineString")
+  implicit val extractorPlacemark: Extractor[Placemark] =
+    extractor4(Placemark)
+  implicit val extractorPlacemarkSequence: Extractor[Seq[Placemark]] =
+    extractorSequence[Placemark]("Placemark")
+  implicit val extractorFolder: Extractor[Folder] =
+    extractor2(Folder)
+  implicit val extractorFolderSequence: Extractor[Seq[Folder]] =
+    extractorSequence[Folder]("Folder")
+
+  implicit val extractMaybeDescription: Extractor[Option[String]] = extractorOption[String]("junk")
+
+  implicit val extractorStyle: Extractor[Style] =
+    extractor0[Style](_ => Style()) // TODO flesh this out
+  implicit val extractorStyleSequence: Extractor[Seq[Style]] =
+    extractorSequence[Style]("Style")
+  implicit val extractorStyleMap: Extractor[StyleMap] =
+    extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
+  implicit val extractorStyleMapSequence: Extractor[Seq[StyleMap]] =
+    extractorSequence[StyleMap]("StyleMap")
+  implicit val extractorDocument: Extractor[Document] =
+    extractor5(Document)
+  implicit val extractorDocumentSequence: Extractor[Seq[Document]] =
+    extractorSequence[Document]("Document")
+
+  implicit val extractorKml: Extractor[KML] =
+    extractor2(KML)
+  implicit val extractorKmlSequence: Extractor[Seq[KML]] =
+    extractorSequence[KML]("kml")
+}
+
+
+object KMLCompanion {
 
   def loadKML(resource: URL): KML = {
     require(resource != null)
@@ -49,13 +105,13 @@ object KML {
     val xml: Elem = XML.loadFile(file)
     //    val kmls: collection.Seq[KML] = for (kml <- xml \\ "kml") yield KML.fromXML(kml)
     //    kmls.head
-    KML(None, Nil)
+    KML("", Nil)
   }
 }
 
 
 
 object Test extends App {
-  val kml: KML = KML.loadKML(KML.getClass.getResource("sample.kml"))
+  val kml: KML = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
   println(s"KML: $kml")
 }

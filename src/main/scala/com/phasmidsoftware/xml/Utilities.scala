@@ -1,7 +1,8 @@
 package com.phasmidsoftware.xml
 
+import scala.collection.mutable
 import scala.util.Try
-import scala.xml.NodeSeq
+import scala.xml.{Node, NodeSeq}
 
 object Utilities {
   //  def extract1[X, P: Extractor](n: Node): Seq[X] = ???
@@ -12,6 +13,18 @@ object Utilities {
     (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
   }
 
+  def showBrief(node: Node): String = node.label
+
+  def show(node: Node): String = {
+    val result = new mutable.StringBuilder("node: ")
+    result.append(s"label=${node.label}, ")
+    result.append(s"length=${node.length}, ")
+    result.append(s"descendants=${node.descendant.size}, ")
+    result.append(s"attributes=${node.attributes.mkString}, ")
+    val children = node.child map showBrief
+    result.append(s"children=${children.mkString("{", ",", "}")}")
+    result.toString()
+  }
 }
 
 case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)

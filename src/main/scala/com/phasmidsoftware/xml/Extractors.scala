@@ -1,6 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.xml.Extractors.{extractField, fieldNames}
+import com.phasmidsoftware.xml.Utilities.show
 
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -111,7 +112,7 @@ trait Extractors {
    * @tparam P0 the type of the first member of the Product type T.
    * @tparam P1 the type of the second member of the Product type T.
    * @tparam P2 the type of the third member of the Product type T.
-   * @tparam P3 the type of the third member of the Product type T.
+   * @tparam P3 the type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -125,6 +126,30 @@ trait Extractors {
             t <- extractor3(construct(p0, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
+      }
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with five members.
+   *
+   * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
+   * @tparam P0 the type of the first member of the Product type T.
+   * @tparam P1 the type of the second member of the Product type T.
+   * @tparam P2 the type of the third member of the Product type T.
+   * @tparam P3 the type of the fourth member of the Product type T.
+   * @tparam P4 the type of the fifth member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with five members.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractor5[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
+    (node: Node) =>
+      fieldNames(fields) match {
+        case member0 :: fs =>
+          for {
+            p0 <- extractField[P0](member0)(node)
+            // NOTE: do not concern yourself with warnings about implicits here.
+            t <- extractor4(construct(p0, _, _, _, _), fs).extract(node)
+          } yield t
+        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
       }
 }
 
@@ -208,12 +233,13 @@ object Extractors {
   /**
    * method to extract an attribute from a NodeSeq.
    */
-  def extractAttribute[P: Extractor](nodeSeq: NodeSeq): Try[P] = extractSequence[P](nodeSeq) match {
-    case Success(p :: Nil) => Success(p)
-    // TESTME
-    case Success(ps) => Failure(XmlException(s"extractAttribute: non-unique value: $ps"))
-    case Failure(x) => Failure(x)
-  }
+  def extractAttribute[P: Extractor](nodeSeq: NodeSeq): Try[P] =
+    extractSequence[P](nodeSeq) match {
+      case Success(p :: Nil) => Success(p)
+      // TESTME
+      case Success(ps) => Failure(XmlException(s"extractAttribute: non-unique value: $ps"))
+      case Failure(x) => Failure(x)
+    }
 
   /**
    * Method to extract a sequence of objects from a NodeSeq.
@@ -232,21 +258,32 @@ object Extractors {
   /**
    * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
+   * FIXME: why do attributes, optionals, and defaults use the field but not plurals??
+   *
    * @param field the name of a member field.
    * @param node  a Node whence to be extracted.
    * @tparam P the type to which each Node should be converted [must be Extractor].
    * @return a Try[P].
    */
-  def extractField[P: Extractor](field: String)(node: Node): Try[P] = field match {
-    // NOTE child nodes are positional. They do not necessarily match names.
-    case plural(_) => implicitly[Extractor[P]].extract(node)
-    // NOTE attributes must match names where the case class member name starts with "_"
-    case attribute(x) => extractAttribute[P](node \ s"@$x")
-    // NOTE attributes must match names where the case class member name starts with "_"
-    case optional(x) => extractOptional[P](node \ x)
-    // NOTE this is a default case which is currently identical to the plural case.
-    case x => extractSingleton[P](node \ x)
-  }
+  def extractField[P: Extractor](field: String)(node: Node): Try[P] =
+    (field match {
+      // NOTE attributes must match names where the case class member name starts with "_"
+      case attribute(x) =>
+        val nodeSeq = node \ s"@$x"
+        "attribute: @$x" -> extractAttribute[P](nodeSeq)
+      // NOTE child nodes are positional. They do not necessarily match names.
+      case plural(_) =>
+        s"plural:" -> implicitly[Extractor[P]].extract(node)
+      // NOTE attributes must match names where the case class member name starts with "_"
+      case optional(x) =>
+        s"optional: $x" -> extractOptional[P](node \ x)
+      // NOTE this is a default case which is currently identical to the plural case.
+      case x =>
+        s"default: $x" -> extractSingleton[P](node \ x)
+    }) match {
+      case _ -> Success(p) => Success(p)
+      case m -> Failure(x) => Failure(XmlException(s"extractField: field=$field, node=${show(node)}, m=$m", x))
+    }
 }
 
 /**
