@@ -26,7 +26,7 @@ case class StyleMap()
 
 case class Folder(name: String, Placemarks: Seq[Placemark])
 
-case class Placemark(name: String, description: String, styleUrl: String, LineStrings: Seq[LineString])
+case class Placemark(name: String, maybedescription: Option[String], styleUrl: String, LineStrings: Seq[LineString])
 
 case class LineString(tessellate: String, Coordinates: Seq[Coordinates])
 

@@ -612,7 +612,10 @@ object Extractors {
         s"default: $x" -> extractSingleton[P](node \ x)
     }) match {
       case _ -> Success(p) => Success(p)
-      case m -> Failure(x) => Failure(XmlException(s"extractField: field=$field, node=${show(node)}, m=$m", x))
+      case m -> Failure(x) =>
+        val message = s"extractField: field=$field, node=${show(node)}, m=$m"
+        logger.info(s"$message caused by $x")
+        Failure(XmlException(message, x))
     }
 
   val logger: Logger = LoggerFactory.getLogger(Extractors.getClass)

@@ -82,6 +82,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "Placemark"
+
   it should "extract Placemark" in {
     val xml: Elem = <xml>
       <Placemark>
@@ -108,7 +110,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
         placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.description shouldBe "RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."
+        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -119,6 +121,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Failure(x) => fail(x)
     }
   }
+
+  behavior of "Folder"
 
   it should "extract Folder" in {
     val xml: Elem = <xml>
@@ -153,7 +157,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
         placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.description shouldBe "RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."
+        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -165,7 +169,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  ignore should "extract Document" in {
+  behavior of "Document"
+
+  it should "extract Document" in {
     val xml = <xml>
       <Document>
         <name>MA - Boston NE: Historic New England Railroads</name>
@@ -2799,20 +2805,25 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         fs.size shouldBe 1
         val folder: Folder = fs.head
         val ps = folder.Placemarks
-        ps.size shouldBe 1
+        ps.size shouldBe 34
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.description shouldBe "RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."
+        placemark.name shouldBe "Stoneham Branch"
+        placemark.maybedescription shouldBe Some(
+          """
+              K405<br>RDK1: 51B
+            """)
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
         val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
-        coordinate.coordinates.size shouldBe 8
+        coordinate.coordinates.size shouldBe 94
       case Failure(x) => fail(x)
     }
   }
+
+  behavior of "KML"
 
   ignore should "extract KML" in {
     val xml = <xml version="1.0" encoding="UTF-8">
@@ -3221,7 +3232,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
         placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.description shouldBe "RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."
+        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -3250,7 +3261,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
         placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.description shouldBe "RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."
+        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
