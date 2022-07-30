@@ -28,7 +28,7 @@ case class Folder(name: String, Placemarks: Seq[Placemark])
 
 case class Placemark(name: String, description: String, styleUrl: String, LineStrings: Seq[LineString])
 
-case class LineString(tessellate: String, coordinates: Seq[Coordinates])
+case class LineString(tessellate: String, Coordinates: Seq[Coordinates])
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
@@ -51,6 +51,8 @@ object Coordinate {
 }
 
 object KmlExtractors extends Extractors {
+
+  Extractors.translations += "Coordinates" -> "coordinates"
 
   import Extractors._
 

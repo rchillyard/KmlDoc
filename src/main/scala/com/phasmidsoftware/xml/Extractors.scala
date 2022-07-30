@@ -1,8 +1,10 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.xml.Extractors.{extractField, fieldNames}
+import com.phasmidsoftware.xml.Extractors.{extractChildren, extractField, fieldNames}
 import com.phasmidsoftware.xml.Utilities.show
+import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -80,13 +82,10 @@ trait Extractors {
       fieldNames(fields) match {
         case member :: Nil =>
           for {
-            p0 <- extractMember(node, member)
+            p0 <- extractChildren(node, member)
           } yield construct(p0)
-        //          extractMember(node, member) map construct
         case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
       }
-
-  private def extractMember[P: MultiExtractor](node: Node, member: String): Try[P] = implicitly[MultiExtractor[P]].extract(node \ member)
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
@@ -142,7 +141,7 @@ trait Extractors {
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractMember[P0](node, member0)
+            p0 <- extractChildren[P0](node, member0)
             t <- extractor01(construct.curried(p0), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs")) // TESTME
@@ -207,7 +206,7 @@ trait Extractors {
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractMember[P0](node, member0)
+            p0 <- extractChildren[P0](node, member0)
             // NOTE: do not concern yourself with warnings about implicits here.
             t <- extractor02[P1, P2, T](construct(p0, _, _), fs).extract(node)
           } yield t
@@ -299,7 +298,7 @@ trait Extractors {
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractMember[P0](node, member0)
+            p0 <- extractChildren[P0](node, member0)
             // NOTE: do not concern yourself with warnings about implicits here.
             t <- extractor03(construct(p0, _, _, _), fs).extract(node)
           } yield t
@@ -395,7 +394,7 @@ trait Extractors {
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractMember[P0](node, member0)
+            p0 <- extractChildren[P0](node, member0)
             // NOTE: do not concern yourself with warnings about implicits here.
             t <- extractor04(construct(p0, _, _, _, _), fs).extract(node)
           } yield t
@@ -534,6 +533,22 @@ object Extractors {
   val attribute: Regex = """_(\w+)""".r
   val optional: Regex = """maybe(\w+)""".r
 
+  private def extractChildren[P: MultiExtractor](node: Node, member: String): Try[P] = {
+    val w = translateMemberName(member)
+    val nodeSeq = node \ w
+    if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children found for child $w (for member $member) in ${show(node)}")
+    implicitly[MultiExtractor[P]].extract(nodeSeq)
+  }
+
+  val translations: mutable.HashMap[String, String] = new mutable.HashMap[String, String]()
+
+  def translateMemberName(member: String): String =
+    translations.getOrElse(member,
+      member match {
+        case Extractors.plural(x) => x
+        case _ => translations.getOrElse(member, member)
+      })
+
   /**
    * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
@@ -552,9 +567,11 @@ object Extractors {
         "attribute: @$x" -> extractAttribute[P](nodeSeq)
       // NOTE child nodes are positional. They do not necessarily match names.
       case plural(_) =>
+        // TESTME
         s"plural:" -> implicitly[Extractor[P]].extract(node)
       // NOTE attributes must match names where the case class member name starts with "_"
       case optional(x) =>
+        // TESTME
         s"optional: $x" -> extractOptional[P](node \ x)
       // NOTE this is a default case which is currently identical to the plural case.
       case x =>
@@ -563,6 +580,9 @@ object Extractors {
       case _ -> Success(p) => Success(p)
       case m -> Failure(x) => Failure(XmlException(s"extractField: field=$field, node=${show(node)}, m=$m", x))
     }
+
+  val logger: Logger = LoggerFactory.getLogger(Extractors.getClass)
+
 }
 
 /**

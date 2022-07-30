@@ -42,6 +42,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "LineString"
+
   it should "extract LineString" in {
     val xml: Elem = <xml>
       <LineString>
@@ -73,14 +75,14 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ls.size shouldBe 1
         val lineString = ls.head
         lineString.tessellate shouldBe "1"
-        val cs: Seq[Coordinates] = lineString.coordinates
+        val cs: Seq[Coordinates] = lineString.Coordinates
         cs.size shouldBe 1
         cs.head.coordinates.size shouldBe 18
       case Failure(x) => fail(x)
     }
   }
 
-  ignore should "extract Placemark" in {
+  it should "extract Placemark" in {
     val xml: Elem = <xml>
       <Placemark>
         <name>Wakefield Branch of Eastern RR</name>
@@ -110,7 +112,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
-        val coordinates = lineString.coordinates
+        val coordinates: scala.Seq[Coordinates] = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
         coordinate.coordinates.size shouldBe 8
@@ -118,7 +120,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  ignore should "extract Folder" in {
+  it should "extract Folder" in {
     val xml: Elem = <xml>
       <Folder>
         <name>Untitled layer</name>
@@ -155,7 +157,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
-        val coordinates = lineString.coordinates
+        val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
         coordinate.coordinates.size shouldBe 8
@@ -2804,7 +2806,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
-        val coordinates = lineString.coordinates
+        val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
         coordinate.coordinates.size shouldBe 8
@@ -3223,7 +3225,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
-        val coordinates = lineString.coordinates
+        val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
         coordinate.coordinates.size shouldBe 8
@@ -3252,7 +3254,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
-        val coordinates = lineString.coordinates
+        val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
         coordinate.coordinates.size shouldBe 8
