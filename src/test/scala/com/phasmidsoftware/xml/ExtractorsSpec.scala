@@ -8,7 +8,7 @@ import java.util.regex.Matcher
 import scala.util.{Success, Try}
 import scala.xml.{Elem, Node}
 
-class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
+class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
 
   case class Simple1(id: Int)
 
@@ -71,23 +71,18 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   object MyExtractors extends Extractors {
 
+    // XXX this is to demonstrate the usage of the translations feature.
+    Extractors.translations += "empties" -> "empty"
+
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
-    implicit val poo8: MultiExtractor[Seq[Empty.type]] = new MultiExtractorBase[Empty.type]()
-
+    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractor[Empty.type]
     implicit val extractJunk: Extractor[Junk] = extractor0[Junk](_ => Junk())
-
-    implicit val extractEmpties: Extractor[Seq[Empty.type]] = extractorSequence[Empty.type]("empty")
-
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption[Junk]("junk")
-
     implicit val extractDocument1: Extractor[Document1] = extractor01(Document1)
-    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = new MultiExtractorBase[Document1]()
-
+    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractor[Document1]
     val makeDocument2A: (String, Seq[Empty.type]) => Document2A = Document2A.apply _
     implicit val extractDocument2A: Extractor[Document2A] = extractor11(makeDocument2A)
-
     implicit val extractDocument2: Extractor[Document2] = extractor11(Document2)
-
     implicit val extractDocument3: Extractor[Document3] = extractor21(Document3)
   }
 
@@ -137,7 +132,7 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Junk())
   }
 
-  it should "extractor1A" in {
+  it should "extractor10A" in {
     val xml: Elem = <xml>
       <id>1</id>
     </xml>
@@ -145,23 +140,24 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Simple1(1))
   }
 
-  it should "extractor1B" in {
+  it should "extractor10B" in {
     val xml: Elem = <xml id="1"></xml>
     val extracted = MyExtractors.extractor10(Simple2).extract(xml)
     extracted shouldBe Success(Simple2("1"))
   }
 
-  ignore should "extractor1C" in {
-    val xml: Elem = <xml id="1">
+  it should "multiExtractor[Document1]" in {
+    val xml: Elem = <xml>
       <document1>
         <empty></empty> <empty></empty>
       </document1>
     </xml>
-    val extracted = MyExtractors.extractMultiDocument1.extract(xml \ "document1")
-    extracted shouldBe Success(Document1(List(Empty, Empty)))
+    import MyExtractors._
+    val extracted: Try[Seq[Document1]] = extractMultiDocument1.extract(xml \ "document1")
+    extracted shouldBe Success(List(Document1(List(Empty, Empty))))
   }
 
-  ignore should "extractor2A" in {
+  it should "extractor2A" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
@@ -169,7 +165,7 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Document2A(1, List(Empty, Empty)))
   }
 
-  ignore should "extractor2B" in {
+  it should "extractor2B" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
@@ -177,7 +173,7 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Document2(1, List(Empty, Empty)))
   }
 
-  ignore should "extractor3A" in {
+  it should "extractor3A" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
@@ -185,7 +181,7 @@ class ExtractorsTest extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Document3(1, None, List(Empty, Empty)))
   }
 
-  ignore should "extractor3B" in {
+  it should "extractor3B" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
       <junk></junk>
