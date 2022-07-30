@@ -60,20 +60,20 @@ object KmlExtractors extends Extractors {
   implicit val extractMaybeDescription: Extractor[Option[String]] = extractorOption[String]("junk")
   implicit val extractorStyle: Extractor[Style] = extractor0[Style](_ => Style()) // TODO flesh this out
   implicit val extractorStyleMap: Extractor[StyleMap] = extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
-  implicit val extractorMultiString: MultiExtractor[Seq[String]] = new MultiExtractorBase[String]()
-  implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = new MultiExtractorBase[Coordinates]()
+  implicit val extractorMultiString: MultiExtractor[Seq[String]] = multiExtractor[String]
+  implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
-  implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = new MultiExtractorBase[LineString]()
+  implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
   implicit val extractorPlacemark: Extractor[Placemark] = extractor31(Placemark)
-  implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = new MultiExtractorBase[Placemark]()
+  implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
   implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
-  implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = new MultiExtractorBase[StyleMap]()
-  implicit val extractorMultiStyle: MultiExtractor[Seq[Style]] = new MultiExtractorBase[Style]()
-  implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = new MultiExtractorBase[Folder]()
+  implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
+  implicit val extractorMultiStyle: MultiExtractor[Seq[Style]] = multiExtractor[Style]
+  implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
   implicit val extractorDocument: Extractor[Document] = extractor23(Document)
-  implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = new MultiExtractorBase[Document]()
+  implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
   implicit val extractorKml: Extractor[KML] = extractor11(KML)
-  implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = new MultiExtractorBase[KML]()
+  implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
 }
 
 object KMLCompanion {

@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.xml.Extractors.{extractChildren, extractField, fieldNames}
+import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames}
 import com.phasmidsoftware.xml.Utilities.show
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -67,7 +67,7 @@ trait Extractors {
       fieldNames(fields) match {
         case member :: Nil =>
           for {
-            p0 <- extractField[P0](member)(node)
+            p0 <- extractField(member)(node)
           } yield construct(p0)
         case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
       }
@@ -170,7 +170,6 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
             t <- extractor11[P1, P2, T](construct(p0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
@@ -194,7 +193,6 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
             t <- extractor02[P1, P2, T](construct(p0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
@@ -218,7 +216,6 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractChildren[P0](node, member0)
-            // NOTE: do not concern yourself with warnings about implicits here.
             t <- extractor02[P1, P2, T](construct(p0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
@@ -241,8 +238,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor21(construct(p0, _, _, _), fs).extract(node)
+            t <- extractor21[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
       }
@@ -266,8 +262,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor12(construct(p0, _, _, _), fs).extract(node)
+            t <- extractor12[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
       }
@@ -291,8 +286,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor03(construct(p0, _, _, _), fs).extract(node)
+            t <- extractor03[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
       }
@@ -316,8 +310,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractChildren[P0](node, member0)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor03(construct(p0, _, _, _), fs).extract(node)
+            t <- extractor03[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
       }
@@ -342,8 +335,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor22(construct(p0, _, _, _, _), fs).extract(node)
+            t <- extractor22[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
       }
@@ -368,8 +360,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor13(construct(p0, _, _, _, _), fs).extract(node)
+            t <- extractor13[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
       }
@@ -394,8 +385,7 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractField[P0](member0)(node)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor04(construct(p0, _, _, _, _), fs).extract(node)
+            t <- extractor04[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
       }
@@ -420,11 +410,19 @@ trait Extractors {
         case member0 :: fs =>
           for {
             p0 <- extractChildren[P0](node, member0)
-            // NOTE: do not concern yourself with warnings about implicits here.
-            t <- extractor04(construct(p0, _, _, _, _), fs).extract(node)
+            t <- extractor04[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
       }
+
+  /**
+   * Method to create a new MultiExtractor based on type P such that the underlying type of the result
+   * is Seq[P].
+   *
+   * @tparam P the underlying (Extractor) type.
+   * @return a MultiExtractor of Seq[P]
+   */
+  def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 }
 
 /**
