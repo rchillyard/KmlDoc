@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
 import java.util.regex.Matcher
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, Node}
 
 class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
@@ -88,6 +88,18 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   behavior of "Extractors$"
 
+  it should "extract normal attribute" in {
+    val xml: Elem = <kml id="2.2"></kml>
+    import Extractors.StringExtractor
+    extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
+  }
+
+  it should "extract reserved attribute" in {
+    val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
+    import Extractors.StringExtractor
+    extractField[String]("_xmlns")(xml) should matchPattern { case Failure(_) => }
+  }
+
   it should "extractSequence" in {
     val xml: Elem = <xml>
       <empty></empty> <empty></empty>
@@ -101,6 +113,11 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     val xml: Elem = <xml id="1"></xml>
     val extracted = extractSingleton[Int](xml \ "@id")
     extracted shouldBe Success(1)
+  }
+  it should "extractSingleton2" in {
+    val xml: Elem = <xml id="A"></xml>
+    val extracted = extractSingleton[String](xml \ "@id")
+    extracted shouldBe Success("A")
   }
 
   it should "extractOptional1" in {

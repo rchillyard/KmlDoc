@@ -2825,19 +2825,18 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "KML"
 
-  ignore should "extract KML" in {
-    val xml = <xml version="1.0" encoding="UTF-8">
-      <kml xmlns="http://www.opengis.net/kml/2.2">
-        <Document>
-          <name>MA - Boston NE: Historic New England Railroads</name>
-          <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
-          <Style id="icon-22-nodesc-normal">
-            <IconStyle>
-              <scale>1.1</scale>
-              <Icon>
-                <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
-              </Icon>
-              <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+  it should "extract KML" in {
+    val xml = <kml xmlns="http://www.opengis.net/kml/2.2">
+      <Document>
+        <name>MA - Boston NE: Historic New England Railroads</name>
+        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+        <Style id="icon-22-nodesc-normal">
+          <IconStyle>
+            <scale>1.1</scale>
+            <Icon>
+              <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+            </Icon>
+            <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
             </IconStyle>
             <LabelStyle>
               <scale>0</scale>
@@ -3215,31 +3214,28 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           </Folder>
         </Document>
       </kml>
-    </xml>
-    (xml \ "kml").size shouldBe 1
     extractorMultiKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
-        val kml = ks.head
-        val ds = kml.documents
+        val kml: KML = ks.head
+        val ds = kml.Documents
         ds.size shouldBe 1
         val document: Document = ds.head
         val fs = document.Folders
         fs.size shouldBe 1
         val folder = fs.head
-        folder.name shouldBe "MA - Boston NE: Historic New England Railroads"
+        folder.name shouldBe "Untitled layer"
         val ps = folder.Placemarks
-        ps.size shouldBe 1
+        ps.size shouldBe 2
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
+        placemark.name shouldBe "Stoneham Branch"
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
         val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
-        coordinate.coordinates.size shouldBe 8
+        coordinate.coordinates.size shouldBe 94
       case Failure(x) => fail(x)
     }
   }
@@ -3251,7 +3247,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head
-        val ds = kml.documents
+        val ds = kml.Documents
         val document: Document = ds.head
         val fs = document.Folders
         fs.size shouldBe 1

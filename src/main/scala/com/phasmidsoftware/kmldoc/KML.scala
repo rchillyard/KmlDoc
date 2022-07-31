@@ -13,10 +13,12 @@ import scala.xml.{Elem, Node, XML}
  *
  * TODO allow some of the members (not just in KML) to be optional.
  *
- * @param _xmlns the xmlns value.
- * @param documents a sequence of Document.
+ * NOTE well: do not be tempted to add "_xmlns" as a member.
+ * If you do, you will run into the undocumented(?) "feature" of the Xml library that "xmlns" is a reserved attribute name.
+ *
+ * @param Documents a sequence of Document.
  */
-case class KML(_xmlns: String, documents: Seq[Document])
+case class KML(Documents: Seq[Document])
 
 case class Document(name: String, description: String, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
 
@@ -72,7 +74,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
   implicit val extractorDocument: Extractor[Document] = extractor23(Document)
   implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
-  implicit val extractorKml: Extractor[KML] = extractor11(KML)
+  implicit val extractorKml: Extractor[KML] = extractor01(KML)
   implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
 }
 
@@ -90,7 +92,7 @@ object KMLCompanion {
     val xml: Elem = XML.loadFile(file)
     //    val kmls: collection.Seq[KML] = for (kml <- xml \\ "kml") yield KML.fromXML(kml)
     //    kmls.head
-    KML("", Nil)
+    KML(Nil)
   }
 }
 

@@ -67,7 +67,7 @@ trait Extractors {
       fieldNames(fields) match {
         case member :: Nil =>
           for {
-            p0 <- extractField(member)(node)
+            p0 <- extractField[P0](member)(node)
           } yield construct(p0)
         case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
       }
@@ -520,6 +520,8 @@ object Extractors {
 
   /**
    * method to extract a singleton from a NodeSeq.
+   *
+   * CONSIDER why is this identical with extractAttribute?
    */
   def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
     extractSequence[P](nodeSeq) match {
@@ -584,22 +586,32 @@ object Extractors {
   }
 
   /**
+   * Method to yield a Try[P] for a particular child or attribute of the given node.
+   *
    * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
    * FIXME: why do attributes, optionals, and defaults use the field but not plurals??
    *
-   * @param field the name of a member field.
-   * @param node  a Node whence to be extracted.
-   * @tparam P the type to which each Node should be converted [must be Extractor].
+   * @param field the name of a member field:
+   *              if a singleton child, then field is as is
+   *              if (plural) children, then field should end in "s"
+   *              if an attribute, then field should begin with "_"
+   *              if an optional child, then field should begin with "maybe".
+   * @param node  a Node whence field is to be extracted.
+   * @tparam P the type to which Node should be converted [must be Extractor].
    * @return a Try[P].
    */
   def extractField[P: Extractor](field: String)(node: Node): Try[P] =
     (field match {
       // NOTE attributes must match names where the case class member name starts with "_"
+      case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
       case attribute(x) =>
-        val nodeSeq = node \ s"@$x"
-        "attribute: @$x" -> extractAttribute[P](nodeSeq)
-      // NOTE child nodes are positional. They do not necessarily match names.
+        val pyso = for (ns <- node.attribute(x)) yield for (n <- ns) yield implicitly[Extractor[P]].extract(n)
+        s"attribute: $x" -> (pyso match {
+          case Some(py :: Nil) => py
+          case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
+        })
+      // NOTE child nodes are positional. They do not necessarily match names. This is rubbish!! TODO fix it
       case plural(_) =>
         // TESTME
         s"plural:" -> implicitly[Extractor[P]].extract(node)
