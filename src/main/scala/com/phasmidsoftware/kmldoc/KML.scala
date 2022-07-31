@@ -1,6 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.render.{Renderable, Renderers}
+import com.phasmidsoftware.render.{FormatFree, FormatXML, Renderable, Renderers}
 import com.phasmidsoftware.xml.{Extractor, Extractors, MultiExtractor, XmlException}
 
 import java.net.URL
@@ -83,11 +83,11 @@ object KmlExtractors extends Extractors {
 
 object KmlRenderers extends Renderers {
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
-  implicit val rendererStyle: Renderable[Style] = renderer0
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
+  implicit val rendererStyle: Renderable[Style] = renderer0(FormatFree)
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(FormatFree)
   implicit val rendererCoordinate: Renderable[Coordinate] = renderer2(Coordinate.apply)
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate]
-  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
+  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(FormatFree)
   implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
   implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
   implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
@@ -99,7 +99,28 @@ object KmlRenderers extends Renderers {
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
   implicit val rendererDocument: Renderable[Document] = renderer5(Document)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
-  implicit val rendererKml: Renderable[KML] = renderer1(KML)
+  implicit val rendererKml: Renderable[KML] = renderer1(KML)(FormatFree)
+}
+
+object KmlXmlRenderers extends Renderers {
+  implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
+  implicit val rendererStyle: Renderable[Style] = renderer0(FormatXML)
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(FormatXML)
+  implicit val rendererCoordinate: Renderable[Coordinate] = renderer2(Coordinate.apply)
+  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate]
+  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(FormatFree)
+  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
+  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
+  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
+  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)
+  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
+  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)
+  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
+  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
+  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
+  implicit val rendererDocument: Renderable[Document] = renderer5(Document)
+  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
+  implicit val rendererKml: Renderable[KML] = renderer1(KML)(FormatFree)
 }
 
 object KMLCompanion {

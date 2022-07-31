@@ -10,18 +10,18 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "renderer1" in {
     case class Greeting(greet: String)
     object MyRenderers extends Renderers {
-      val rendererGreeting: Renderable[Greeting] = renderer1(Greeting)
+      val rendererGreeting: Renderable[Greeting] = renderer1(Greeting)(FormatFree)
     }
-    MyRenderers.rendererGreeting.render(Greeting("Hello"), 1) shouldBe "Hello"
+    MyRenderers.rendererGreeting.render(Greeting("Hello"), 1) shouldBe "{Hello}"
   }
 
   it should "renderer0" in {
     case object MyJunk
     object MyRenderers extends Renderers {
-      implicit val rendererMyJunk: Renderable[MyJunk.type] = renderer0
+      implicit val rendererMyJunk: Renderable[MyJunk.type] = renderer0(FormatFree)
     }
     import MyRenderers._
-    rendererMyJunk.render(MyJunk, 0) shouldBe "MyJunk"
+    rendererMyJunk.render(MyJunk, 0) shouldBe "{MyJunk}"
   }
 
   it should "intRenderer" in {

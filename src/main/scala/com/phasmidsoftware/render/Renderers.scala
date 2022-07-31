@@ -2,14 +2,25 @@ package com.phasmidsoftware.render
 
 import com.phasmidsoftware.render.Renderable.newline
 
+import scala.annotation.unused
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
 trait Renderers {
-  def renderer0[R <: Product]: Renderable[R] = (r: R, _: Int, _: Boolean) => r.toString
+  def renderer0[R <: Product : ClassTag](format: Format): Renderable[R] = (r: R, _: Int, _: Boolean) => {
+    val sb = new mutable.StringBuilder()
+    sb.append(format.formatType(true))
+    sb.append(r.toString)
+    sb.append(format.formatType(false))
+    sb.toString()
+  }
 
-  def renderer1[P0: Renderable, R <: Product : ClassTag](ignored: P0 => R): Renderable[R] = (r: R, indent: Int, _: Boolean) => {
-    implicitly[Renderable[P0]].render(r.productElement(0).asInstanceOf[P0], indent + 1)
+  def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R)(format: Format): Renderable[R] = (r: R, indent: Int, interior: Boolean) => {
+    val sb = new mutable.StringBuilder()
+    if (!interior) sb.append(format.formatType(true))
+    sb.append(implicitly[Renderable[P0]].render(r.productElement(0).asInstanceOf[P0], indent + 1))
+    if (!interior) sb.append(format.formatType(false))
+    sb.toString()
   }
 
   def renderer2[P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => R): Renderable[R] = (r: R, indent: Int, interior: Boolean) => {
@@ -18,7 +29,7 @@ trait Renderers {
     val renderer1Object = renderer1Constructor(r.productElement(0).asInstanceOf[P0])
     val sb = new mutable.StringBuilder()
     if (!interior) sb.append("{")
-    sb.append(renderer1(renderer1Constructor).render(renderer1Object, indent + 1, interior = true))
+    sb.append(renderer1(renderer1Constructor)(FormatFree).render(renderer1Object, indent + 1, interior = true))
     sb.append(", ")
     sb.append(implicitly[Renderable[P1]].render(p1, indent + 1))
     if (!interior) sb.append("}")
@@ -98,4 +109,20 @@ trait Renderable[T] {
 
 object Renderable {
   def newline(indent: Int): String = " " * indent + "\n"
+}
+
+trait Format {
+  def formatType[T: ClassTag](open: Boolean): String
+}
+
+case object FormatXML extends Format {
+  def formatType[T: ClassTag](open: Boolean): String = {
+    val simpleName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    if (open) s"<$simpleName>"
+    else s"</$simpleName>"
+  }
+}
+
+case object FormatFree extends Format {
+  def formatType[T: ClassTag](open: Boolean): String = if (open) "{" else "}"
 }
