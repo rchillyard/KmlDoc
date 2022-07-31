@@ -39,7 +39,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "renderer2A" in {
     case class Complex(r: Double, i: Double)
     object ComplexRenderers extends Renderers {
-      val rendererComplex: Renderable[Complex] = renderer2(Complex)
+      val rendererComplex: Renderable[Complex] = renderer2(Complex)(FormatFree)
     }
     ComplexRenderers.rendererComplex.render(Complex(1, -1), 0) shouldBe "{1.0, -1.0}"
   }
@@ -47,7 +47,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "renderer2B" in {
     case class KV(k: String, v: Int)
     object KVRenderers extends Renderers {
-      val rendererKV: Renderable[KV] = renderer2(KV)
+      val rendererKV: Renderable[KV] = renderer2(KV)(FormatFree)
     }
     KVRenderers.rendererKV.render(KV("a", -1), 0) shouldBe "{a, -1}"
   }
@@ -55,7 +55,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "renderer4" in {
     case class KVVV(k: String, v: Int, b: Boolean, x: Double)
     object KVVVRenderers extends Renderers {
-      val rendererKVVV: Renderable[KVVV] = renderer4(KVVV)
+      val rendererKVVV: Renderable[KVVV] = renderer4(KVVV)(FormatFree)
     }
     KVVVRenderers.rendererKVVV.render(KVVV("a", -1, b = false, math.Pi), 0) shouldBe "{a, -1, false, 3.141592653589793}"
   }
@@ -80,10 +80,9 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "renderer5" in {
     case class KVVVV(k: String, v: Int, b: Boolean, x: Double, l: Long)
     object KVVVRenderers extends Renderers {
-      val rendererKVVV: Renderable[KVVVV] = renderer5(KVVVV)
+      val rendererKVVV: Renderable[KVVVV] = renderer5(KVVVV)(FormatFree)
     }
     KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, b = false, math.Pi, 42L), 0) shouldBe "{a, -1, false, 3.141592653589793, 42}"
-
   }
 
   it should "optionRenderer" in {
@@ -101,7 +100,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "renderer3" in {
     case class KVV(k: String, v: Int, b: Boolean)
     object KVVRenderers extends Renderers {
-      val rendererKVV: Renderable[KVV] = renderer3(KVV)
+      val rendererKVV: Renderable[KVV] = renderer3(KVV)(FormatFree)
     }
     KVVRenderers.rendererKVV.render(KVV("a", -1, b = false), 0) shouldBe "{a, -1, false}"
   }
