@@ -94,10 +94,16 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
   }
 
-  it should "extract reserved attribute" in {
+  it should "not extract reserved attribute" in {
     val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
     import Extractors.StringExtractor
     extractField[String]("_xmlns")(xml) should matchPattern { case Failure(_) => }
+  }
+
+  it should "not extract plural attribute" in {
+    val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
+    import MyExtractors.extractEmpty
+    extractField[Empty.type]("documents")(xml) should matchPattern { case Failure(_) => }
   }
 
   it should "extractSequence" in {
@@ -256,13 +262,6 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   it should "extractField Long" in {
     val le: Node => Try[Long] = Extractors.extractField[Long]("_id")
-    le(<xml id="42"></xml>) shouldBe Success(42)
-  }
-
-  // FIXME this is just plain wrong!
-  ignore should "extractField optional" in {
-    implicit val z: Extractor[Option[Long]] = MyExtractors.extractorOption[Long]("id")
-    val le: Node => Try[Option[Long]] = Extractors.extractField[Option[Long]]("maybeid")
     le(<xml id="42"></xml>) shouldBe Success(42)
   }
 

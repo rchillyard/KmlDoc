@@ -109,7 +109,7 @@ trait Extractors {
             p0 <- extractField[P0](member0)(node)
             t <- extractor10(construct.curried(p0), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs"))
       }
 
   /**
@@ -195,7 +195,7 @@ trait Extractors {
             p0 <- extractField[P0](member0)(node)
             t <- extractor02[P1, P2, T](construct(p0, _, _), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs"))
       }
 
   /**
@@ -264,7 +264,7 @@ trait Extractors {
             p0 <- extractField[P0](member0)(node)
             t <- extractor12[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs"))
       }
 
   /**
@@ -312,7 +312,7 @@ trait Extractors {
             p0 <- extractChildren[P0](node, member0)
             t <- extractor03[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs"))
       }
 
   /**
@@ -337,7 +337,7 @@ trait Extractors {
             p0 <- extractField[P0](member0)(node)
             t <- extractor22[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs"))
       }
 
   /**
@@ -387,7 +387,7 @@ trait Extractors {
             p0 <- extractField[P0](member0)(node)
             t <- extractor04[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs"))
       }
 
   /**
@@ -412,7 +412,7 @@ trait Extractors {
             p0 <- extractChildren[P0](node, member0)
             t <- extractor04[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
           } yield t
-        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs"))
       }
 
   /**
@@ -588,13 +588,12 @@ object Extractors {
   /**
    * Method to yield a Try[P] for a particular child or attribute of the given node.
    *
-   * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
+   * NOTE: Plural members should use extractChildren and not extractField.
    *
-   * FIXME: why do attributes, optionals, and defaults use the field but not plurals??
+   * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
    * @param field the name of a member field:
    *              if a singleton child, then field is as is
-   *              if (plural) children, then field should end in "s"
    *              if an attribute, then field should begin with "_"
    *              if an optional child, then field should begin with "maybe".
    * @param node  a Node whence field is to be extracted.
@@ -611,10 +610,9 @@ object Extractors {
           case Some(py :: Nil) => py
           case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
         })
-      // NOTE child nodes are positional. They do not necessarily match names. This is rubbish!! TODO fix it
-      case plural(_) =>
-        // TESTME
-        s"plural:" -> implicitly[Extractor[P]].extract(node)
+      // NOTE child nodes are extracted using extractChildren
+      case plural(x) =>
+        s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
       // NOTE attributes must match names where the case class member name starts with "_"
       case optional(x) =>
         // TESTME

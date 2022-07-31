@@ -3240,7 +3240,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  ignore should "extract KmlFromFile" in {
+  it should "extract KmlFromFile" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
     extractorMultiKml.extract(xml) match {
@@ -3252,19 +3252,16 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val fs = document.Folders
         fs.size shouldBe 1
         val folder = fs.head
-        folder.name shouldBe "MA - Boston NE: Historic New England Railroads"
         val ps = folder.Placemarks
-        ps.size shouldBe 1
+        ps.size shouldBe 34
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
         val coordinates = lineString.Coordinates
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
-        coordinate.coordinates.size shouldBe 8
+        coordinate.coordinates.size shouldBe 94
       case Failure(x) => fail(x)
     }
   }
