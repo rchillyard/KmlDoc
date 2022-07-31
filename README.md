@@ -1,2 +1,8 @@
 # KmlDoc
-Utilities to work with KML files
+
+KML Doctor
+==========
+
+Utilities to work with KML files.
+
+

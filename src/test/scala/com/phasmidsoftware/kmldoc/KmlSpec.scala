@@ -3265,5 +3265,19 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Failure(x) => fail(x)
     }
   }
+
+  it should "extract and render Kml from file" in {
+    val url = KML.getClass.getResource("sample.kml")
+    val xml = XML.loadFile(url.getFile)
+    extractorMultiKml.extract(xml) match {
+      case Success(ks) =>
+        ks.size shouldBe 1
+        val kml = ks.head
+        val w = kml.toString
+        println(w)
+        w.length shouldBe 74442
+      case Failure(x) => fail(x)
+    }
+  }
 }
 
