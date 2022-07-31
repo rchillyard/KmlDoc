@@ -1,8 +1,4 @@
-/*
- * This module derives from Spray.
- */
-
-package com.phasmidsoftware.kmldoc
+package com.phasmidsoftware.xml
 
 import java.lang.reflect.Modifier
 import scala.reflect.ClassTag
