@@ -40,8 +40,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         cs.size shouldBe 1
         val coordinates: Coordinates = cs.head
         coordinates.coordinates.size shouldBe 2
-        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML, 0)
-        output shouldBe "<Coordinates>\n-71.06992, 42.49424, 0  \n-71.07018, 42.49512, 0  \n</Coordinates>\n"
+        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML(0))
+        // TODO remove the final newline from the expected output.
+        output shouldBe "\n<Coordinates>\n  -71.06992, 42.49424, 0\n  -71.07018, 42.49512, 0\n  </Coordinates>\n\n"
       case Failure(x) => fail(x)
     }
   }
@@ -3278,7 +3279,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 77688
+        w.length shouldBe 81772
       case Failure(x) => fail(x)
     }
   }
@@ -3291,7 +3292,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head
-        val w = renderer.render(kml, FormatXML, 0)
+        val w = renderer.render(kml, FormatXML(0))
         val fw = new FileWriter("xmlOutput.xml")
         fw.append(w)
       case Failure(x) => fail(x)
