@@ -90,15 +90,19 @@ trait Renderers {
     case None => ""
   }
 
-  def sequenceRenderer[R: Renderable]: Renderable[Seq[R]] = (rs: Seq[R], indent: Int, _: Boolean) => {
-    val sb = new mutable.StringBuilder("[")
+  def sequenceRenderer[R: Renderable](format: Format): Renderable[Seq[R]] = (rs: Seq[R], indent: Int, _: Boolean) => {
+    val separator = format.sequencer(None)
+    val sb = new mutable.StringBuilder()
+    sb.append(format.sequencer(Some(true)))
     val indented = indent + 1
+    var first = true
     for (r <- rs) {
-      sb.append(newline(indent))
+      if (!first) sb.append(if (separator == "\n") newline(indent) else separator)
       sb.append(implicitly[Renderable[R]].render(r, indented))
+      first = false
     }
     sb.append(newline(indent))
-    sb.append("]")
+    sb.append(format.sequencer(Some(false)))
     sb.toString()
   }
 }
@@ -113,6 +117,8 @@ object Renderable {
 
 trait Format {
   def formatType[T: ClassTag](open: Boolean): String
+
+  def sequencer(open: Option[Boolean]): String
 }
 
 case object FormatXML extends Format {
@@ -121,8 +127,26 @@ case object FormatXML extends Format {
     if (open) s"<$simpleName>"
     else s"</$simpleName>"
   }
+
+  def sequencer(open: Option[Boolean]): String = ""
 }
 
 case object FormatFree extends Format {
   def formatType[T: ClassTag](open: Boolean): String = if (open) "{" else "}"
+
+  def sequencer(open: Option[Boolean]): String = open match {
+    case Some(true) => "["
+    case Some(false) => "]"
+    case None => "\n"
+  }
+}
+
+case object FormatIndented extends Format {
+  def formatType[T: ClassTag](open: Boolean): String = if (open) "{" else "}"
+
+  def sequencer(open: Option[Boolean]): String = open match {
+    case Some(true) => "["
+    case Some(false) => "]"
+    case None => ", "
+  }
 }

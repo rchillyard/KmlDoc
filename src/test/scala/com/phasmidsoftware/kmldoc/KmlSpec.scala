@@ -3,6 +3,7 @@ package com.phasmidsoftware.kmldoc
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
+import java.io.FileWriter
 import scala.collection.Seq
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
@@ -12,7 +13,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "Coordinate"
 
   it should "parse Coordinate pair" in {
-    Coordinate("-71.06992,42.49424,0") shouldBe Coordinate("42.49424", "-71.06992")
+    Coordinate("-71.06992,42.49424,0") shouldBe Coordinate("42.49424", "-71.06992", "0")
   }
   behavior of "Coordinates"
 
@@ -3276,6 +3277,21 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val w = kml.toString
       //        println(w)
       //        w.length shouldBe 74442
+      case Failure(x) => fail(x)
+    }
+  }
+
+  it should "extract and render Kml as XML from file" in {
+    val renderer = KmlXmlRenderers.rendererKml
+    val url = KML.getClass.getResource("sample.kml")
+    val xml = XML.loadFile(url.getFile)
+    extractorMultiKml.extract(xml) match {
+      case Success(ks) =>
+        ks.size shouldBe 1
+        val kml = ks.head
+        val w = renderer.render(kml, 0)
+        val fw = new FileWriter("xmlOutput.xml")
+        fw.append(w)
       case Failure(x) => fail(x)
     }
   }

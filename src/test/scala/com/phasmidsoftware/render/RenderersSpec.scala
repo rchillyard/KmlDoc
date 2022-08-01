@@ -66,12 +66,11 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "sequenceRenderer" in {
     object MyRenderers extends Renderers {
-      implicit val rendererIntSeq: Renderable[Seq[Int]] = sequenceRenderer[Int]
+      implicit val rendererIntSeq: Renderable[Seq[Int]] = sequenceRenderer[Int](FormatFree)
     }
     import MyRenderers._
     rendererIntSeq.render(Seq(42, 99, 1), 0) shouldBe
-      """[
-        |42
+      """[42
         |99
         |1
         |]""".stripMargin

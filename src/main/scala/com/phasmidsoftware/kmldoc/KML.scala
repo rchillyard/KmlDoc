@@ -1,6 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.render.{FormatFree, FormatXML, Renderable, Renderers}
+import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.{Extractor, Extractors, MultiExtractor, XmlException}
 
 import java.net.URL
@@ -44,13 +44,13 @@ object Coordinates {
   }
 }
 
-case class Coordinate(lat: String, long: String)
+case class Coordinate(lat: String, long: String, alt: String)
 
 object Coordinate {
   val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
 
   def apply(w: String): Coordinate = w match {
-    case latLong(long, lat, _) => Coordinate(lat, long)
+    case latLong(long, lat, alt) => Coordinate(lat, long, alt)
     case _ => throw XmlException(s"bad coordinate string: $w")
   }
 }
@@ -83,43 +83,48 @@ object KmlExtractors extends Extractors {
 
 object KmlRenderers extends Renderers {
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
-  implicit val rendererStyle: Renderable[Style] = renderer0(FormatFree)
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(FormatFree)
-  implicit val rendererCoordinate: Renderable[Coordinate] = renderer2(Coordinate.apply)(FormatFree)
-  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate]
-  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(FormatFree)
-  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
-  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(FormatFree)
-  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)(FormatFree)
-  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
-  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)(FormatFree)
-  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
-  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
-  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
-  implicit val rendererDocument: Renderable[Document] = renderer5(Document)(FormatFree)
-  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
-  implicit val rendererKml: Renderable[KML] = renderer1(KML)(FormatFree)
+  private val format: Format = FormatFree
+  implicit val rendererStyle: Renderable[Style] = renderer0(format)
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(format)
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, indent: Int, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate](format)
+  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(format)
+  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates](format)
+  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(format)
+  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString](format)
+  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)(format)
+  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark](format)
+  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)(format)
+  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder](format)
+  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style](format)
+  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap](format)
+  implicit val rendererDocument: Renderable[Document] = renderer5(Document)(format)
+  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document](format)
+  implicit val rendererKml: Renderable[KML] = renderer1(KML)(format)
 }
 
+/**
+ * TODO we need to arrange for the format to be part of the parameters to render, if possible, not to the Renderable.
+ */
 object KmlXmlRenderers extends Renderers {
+  private val format: Format = FormatXML
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
-  implicit val rendererStyle: Renderable[Style] = renderer0(FormatXML)
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(FormatXML)
-  implicit val rendererCoordinate: Renderable[Coordinate] = renderer2(Coordinate.apply)(FormatXML)
-  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate]
-  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(FormatXML)
-  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
-  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(FormatXML)
-  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)(FormatXML)
-  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
-  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)(FormatXML)
-  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
-  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
-  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
-  implicit val rendererDocument: Renderable[Document] = renderer5(Document)(FormatXML)
-  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
+  implicit val rendererStyle: Renderable[Style] = renderer0(format)
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(format)
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, indent: Int, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate](format)
+  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(format)
+  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates](format)
+  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(format)
+  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString](format)
+  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)(format)
+  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark](format)
+  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)(format)
+  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder](format)
+  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style](format)
+  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap](format)
+  implicit val rendererDocument: Renderable[Document] = renderer5(Document)(format)
+  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document](format)
   implicit val rendererKml: Renderable[KML] = renderer1(KML)(FormatFree)
 }
 
