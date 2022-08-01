@@ -165,8 +165,8 @@ case class FormatXML(indents: Int) extends BaseFormat(indents) {
   def sequencer(open: Option[Boolean]): String = newline
 }
 
-case class FormatFree(indents: Int) extends BaseFormat(indents) {
-  val name: String = "FormatFree"
+case class FormatText(indents: Int) extends BaseFormat(indents) {
+  val name: String = "FormatText"
 
   def indent: Format = copy(indents = indents + 1)
 
