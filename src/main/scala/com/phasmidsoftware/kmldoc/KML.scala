@@ -5,6 +5,7 @@ import com.phasmidsoftware.xml.{Extractor, Extractors, MultiExtractor, XmlExcept
 
 import java.net.URL
 import scala.io.Source
+import scala.reflect.ClassTag
 import scala.util.Success
 import scala.util.matching.Regex
 import scala.xml.{Elem, Node, XML}
@@ -108,11 +109,19 @@ object KmlRenderers extends Renderers {
  */
 object KmlXmlRenderers extends Renderers {
   private val format: Format = FormatXML
+  private val formatCoordinate: Format = new Format {
+    def formatType[T: ClassTag](open: Boolean): String = "\n"
+
+    def sequencer(open: Option[Boolean]): String = open match {
+      case Some(false) => ""
+      case _ => "\n"
+    }
+  }
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
   implicit val rendererStyle: Renderable[Style] = renderer0(format)
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(format)
   implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, indent: Int, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
-  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate](format)
+  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate](formatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(format)
   implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates](format)
   implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(format)
@@ -125,7 +134,7 @@ object KmlXmlRenderers extends Renderers {
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap](format)
   implicit val rendererDocument: Renderable[Document] = renderer5(Document)(format)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document](format)
-  implicit val rendererKml: Renderable[KML] = renderer1(KML)(FormatFree)
+  implicit val rendererKml: Renderable[KML] = renderer1(KML)(format)
 }
 
 object KMLCompanion {

@@ -34,11 +34,13 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         -71.07018,42.49512,0
       </coordinates>
     </xml>
-
     extractorMultiCoordinates.extract(xml \ "coordinates") match {
       case Success(cs) =>
         cs.size shouldBe 1
-        cs.head.coordinates.size shouldBe 2
+        val coordinates: Coordinates = cs.head
+        coordinates.coordinates.size shouldBe 2
+        val output = KmlXmlRenderers.rendererCoordinates_s.render(cs, 0)
+        output shouldBe "<Coordinates>\n-71.06992, 42.49424, 0  \n-71.07018, 42.49512, 0  \n</Coordinates>\n"
       case Failure(x) => fail(x)
     }
   }
@@ -3275,8 +3277,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-      //        println(w)
-      //        w.length shouldBe 74442
+        w.length shouldBe 75746
       case Failure(x) => fail(x)
     }
   }
