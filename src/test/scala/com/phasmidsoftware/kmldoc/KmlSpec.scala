@@ -1,5 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
+import com.phasmidsoftware.render.FormatXML
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
@@ -39,7 +40,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         cs.size shouldBe 1
         val coordinates: Coordinates = cs.head
         coordinates.coordinates.size shouldBe 2
-        val output = KmlXmlRenderers.rendererCoordinates_s.render(cs, 0)
+        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML, 0)
         output shouldBe "<Coordinates>\n-71.06992, 42.49424, 0  \n-71.07018, 42.49512, 0  \n</Coordinates>\n"
       case Failure(x) => fail(x)
     }
@@ -3277,20 +3278,20 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 75746
+        w.length shouldBe 77688
       case Failure(x) => fail(x)
     }
   }
 
   it should "extract and render Kml as XML from file" in {
-    val renderer = KmlXmlRenderers.rendererKml
+    val renderer = new KmlRenderers {}.rendererKml
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
     extractorMultiKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head
-        val w = renderer.render(kml, 0)
+        val w = renderer.render(kml, FormatXML, 0)
         val fw = new FileWriter("xmlOutput.xml")
         fw.append(w)
       case Failure(x) => fail(x)

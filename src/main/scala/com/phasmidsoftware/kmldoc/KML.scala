@@ -21,7 +21,7 @@ import scala.xml.{Elem, Node, XML}
  * @param Documents a sequence of Document.
  */
 case class KML(Documents: Seq[Document]) {
-  override def toString: String = KmlRenderers.rendererKml.render(this, 0)
+  override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML, 0)
 }
 
 case class Document(name: String, description: String, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
@@ -82,34 +82,10 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
 }
 
-object KmlRenderers extends Renderers {
-  implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
-  private val format: Format = FormatFree
-  implicit val rendererStyle: Renderable[Style] = renderer0(format)
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(format)
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, indent: Int, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
-  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate](format)
-  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(format)
-  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates](format)
-  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(format)
-  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString](format)
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)(format)
-  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark](format)
-  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)(format)
-  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder](format)
-  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style](format)
-  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap](format)
-  implicit val rendererDocument: Renderable[Document] = renderer5(Document)(format)
-  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document](format)
-  implicit val rendererKml: Renderable[KML] = renderer1(KML)(format)
-}
+trait KmlRenderers extends Renderers {
+  val formatCoordinate: Format = new Format {
+    val name: String = "formatCoordinate"
 
-/**
- * TODO we need to arrange for the format to be part of the parameters to render, if possible, not to the Renderable.
- */
-object KmlXmlRenderers extends Renderers {
-  private val format: Format = FormatXML
-  private val formatCoordinate: Format = new Format {
     def formatType[T: ClassTag](open: Boolean): String = "\n"
 
     def sequencer(open: Option[Boolean]): String = open match {
@@ -118,23 +94,23 @@ object KmlXmlRenderers extends Renderers {
     }
   }
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
-  implicit val rendererStyle: Renderable[Style] = renderer0(format)
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0(format)
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, indent: Int, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
-  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRenderer[Coordinate](formatCoordinate)
-  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)(format)
-  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates](format)
-  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)(format)
-  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString](format)
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)(format)
-  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark](format)
-  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)(format)
-  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder](format)
-  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style](format)
-  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap](format)
-  implicit val rendererDocument: Renderable[Document] = renderer5(Document)(format)
-  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document](format)
-  implicit val rendererKml: Renderable[KML] = renderer1(KML)(format)
+  implicit val rendererStyle: Renderable[Style] = renderer0
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Int, _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](formatCoordinate)
+  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
+  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
+  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
+  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
+  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)
+  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
+  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)
+  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
+  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
+  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
+  implicit val rendererDocument: Renderable[Document] = renderer5(Document)
+  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
+  implicit val rendererKml: Renderable[KML] = renderer1(KML)
 }
 
 object KMLCompanion {
