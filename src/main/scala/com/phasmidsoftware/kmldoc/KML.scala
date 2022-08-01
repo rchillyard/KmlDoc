@@ -96,7 +96,7 @@ trait KmlRenderers extends Renderers {
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
   implicit val rendererStyle: Renderable[Style] = renderer0
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Int, _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, format: Format, indent: Int, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](formatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
   implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]

@@ -90,28 +90,7 @@ trait Renderers {
     case None => ""
   }
 
-  class SequenceRenderable[R: Renderable](maybeFormat: Option[Format]) extends FormatRenderable[Seq[R]](maybeFormat) {
-    // TODO Merge the duplicated code
-    def render(rs: Seq[R], format: Format, indent: Int, interior: Boolean): String = {
-      val separator = format.sequencer(None)
-      val sb = new mutable.StringBuilder()
-      sb.append(format.sequencer(Some(true)))
-      val indented = indent + 1
-      var first = true
-      for (r <- rs) {
-        if (!first) sb.append(if (separator == "\n") newline(indent) else separator)
-        sb.append(implicitly[Renderable[R]].render(r, format, indented))
-        first = false
-      }
-      sb.append(newline(indent))
-      sb.append(format.sequencer(Some(false)))
-      sb.toString()
-    }
-  }
-
-  def sequenceRenderer[R: Renderable]: Renderable[Seq[R]] = new SequenceRenderable[R](None)
-
-  def sequenceRendererFormatted[R: Renderable](format: Format): Renderable[Seq[R]] = (rs: Seq[R], ignored: Format, indent: Int, interior: Boolean) => {
+  private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, indent: Int, interior: Boolean): String = {
     val separator = format.sequencer(None)
     val sb = new mutable.StringBuilder()
     sb.append(format.sequencer(Some(true)))
@@ -126,6 +105,28 @@ trait Renderers {
     sb.append(format.sequencer(Some(false)))
     sb.toString()
   }
+
+  /**
+   * Method to return a Renderable of Seq[R].
+   *
+   * @tparam R the underlying element type.
+   * @return a Renderable of Seq[R].
+   */
+  def sequenceRenderer[R: Renderable]: Renderable[Seq[R]] = new Renderable[Seq[R]]() {
+    def render(rs: Seq[R], format: Format, indent: Int, interior: Boolean): String = doRenderSequence(rs, format, indent, interior)
+  }
+
+  /**
+   * Method to return a Renderable of Seq[R] with a pre-defined format.
+   *
+   * NOTE This is required for allowing a format to take precedence over the format parameter passed into the render method.
+   *
+   * @param format the required format.
+   * @tparam R the underlying type to be rendered.
+   * @return a Renderable of Seq[R].
+   */
+  def sequenceRendererFormatted[R: Renderable](format: Format): Renderable[Seq[R]] = (rs: Seq[R], ignored: Format, indent: Int, interior: Boolean) =>
+    doRenderSequence(rs, format, indent, interior)
 }
 
 trait Renderable[T] {
@@ -135,8 +136,6 @@ trait Renderable[T] {
 object Renderable {
   def newline(indent: Int): String = " " * indent + "\n"
 }
-
-abstract class FormatRenderable[T](format: Option[Format]) extends Renderable[T]
 
 trait Format {
   val name: String
