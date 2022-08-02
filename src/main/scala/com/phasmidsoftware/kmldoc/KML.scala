@@ -1,7 +1,7 @@
 package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render._
-import com.phasmidsoftware.xml.{Extractor, Extractors, MultiExtractor, XmlException}
+import com.phasmidsoftware.xml._
 
 import java.net.URL
 import scala.io.Source
@@ -24,15 +24,15 @@ case class KML(Documents: Seq[Document]) {
   override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML(0), None)
 }
 
-case class Document(name: String, description: String, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
+case class Document(name: Text, description: Text, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
 
 case class Style()
 
 case class StyleMap()
 
-case class Folder(name: String, Placemarks: Seq[Placemark])
+case class Folder(name: Text, Placemarks: Seq[Placemark])
 
-case class Placemark(name: String, maybedescription: Option[String], styleUrl: String, LineStrings: Seq[LineString])
+case class Placemark(name: Text, maybedescription: Option[Text], styleUrl: Text, LineStrings: Seq[LineString])
 
 case class Tessellate($: String)
 
@@ -65,10 +65,8 @@ object KmlExtractors extends Extractors {
   import Extractors._
 
   implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
-  implicit val extractMaybeDescription: Extractor[Option[String]] = extractorOption[String]("junk")
   implicit val extractorStyle: Extractor[Style] = extractor0[Style](_ => Style()) // TODO flesh this out
   implicit val extractorStyleMap: Extractor[StyleMap] = extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
-  implicit val extractorMultiString: MultiExtractor[Seq[String]] = multiExtractor[String]
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
@@ -99,10 +97,11 @@ trait KmlRenderers extends Renderers {
     }
   }
 
-  implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
+  implicit val rendererText: Renderable[Text] = renderer1(Text)
+  implicit val rendererOptionText: Renderable[Option[Text]] = optionRenderer[Text]
   implicit val rendererStyle: Renderable[Style] = renderer0
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, format: Format, maybeName: Option[String], interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Option[String], _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
   implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]

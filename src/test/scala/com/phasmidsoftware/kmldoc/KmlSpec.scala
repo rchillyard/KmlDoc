@@ -1,6 +1,7 @@
 package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render.FormatXML
+import com.phasmidsoftware.xml.Text
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
@@ -115,8 +116,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ps) =>
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
+        placemark.name shouldBe Text("Wakefield Branch of Eastern RR")
+        placemark.maybedescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -158,12 +159,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(fs) =>
         fs.size shouldBe 1
         val folder = fs.head
-        folder.name shouldBe "Untitled layer"
+        folder.name shouldBe Text("Untitled layer")
         val ps = folder.Placemarks
         ps.size shouldBe 1
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Wakefield Branch of Eastern RR"
-        placemark.maybedescription shouldBe Some("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
+        placemark.name shouldBe Text("Wakefield Branch of Eastern RR")
+        placemark.maybedescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -2806,18 +2807,18 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ds) =>
         ds.size shouldBe 1
         val document: Document = ds.head
-        document.name shouldBe "MA - Boston NE: Historic New England Railroads"
+        document.name shouldBe Text("MA - Boston NE: Historic New England Railroads")
         val fs = document.Folders
         fs.size shouldBe 1
         val folder: Folder = fs.head
         val ps = folder.Placemarks
         ps.size shouldBe 34
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Stoneham Branch"
-        placemark.maybedescription shouldBe Some(
+        placemark.name shouldBe Text("Stoneham Branch")
+        placemark.maybedescription shouldBe Some(Text(
           """
               K405<br>RDK1: 51B
-            """)
+            """))
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -3230,11 +3231,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val fs = document.Folders
         fs.size shouldBe 1
         val folder = fs.head
-        folder.name shouldBe "Untitled layer"
+        folder.name shouldBe Text("Untitled layer")
         val ps = folder.Placemarks
         ps.size shouldBe 2
         val placemark: Placemark = ps.head
-        placemark.name shouldBe "Stoneham Branch"
+        placemark.name shouldBe Text("Stoneham Branch")
         val ls: Seq[LineString] = placemark.LineStrings
         ls.size shouldBe 1
         val lineString: LineString = ls.head
@@ -3280,7 +3281,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 82289
+        w.length shouldBe 83550
       case Failure(x) => fail(x)
     }
   }

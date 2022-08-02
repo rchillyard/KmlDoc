@@ -27,6 +27,8 @@ object Utilities {
   }
 }
 
+case class Text($: String)
+
 case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
 
 object XmlException {

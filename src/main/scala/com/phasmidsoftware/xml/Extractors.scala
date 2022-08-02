@@ -1,5 +1,6 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.kmldoc.KmlExtractors.{extractor10, extractorOption}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames}
 import com.phasmidsoftware.xml.Utilities.show
 import org.slf4j.{Logger, LoggerFactory}
@@ -506,6 +507,9 @@ object Extractors {
    * TESTME
    */
   implicit object LongMultiExtractor extends MultiExtractorBase[Long]
+
+  implicit val extractorText: Extractor[Text] = extractor10(Text)
+  implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]("")
 
   /**
    * Method to extract an optional value from a NodeSeq.
