@@ -23,12 +23,13 @@ trait Renderers {
 
   def renderer2[P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => R): Renderable[R] = (r: R, format: Format, interior: Boolean) => {
     val p1 = r.productElement(1).asInstanceOf[P1]
+    val names = r.productElementNames
     val renderer1Constructor: P0 => R = construct(_, p1)
     val renderer1Object = renderer1Constructor(r.productElement(0).asInstanceOf[P0])
     val sb = new mutable.StringBuilder()
     if (!interior) sb.append(format.formatType(true))
     sb.append(renderer1(renderer1Constructor).render(renderer1Object, format.indent, interior = true))
-    sb.append(", ") // CONSIDER using format here and in others
+    sb.append(format.delimiter)
     sb.append(implicitly[Renderable[P1]].render(p1, format.indent))
     if (!interior) sb.append(format.formatType(false))
     sb.toString()
@@ -41,7 +42,7 @@ trait Renderers {
     val sb = new mutable.StringBuilder()
     if (!interior) sb.append(format.formatType(true))
     sb.append(renderer2(renderer2Constructor).render(renderer2Object, format.indent, interior = true))
-    sb.append(", ")
+    sb.append(format.delimiter)
     sb.append(implicitly[Renderable[P2]].render(p2, format.indent))
     if (!interior) sb.append(format.formatType(false))
     sb.toString()
@@ -54,7 +55,7 @@ trait Renderers {
     val sb = new mutable.StringBuilder()
     if (!interior) sb.append(format.formatType(true))
     sb.append(renderer3(renderer3Constructor).render(renderer3Object, format.indent, interior = true))
-    sb.append(", ")
+    sb.append(format.delimiter)
     sb.append(implicitly[Renderable[P3]].render(p3, format.indent))
     if (!interior) sb.append(format.formatType(false))
     sb.toString()
@@ -67,7 +68,7 @@ trait Renderers {
     val sb = new mutable.StringBuilder()
     if (!interior) sb.append(format.formatType(true))
     sb.append(renderer4(renderer4Constructor).render(renderer4Object, format.indent, interior = true))
-    sb.append(", ")
+    sb.append(format.delimiter)
     sb.append(implicitly[Renderable[P4]].render(p4, format.indent))
     if (!interior) sb.append(format.formatType(false))
     sb.toString()
@@ -137,6 +138,8 @@ trait Format {
 
   def formatType[T: ClassTag](open: Boolean): String
 
+  def delimiter: String = ", "
+
   def sequencer(open: Option[Boolean]): String
 
   def newline: String
@@ -155,6 +158,8 @@ case class FormatXML(indents: Int) extends BaseFormat(indents) {
   val name: String = "FormatXML"
 
   def indent: Format = copy(indents = indents + 1)
+
+  override def delimiter: String = " "
 
   def formatType[T: ClassTag](open: Boolean): String = {
     val simpleName = implicitly[ClassTag[T]].runtimeClass.getSimpleName

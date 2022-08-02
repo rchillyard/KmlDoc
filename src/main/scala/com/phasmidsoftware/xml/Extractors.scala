@@ -593,8 +593,9 @@ object Extractors {
    * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
    * @param field the name of a member field:
-   *              if a singleton child, then field is as is
-   *              if an attribute, then field should begin with "_"
+   *              if the (text) content of the node, then the field should be "$";
+   *              if a singleton child, then field is as is;
+   *              if an attribute, then field should begin with "_";
    *              if an optional child, then field should begin with "maybe".
    * @param node  a Node whence field is to be extracted.
    * @tparam P the type to which Node should be converted [must be Extractor].
@@ -602,6 +603,9 @@ object Extractors {
    */
   def extractField[P: Extractor](field: String)(node: Node): Try[P] =
     (field match {
+      // NOTE special name for the (text) content of a node.
+      case "$" =>
+        "$" -> implicitly[Extractor[P]].extract(node)
       // NOTE attributes must match names where the case class member name starts with "_"
       case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
       case attribute(x) =>

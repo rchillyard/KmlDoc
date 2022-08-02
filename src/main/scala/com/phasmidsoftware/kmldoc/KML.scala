@@ -34,7 +34,9 @@ case class Folder(name: String, Placemarks: Seq[Placemark])
 
 case class Placemark(name: String, maybedescription: Option[String], styleUrl: String, LineStrings: Seq[LineString])
 
-case class LineString(tessellate: String, Coordinates: Seq[Coordinates])
+case class Tessellate($: String)
+
+case class LineString(tessellate: Tessellate, Coordinates: Seq[Coordinates])
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
@@ -68,6 +70,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorStyleMap: Extractor[StyleMap] = extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
   implicit val extractorMultiString: MultiExtractor[Seq[String]] = multiExtractor[String]
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
+  implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
   implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
   implicit val extractorPlacemark: Extractor[Placemark] = extractor31(Placemark)
@@ -103,6 +106,7 @@ trait KmlRenderers extends Renderers {
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
   implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
+  implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate)
   implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
   implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
   implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)
