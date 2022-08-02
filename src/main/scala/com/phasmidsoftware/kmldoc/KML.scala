@@ -21,7 +21,7 @@ import scala.xml.{Elem, Node, XML}
  * @param Documents a sequence of Document.
  */
 case class KML(Documents: Seq[Document]) {
-  override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML(0))
+  override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML(0), None)
 }
 
 case class Document(name: String, description: String, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
@@ -91,7 +91,7 @@ trait KmlRenderers extends Renderers {
 
     def indent: Format = copy(indents = indents + 1)
 
-    def formatType[T: ClassTag](open: Boolean): String = if (open) newline else ""
+    def formatName[T: ClassTag](open: Boolean, maybeName: Option[String]): String = if (open) newline else ""
 
     def sequencer(open: Option[Boolean]): String = open match {
       case Some(false) => ""
@@ -102,7 +102,7 @@ trait KmlRenderers extends Renderers {
   implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]
   implicit val rendererStyle: Renderable[Style] = renderer0
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, format: Format, interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, format: Format, maybeName: Option[String], interior: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
   implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]

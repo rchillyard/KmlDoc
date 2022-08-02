@@ -40,7 +40,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         cs.size shouldBe 1
         val coordinates: Coordinates = cs.head
         coordinates.coordinates.size shouldBe 2
-        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML(0))
+        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML(0), None)
         // TODO remove the final newline from the expected output.
         output shouldBe "\n<Coordinates>\n  -71.06992, 42.49424, 0\n  -71.07018, 42.49512, 0\n  </Coordinates>\n\n"
       case Failure(x) => fail(x)
@@ -83,7 +83,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val cs: Seq[Coordinates] = lineString.Coordinates
         cs.size shouldBe 1
         cs.head.coordinates.size shouldBe 18
-        new KmlRenderers {}.rendererLineStrings.render(ls, FormatXML(0)) shouldBe ("\n<LineString>\n  <Tessellate>1</Tessellate>\n  <Coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n    </Coordinates>\n  \n  </LineString>\n\n").stripMargin
+        new KmlRenderers {}.rendererLineStrings.render(ls, FormatXML(0), None) shouldBe "\n<LineString><tessellate>1</tessellate> \n  <Coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n    </Coordinates>\n  \n  </LineString>\n\n".stripMargin
       case Failure(x) => fail(x)
     }
   }
@@ -3280,7 +3280,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 81772
+        w.length shouldBe 82289
       case Failure(x) => fail(x)
     }
   }
@@ -3293,7 +3293,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head
-        val w = renderer.render(kml, FormatXML(0))
+        val w = renderer.render(kml, FormatXML(0), None)
         val fw = new FileWriter("xmlOutput.xml")
         fw.append(w)
       case Failure(x) => fail(x)
