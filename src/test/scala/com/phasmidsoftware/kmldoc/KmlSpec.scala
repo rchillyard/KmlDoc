@@ -176,6 +176,166 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "Style"
+
+  it should "extract IconStyle" in {
+    val xml = <xml>
+      <IconStyle>
+        <scale>1.1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+        </Icon>
+        <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+      </IconStyle>
+    </xml>
+    val nodeSeq = xml \ "IconStyle"
+    nodeSeq.size shouldBe 1
+    val iconStyle = nodeSeq.head
+    extractorIconStyle.extract(iconStyle) match {
+      case Success(is) =>
+        is shouldBe IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels"))
+      case Failure(x) => fail(x)
+    }
+  }
+
+  it should "extract Styles (type A)" in {
+    val xml = <xml>
+      <Style id="icon-22-nodesc-normal">
+        <IconStyle>
+          <scale>1.1</scale>
+          <Icon>
+            <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+          </Icon>
+          <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+        </IconStyle>
+        <LabelStyle>
+          <scale>0</scale>
+        </LabelStyle>
+        <BalloonStyle>
+          <text>
+            <![CDATA[<h3>$[name]</h3>]]>
+          </text>
+        </BalloonStyle>
+      </Style>
+      <Style id="icon-22-nodesc-highlight">
+        <IconStyle>
+          <scale>1.1</scale>
+          <Icon>
+            <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+          </Icon>
+          <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+        </IconStyle>
+        <LabelStyle>
+          <scale>1.1</scale>
+        </LabelStyle>
+        <BalloonStyle>
+          <text>
+            <![CDATA[<h3>$[name]</h3>]]>
+          </text>
+        </BalloonStyle>
+      </Style>
+      <StyleMap id="icon-22-nodesc">
+        <Pair>
+          <key>normal</key>
+          <styleUrl>#icon-22-nodesc-normal</styleUrl>
+        </Pair>
+        <Pair>
+          <key>highlight</key>
+          <styleUrl>#icon-22-nodesc-highlight</styleUrl>
+        </Pair>
+      </StyleMap>
+    </xml>
+    extractorMultiStyle.extract(xml \ "Style") match {
+      case Success(ss) =>
+        ss.size shouldBe 2
+        val style: Style = ss.head
+        style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
+      case Failure(x) => fail(x)
+    }
+  }
+
+  it should "extract Styles (type B)" in {
+    val xml = <xml>
+      <Style id="icon-22-nodesc-normal">
+        <IconStyle>
+          <scale>1.1</scale>
+          <Icon>
+            <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+          </Icon>
+          <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+        </IconStyle>
+        <LabelStyle>
+          <scale>0</scale>
+        </LabelStyle>
+        <BalloonStyle>
+          <text>
+            <![CDATA[<h3>$[name]</h3>]]>
+          </text>
+        </BalloonStyle>
+      </Style>
+      <Style id="icon-22-nodesc-highlight">
+        <IconStyle>
+          <scale>1.1</scale>
+          <Icon>
+            <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+          </Icon>
+          <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+        </IconStyle>
+        <LabelStyle>
+          <scale>1.1</scale>
+        </LabelStyle>
+        <BalloonStyle>
+          <text>
+            <![CDATA[<h3>$[name]</h3>]]>
+          </text>
+        </BalloonStyle>
+      </Style>
+      <StyleMap id="icon-22-nodesc">
+        <Pair>
+          <key>normal</key>
+          <styleUrl>#icon-22-nodesc-normal</styleUrl>
+        </Pair>
+        <Pair>
+          <key>highlight</key>
+          <styleUrl>#icon-22-nodesc-highlight</styleUrl>
+        </Pair>
+      </StyleMap>
+    </xml>
+    extractorMultiStyle.extract(xml \ "Style") match {
+      case Success(ss) =>
+        ss.size shouldBe 2
+        val style: Style = ss.head
+        style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "StyleMap"
+
+  it should "extract StyleMaps" in {
+    val xml = <xml>
+      <Style id="line-0000FF-5000-normal">
+        <LineStyle>
+          <color>ffff0000</color>
+          <width>5</width>
+        </LineStyle>
+      </Style>
+      <Style id="line-0000FF-5000-highlight">
+        <LineStyle>
+          <color>ffff0000</color>
+          <width>7.5</width>
+        </LineStyle>
+      </Style>
+    </xml>
+    extractorMultiStyle.extract(xml \ "Style") match {
+      case Success(ss) =>
+        ss.size shouldBe 2
+        val style: Style = ss.head
+        style shouldBe Style(Text("line-0000FF-5000-normal"), None, None, None, Some(LineStyle(Color("ffff0000"), Width(5.0))))
+      case Failure(x) => fail(x)
+    }
+  }
+
   behavior of "Document"
 
   it should "extract Document" in {
@@ -3281,7 +3441,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 83550
+        w.length shouldBe 86734
       case Failure(x) => fail(x)
     }
   }

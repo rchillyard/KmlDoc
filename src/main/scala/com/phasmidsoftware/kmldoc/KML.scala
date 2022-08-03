@@ -26,9 +26,41 @@ case class KML(Documents: Seq[Document]) {
 
 case class Document(name: Text, description: Text, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
 
-case class Style()
+case class Scale($: Double)
 
-case class StyleMap()
+case class Icon(href: Text)
+
+case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
+
+case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot)
+
+case class LabelStyle(scale: Scale)
+
+case class BalloonStyle(text: String)
+
+case class Color($: String)
+
+case class Width($: Double)
+
+case class LineStyle(color: Color, width: Width)
+
+/**
+ * Style element.
+ * It seems there are two completely different types of Style element, but they are not distinguished.
+ * Type A has IconStyle, LabelStyle, BalloonStyle;
+ * Type B has LineStyle.
+ *
+ * @param _id               the identifier of the Style.
+ * @param maybeIconStyle    the icon style (optional)
+ * @param maybeLabelStyle   the label style (optional)
+ * @param maybeBalloonStyle the balloon style (optional)
+ * @param maybeLineStyle    the line style (optional)
+ */
+case class Style(_id: Text, maybeIconStyle: Option[IconStyle], maybeLabelStyle: Option[LabelStyle], maybeBalloonStyle: Option[BalloonStyle], maybeLineStyle: Option[LineStyle])
+
+case class Pair(key: String, styleUrl: String)
+
+case class StyleMap(_id: Text, Pairs: Seq[Pair])
 
 case class Folder(name: Text, Placemarks: Seq[Placemark])
 
@@ -65,8 +97,23 @@ object KmlExtractors extends Extractors {
   import Extractors._
 
   implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
-  implicit val extractorStyle: Extractor[Style] = extractor0[Style](_ => Style()) // TODO flesh this out
-  implicit val extractorStyleMap: Extractor[StyleMap] = extractor0[StyleMap](_ => StyleMap()) // TODO flesh this out
+  implicit val extractorScale: Extractor[Scale] = extractor10(Scale)
+  implicit val extractorIcon: Extractor[Icon] = extractor10(Icon)
+  implicit val extractorColor: Extractor[Color] = extractor10(Color)
+  implicit val extractorWidth: Extractor[Width] = extractor10(Width)
+  implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot)
+  implicit val extractorIconStyle: Extractor[IconStyle] = extractor30(IconStyle)
+  implicit val extractorBalloonStyle: Extractor[BalloonStyle] = extractor10(BalloonStyle)
+  implicit val extractorLabelStyle: Extractor[LabelStyle] = extractor10(LabelStyle)
+  implicit val extractorLineStyle: Extractor[LineStyle] = extractor20(LineStyle)
+  implicit val extractMaybeIconStyle: Extractor[Option[IconStyle]] = extractorOption("")
+  implicit val extractMaybeLabelStyle: Extractor[Option[LabelStyle]] = extractorOption("")
+  implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption("")
+  implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption("")
+  implicit val extractorStyle: Extractor[Style] = extractor50(Style)
+  implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
+  implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
+  implicit val extractorStyleMap: Extractor[StyleMap] = extractor11(StyleMap) // TODO flesh this out
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
