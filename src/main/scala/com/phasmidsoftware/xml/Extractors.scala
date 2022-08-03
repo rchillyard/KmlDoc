@@ -12,20 +12,18 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
 /**
- * Trait which defines many useful Extractors.
+ * Trait which defines many useful Extractors, where the result is an instance of Extractor[T].
  */
 trait Extractors {
 
   /**
-   * Method to yield an Extractor of Option[P].
+   * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
+   * This is generally used in conjunction with naming a case class member as "maybe"name.
    *
-   * TESTME
-   *
-   * @param ignored NOTE: unused parameter.
    * @tparam P the underlying type of the result.
    * @return an Extractor of Option[P].
    */
-  def extractorOption[P: Extractor](ignored: String): Extractor[Option[P]] =
+  def extractorOption[P: Extractor]: Extractor[Option[P]] =
     (node: Node) =>
       implicitly[Extractor[P]].extract(node) match {
         case Success(p) => Success(Some(p))
@@ -33,7 +31,7 @@ trait Extractors {
       }
 
   /**
-   * Extractor which will convert an Xml Node into a sequence of P objects.
+   * Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
    *
    * @param label the label of the child nodes to be returned.
    * @tparam P the underlying type of the result.
@@ -42,6 +40,15 @@ trait Extractors {
   def extractorSequence[P: Extractor](label: String): Extractor[Seq[P]] =
     (node: Node) =>
       Extractors.extractSequence[P](node \ label)
+
+  /**
+   * Method to create a new MultiExtractor based on type P such that the underlying type of the result
+   * is Seq[P].
+   *
+   * @tparam P the underlying (Extractor) type.
+   * @return a MultiExtractor of Seq[P]
+   */
+  def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
   /**
    * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
@@ -94,8 +101,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * TESTME
-   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -136,8 +141,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * TESTME
-   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -161,7 +164,7 @@ trait Extractors {
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -248,7 +251,7 @@ trait Extractors {
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
    * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -361,9 +364,9 @@ trait Extractors {
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -475,15 +478,6 @@ trait Extractors {
           } yield t
         case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs"))
       }
-
-  /**
-   * Method to create a new MultiExtractor based on type P such that the underlying type of the result
-   * is Seq[P].
-   *
-   * @tparam P the underlying (Extractor) type.
-   * @return a MultiExtractor of Seq[P]
-   */
-  def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 }
 
 /**
@@ -569,7 +563,7 @@ object Extractors {
   implicit object LongMultiExtractor extends MultiExtractorBase[Long]
 
   implicit val extractorText: Extractor[Text] = extractor10(Text)
-  implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]("")
+  implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]
 
   /**
    * Method to extract an optional value from a NodeSeq.
@@ -584,8 +578,6 @@ object Extractors {
 
   /**
    * method to extract a singleton from a NodeSeq.
-   *
-   * CONSIDER why is this identical with extractAttribute?
    */
   def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
     extractSequence[P](nodeSeq) match {
@@ -667,15 +659,13 @@ object Extractors {
           case Some(py :: Nil) => py
           case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
         })
-      // NOTE child nodes are extracted using extractChildren
+      // NOTE child nodes are extracted using extractChildren, not here.
       case plural(x) =>
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
-      // NOTE attributes must match names where the case class member name starts with "_"
+      // NOTE optional members
       case optional(x) =>
-        // TESTME
         s"optional: $x" -> extractOptional[P](node \ x)
-      // NOTE this is a default case which is used for a singleton entity.
-      // NOTE: plural entities would be extracted using extractChildren.
+      // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
       case x =>
         s"singleton: $x" -> extractSingleton[P](node \ x)
     }) match {

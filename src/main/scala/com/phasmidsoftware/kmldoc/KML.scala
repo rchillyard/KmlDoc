@@ -13,9 +13,7 @@ import scala.xml.{Elem, Node, XML}
 /**
  * Case class to define a KML object.
  *
- * TODO allow some of the members (not just in KML) to be optional.
- *
- * NOTE well: do not be tempted to add "_xmlns" as a member.
+ * NOTE WELL: do not be tempted to add "_xmlns" as a member.
  * If you do, you will run into the undocumented(?) "feature" of the Xml library that "xmlns" is a reserved attribute name.
  *
  * @param Documents a sequence of Document.
@@ -106,14 +104,14 @@ object KmlExtractors extends Extractors {
   implicit val extractorBalloonStyle: Extractor[BalloonStyle] = extractor10(BalloonStyle)
   implicit val extractorLabelStyle: Extractor[LabelStyle] = extractor10(LabelStyle)
   implicit val extractorLineStyle: Extractor[LineStyle] = extractor20(LineStyle)
-  implicit val extractMaybeIconStyle: Extractor[Option[IconStyle]] = extractorOption("")
-  implicit val extractMaybeLabelStyle: Extractor[Option[LabelStyle]] = extractorOption("")
-  implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption("")
-  implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption("")
+  implicit val extractMaybeIconStyle: Extractor[Option[IconStyle]] = extractorOption
+  implicit val extractMaybeLabelStyle: Extractor[Option[LabelStyle]] = extractorOption
+  implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption
+  implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption
   implicit val extractorStyle: Extractor[Style] = extractor50(Style)
   implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
   implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
-  implicit val extractorStyleMap: Extractor[StyleMap] = extractor11(StyleMap) // TODO flesh this out
+  implicit val extractorStyleMap: Extractor[StyleMap] = extractor11(StyleMap)
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)

@@ -35,7 +35,6 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
    * Case class similar to Document1, but has two members.
    *
    * @param _id     the identifier of this Document2A.
-   *                NOTE that the member name starts with an "_" in order that it be treated as an attribute.
    * @param empties a sequence of Empty objects.
    */
   case class Document2(_id: Int, empties: Seq[Empty.type])
@@ -44,7 +43,6 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
    * Case class similar to Document1, but has two members.
    *
    * @param _id     the identifier of this Document2A.
-   *                NOTE that the member name starts with an "_" in order that it be treated as an attribute.
    * @param empties a sequence of Empty objects.
    */
   case class Document2A(_id: Int, empties: Seq[Empty.type])
@@ -61,7 +59,6 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
    * Case class similar to Document1, but has two members.
    *
    * @param _id       the identifier of this Document2A.
-   *                  NOTE that the member name starts with an "_" in order that it be treated as an attribute.
    * @param emptys    a sequence of Empty objects.
    * @param maybejunk an optional Junk object.
    */
@@ -77,7 +74,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
     implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractor[Empty.type]
     implicit val extractJunk: Extractor[Junk] = extractor0[Junk](_ => Junk())
-    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption[Junk]("junk")
+    implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument1: Extractor[Document1] = extractor01(Document1)
     implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractor[Document1]
     val makeDocument2A: (String, Seq[Empty.type]) => Document2A = Document2A.apply _
