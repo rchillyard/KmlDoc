@@ -560,7 +560,6 @@ object Extractors {
    */
   implicit object LongMultiExtractor extends MultiExtractorBase[Long]
 
-
   implicit val extractorText: Extractor[Text] = new Extractors {}.extractor10(Text)
   implicit val extractorOptionalText: Extractor[Option[Text]] = new Extractors {}.extractorOption[Text]
 

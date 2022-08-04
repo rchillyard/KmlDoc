@@ -21,8 +21,24 @@ case class KML(Documents: Seq[Document]) {
   override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML(0), None)
 }
 
+/**
+ * Case class to represent a Document.
+ *
+ * CONSIDER what is the difference between name: Text and, for example, Scale($: String).
+ *
+ * @param name        an XML element of the form: <name>the name</name>.
+ * @param description an XML element of the form: <description>the description</description>.
+ * @param Styles      a sequence of Style elements.
+ * @param StyleMaps   a sequence of StyleMap elements.
+ * @param Folders     a sequence of Folder elements.
+ */
 case class Document(name: Text, description: Text, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
 
+/**
+ * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
+ *
+ * @param $ the value of the scale (a Double).
+ */
 case class Scale($: Double)
 
 case class Icon(href: Text)

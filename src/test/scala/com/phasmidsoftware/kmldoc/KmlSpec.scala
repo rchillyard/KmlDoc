@@ -175,6 +175,22 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "HotSpot"
+
+  it should "extract HotSpot" in {
+    val xml = <xml>
+      <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+    </xml>
+    val nodeSeq = xml \ "hotSpot"
+    nodeSeq.size shouldBe 1
+    extractorHotspot.extract(nodeSeq.head) match {
+      case Success(hotSpot) =>
+        hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), None) shouldBe """<HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
   behavior of "Style"
 
   it should "extract IconStyle" in {
@@ -193,7 +209,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorIconStyle.extract(iconStyle) match {
       case Success(is) =>
         is shouldBe IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels"))
-        new KmlRenderers {}.renderIconStyle
+        new KmlRenderers {}.renderIconStyle.render(is, FormatXML(0), None) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot></IconStyle>"""
       case Failure(x) => fail(x)
     }
   }

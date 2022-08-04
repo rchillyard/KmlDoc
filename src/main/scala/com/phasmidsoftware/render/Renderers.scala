@@ -1,6 +1,6 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.xml.Text
+import com.phasmidsoftware.xml.{Extractors, Text}
 import scala.annotation.unused
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -16,11 +16,10 @@ trait Renderers {
   }
 
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, maybeName: Option[String], interior: Boolean) => {
-    val sb = new mutable.StringBuilder()
+    val sb = new StringBuilder()
     if (!interior) sb.append(format.formatName(open = true, maybeName))
     val p0 = r.productElement(0)
-    val names = r.productElementNames.toSeq
-    sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, names.headOption))
+    sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, maybeAttributeName(r, 0, useName = true)))
     if (!interior) sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }
@@ -33,7 +32,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, None))
     sb.append(renderer1(renderer1Constructor).render(renderer1Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, None))
+    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, maybeAttributeName(r, 1)))
     if (!interior) sb.append(format.formatName(open = false, None))
     sb.toString()
   }
@@ -46,7 +45,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, None))
     sb.append(renderer2(renderer2Constructor).render(renderer2Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, None))
+    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, maybeAttributeName(r, 2)))
     if (!interior) sb.append(format.formatName(open = false, None))
     sb.toString()
   }
@@ -59,7 +58,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, None))
     sb.append(renderer3(renderer3Constructor).render(renderer3Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, None))
+    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, maybeAttributeName(r, 3)))
     if (!interior) sb.append(format.formatName(open = false, None))
     sb.toString()
   }
@@ -72,7 +71,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, None))
     sb.append(renderer4(renderer4Constructor).render(renderer4Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, None))
+    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, maybeAttributeName(r, 4)))
     if (!interior) sb.append(format.formatName(open = false, None))
     sb.toString()
   }
@@ -81,6 +80,13 @@ trait Renderers {
     case Some(r) => implicitly[Renderable[R]].render(r, format, None)
     case None => ""
   }
+
+  private def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
+    r.productElementName(index) match {
+      case "$" => None
+      case Extractors.attribute(x) => Some(x)
+      case x => if (useName) Some(x) else None
+    }
 
   private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format): String = {
     val separator = format.sequencer(None)
@@ -122,19 +128,29 @@ trait Renderers {
 
 object Renderers {
 
-  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, _: Option[String], _: Boolean) => t
+  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, maybeName: Option[String], _: Boolean) =>
+    renderAttribute(t, maybeName)
 
-  implicit val intRenderer: Renderable[Int] = (t: Int, _: Format, _: Option[String], _: Boolean) => t.toString
+  implicit val intRenderer: Renderable[Int] = (t: Int, _: Format, maybeName: Option[String], _: Boolean) =>
+    renderAttribute(t.toString, maybeName)
 
-  implicit val booleanRenderer: Renderable[Boolean] = (t: Boolean, _: Format, _: Option[String], _: Boolean) => t.toString
+  implicit val booleanRenderer: Renderable[Boolean] = (t: Boolean, _: Format, maybeName: Option[String], _: Boolean) =>
+    renderAttribute(t.toString, maybeName)
 
-  implicit val doubleRenderer: Renderable[Double] = (t: Double, _: Format, _: Option[String], _: Boolean) => t.toString
+  implicit val doubleRenderer: Renderable[Double] = (t: Double, _: Format, maybeName: Option[String], _: Boolean) =>
+    renderAttribute(t.toString, maybeName)
 
-  implicit val longRenderer: Renderable[Long] = (t: Long, _: Format, _: Option[String], _: Boolean) => t.toString
+  implicit val longRenderer: Renderable[Long] = (t: Long, _: Format, maybeName: Option[String], _: Boolean) =>
+    renderAttribute(t.toString, maybeName)
 
   private val renderers = new Renderers {}
   implicit val rendererText: Renderable[Text] = renderers.renderer1(Text)
   implicit val rendererOptionText: Renderable[Option[Text]] = renderers.optionRenderer[Text]
+
+  private def renderAttribute(w: String, maybeName: Option[String]): String = maybeName match {
+    case Some(name) => s"""$name="$w""""
+    case None => w
+  }
 }
 
 /**
