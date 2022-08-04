@@ -1,10 +1,8 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.kmldoc.KmlExtractors.{extractor10, extractorOption}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames}
 import com.phasmidsoftware.xml.Utilities.show
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -562,8 +560,9 @@ object Extractors {
    */
   implicit object LongMultiExtractor extends MultiExtractorBase[Long]
 
-  implicit val extractorText: Extractor[Text] = extractor10(Text)
-  implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]
+
+  implicit val extractorText: Extractor[Text] = new Extractors {}.extractor10(Text)
+  implicit val extractorOptionalText: Extractor[Option[Text]] = new Extractors {}.extractorOption[Text]
 
   /**
    * Method to extract an optional value from a NodeSeq.

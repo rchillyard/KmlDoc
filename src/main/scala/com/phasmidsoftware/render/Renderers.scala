@@ -1,10 +1,12 @@
 package com.phasmidsoftware.render
 
+import com.phasmidsoftware.xml.Text
 import scala.annotation.unused
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
 trait Renderers {
+
   def renderer0[R <: Product : ClassTag]: Renderable[R] = (r: R, format: Format, _: Option[String], _: Boolean) => {
     val sb = new mutable.StringBuilder()
     sb.append(format.formatName(open = true, None))
@@ -75,16 +77,6 @@ trait Renderers {
     sb.toString()
   }
 
-  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, _: Option[String], _: Boolean) => t
-
-  implicit val intRenderer: Renderable[Int] = (t: Int, _: Format, _: Option[String], _: Boolean) => t.toString
-
-  implicit val booleanRenderer: Renderable[Boolean] = (t: Boolean, _: Format, _: Option[String], _: Boolean) => t.toString
-
-  implicit val doubleRenderer: Renderable[Double] = (t: Double, _: Format, _: Option[String], _: Boolean) => t.toString
-
-  implicit val longRenderer: Renderable[Long] = (t: Long, _: Format, _: Option[String], _: Boolean) => t.toString
-
   def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, _: Option[String], _: Boolean) => ro match {
     case Some(r) => implicitly[Renderable[R]].render(r, format, None)
     case None => ""
@@ -126,6 +118,23 @@ trait Renderers {
    */
   def sequenceRendererFormatted[R: Renderable](formatFunc: Int => Format): Renderable[Seq[R]] = (rs: Seq[R], format: Format, _: Option[String], interior: Boolean) =>
     doRenderSequence(rs, formatFunc(format.indents))
+}
+
+object Renderers {
+
+  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, _: Option[String], _: Boolean) => t
+
+  implicit val intRenderer: Renderable[Int] = (t: Int, _: Format, _: Option[String], _: Boolean) => t.toString
+
+  implicit val booleanRenderer: Renderable[Boolean] = (t: Boolean, _: Format, _: Option[String], _: Boolean) => t.toString
+
+  implicit val doubleRenderer: Renderable[Double] = (t: Double, _: Format, _: Option[String], _: Boolean) => t.toString
+
+  implicit val longRenderer: Renderable[Long] = (t: Long, _: Format, _: Option[String], _: Boolean) => t.toString
+
+  private val renderers = new Renderers {}
+  implicit val rendererText: Renderable[Text] = renderers.renderer1(Text)
+  implicit val rendererOptionText: Renderable[Option[Text]] = renderers.optionRenderer[Text]
 }
 
 /**

@@ -21,6 +21,8 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Renderers (FormatText)"
 
+  import Renderers._
+
   it should "renderer1" in {
     object MyRenderers extends Renderers {
       val rendererGreeting: Renderable[Greeting] = renderer1(Greeting)
@@ -37,15 +39,15 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "intRenderer" in {
-    new Renderers {}.intRenderer.render(1, FormatText(0), None) shouldBe "1"
+    Renderers.intRenderer.render(1, FormatText(0), None) shouldBe "1"
   }
 
   it should "stringRenderer" in {
-    new Renderers {}.stringRenderer.render("Hello", FormatText(0), None) shouldBe "Hello"
+    Renderers.stringRenderer.render("Hello", FormatText(0), None) shouldBe "Hello"
   }
 
   it should "booleanRenderer" in {
-    new Renderers {}.booleanRenderer.render(true, FormatText(0), None) shouldBe "true"
+    Renderers.booleanRenderer.render(true, FormatText(0), None) shouldBe "true"
   }
 
   it should "renderer2A" in {
@@ -70,7 +72,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "doubleRenderer" in {
-    new Renderers {}.doubleRenderer.render(math.Pi, FormatText(0), None) shouldBe "3.141592653589793"
+    Renderers.doubleRenderer.render(math.Pi, FormatText(0), None) shouldBe "3.141592653589793"
   }
 
   it should "sequenceRenderer" in {
@@ -101,7 +103,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "longRenderer" in {
-    new Renderers {}.longRenderer.render(42L, FormatText(0), None) shouldBe "42"
+    Renderers.longRenderer.render(42L, FormatText(0), None) shouldBe "42"
   }
 
   it should "renderer3" in {
@@ -129,15 +131,15 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "intRenderer" in {
-    new Renderers {}.intRenderer.render(1, FormatXML(0), None) shouldBe "1"
+    Renderers.intRenderer.render(1, FormatXML(0), None) shouldBe "1"
   }
 
   it should "stringRenderer" in {
-    new Renderers {}.stringRenderer.render("Hello", FormatXML(0), None) shouldBe "Hello"
+    Renderers.stringRenderer.render("Hello", FormatXML(0), None) shouldBe "Hello"
   }
 
   it should "booleanRenderer" in {
-    new Renderers {}.booleanRenderer.render(true, FormatXML(0), None) shouldBe "true"
+    Renderers.booleanRenderer.render(true, FormatXML(0), None) shouldBe "true"
   }
 
   it should "renderer2A" in {
@@ -162,7 +164,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "doubleRenderer" in {
-    new Renderers {}.doubleRenderer.render(math.Pi, FormatXML(0), None) shouldBe "3.141592653589793"
+    Renderers.doubleRenderer.render(math.Pi, FormatXML(0), None) shouldBe "3.141592653589793"
   }
 
   it should "sequenceRenderer" in {
@@ -195,7 +197,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "longRenderer" in {
-    new Renderers {}.longRenderer.render(42L, FormatXML(0), None) shouldBe "42"
+    Renderers.longRenderer.render(42L, FormatXML(0), None) shouldBe "42"
   }
 
   it should "renderer3" in {

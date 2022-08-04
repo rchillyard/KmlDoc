@@ -2,10 +2,9 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render.FormatXML
 import com.phasmidsoftware.xml.Text
+import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-
-import java.io.FileWriter
 import scala.collection.Seq
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
@@ -194,6 +193,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorIconStyle.extract(iconStyle) match {
       case Success(is) =>
         is shouldBe IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels"))
+        new KmlRenderers {}.renderIconStyle
       case Failure(x) => fail(x)
     }
   }

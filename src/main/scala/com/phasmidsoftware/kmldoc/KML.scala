@@ -2,7 +2,6 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml._
-
 import java.net.URL
 import scala.io.Source
 import scala.reflect.ClassTag
@@ -129,6 +128,7 @@ object KmlExtractors extends Extractors {
 }
 
 trait KmlRenderers extends Renderers {
+
   case class FormatCoordinate(indents: Int) extends BaseFormat(indents) {
     val name: String = "formatCoordinate"
 
@@ -142,8 +142,12 @@ trait KmlRenderers extends Renderers {
     }
   }
 
-  implicit val rendererText: Renderable[Text] = renderer1(Text)
-  implicit val rendererOptionText: Renderable[Option[Text]] = optionRenderer[Text]
+  import Renderers._
+
+  implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
+  implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
+  implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot)
+  implicit val renderIconStyle: Renderable[IconStyle] = renderer3(IconStyle)
   implicit val rendererStyle: Renderable[Style] = renderer0
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
   implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Option[String], _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
