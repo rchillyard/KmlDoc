@@ -12,11 +12,11 @@ import scala.reflect.ClassTag
  */
 trait Renderers {
 
-  def renderer0[R <: Product : ClassTag]: Renderable[R] = (r: R, format: Format, _: Option[String], _: Boolean) => {
+  def renderer0[R <: Product : ClassTag]: Renderable[R] = (r: R, format: Format, maybeName: Option[String], _: Boolean) => {
     val sb = new mutable.StringBuilder()
-    sb.append(format.formatName(open = true, None))
+    sb.append(format.formatName(open = true, maybeName))
     sb.append(r.toString)
-    sb.append(format.formatName(open = false, None))
+    sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }
 
@@ -93,14 +93,14 @@ trait Renderers {
       case x => if (useName) Some(x) else None
     }
 
-  private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format): String = {
+  private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String]) = {
     val separator = format.sequencer(None)
     val sb = new mutable.StringBuilder()
     sb.append(format.sequencer(Some(true)))
     var first = true
     for (r <- rs) {
       if (!first) sb.append(if (separator == "\n") format.newline else separator)
-      sb.append(implicitly[Renderable[R]].render(r, format, None))
+      sb.append(implicitly[Renderable[R]].render(r, format, maybeName))
       first = false
     }
     sb.append(format.newline)
@@ -115,7 +115,7 @@ trait Renderers {
    * @return a Renderable of Seq[R].
    */
   def sequenceRenderer[R: Renderable]: Renderable[Seq[R]] = new Renderable[Seq[R]]() {
-    def render(rs: Seq[R], format: Format, maybeName: Option[String], interior: Boolean): String = doRenderSequence(rs, format)
+    def render(rs: Seq[R], format: Format, maybeName: Option[String], interior: Boolean): String = doRenderSequence(rs, format, None)
   }
 
   /**
@@ -127,8 +127,8 @@ trait Renderers {
    * @tparam R the underlying type to be rendered.
    * @return a Renderable of Seq[R].
    */
-  def sequenceRendererFormatted[R: Renderable](formatFunc: Int => Format): Renderable[Seq[R]] = (rs: Seq[R], format: Format, _: Option[String], _: Boolean) =>
-    doRenderSequence(rs, formatFunc(format.indents))
+  def sequenceRendererFormatted[R: Renderable](formatFunc: Int => Format): Renderable[Seq[R]] = (rs: Seq[R], format: Format, maybeName: Option[String], _: Boolean) =>
+    doRenderSequence(rs, formatFunc(format.indents), maybeName)
 }
 
 object Renderers {

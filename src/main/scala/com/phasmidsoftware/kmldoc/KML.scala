@@ -83,7 +83,7 @@ case class Placemark(name: Text, maybedescription: Option[Text], styleUrl: Text,
 
 case class Tessellate($: String)
 
-case class LineString(tessellate: Tessellate, Coordinates: Seq[Coordinates])
+case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
@@ -107,7 +107,7 @@ object Coordinate {
 
 object KmlExtractors extends Extractors {
 
-  Extractors.translations += "Coordinates" -> "coordinates"
+  Extractors.translations += "coordinates" -> "coordinates"
 
   import Extractors._
 
@@ -182,7 +182,8 @@ trait KmlRenderers extends Renderers {
   implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Option[String], _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
-  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRenderer[Coordinates]
+  // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
+  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML)
   implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate)
   implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
   implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
