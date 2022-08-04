@@ -37,7 +37,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, maybeName))
     sb.append(renderer1(renderer1Constructor).render(renderer1Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, maybeAttributeName(r, 1)))
+    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, maybeAttributeName(r, 1, useName = true)))
     if (!interior) sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }
@@ -50,7 +50,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, maybeName))
     sb.append(renderer2(renderer2Constructor).render(renderer2Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, maybeAttributeName(r, 2)))
+    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, maybeAttributeName(r, 2, useName = true)))
     if (!interior) sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }
@@ -63,7 +63,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, maybeName))
     sb.append(renderer3(renderer3Constructor).render(renderer3Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, maybeAttributeName(r, 3)))
+    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, maybeAttributeName(r, 3, useName = true)))
     if (!interior) sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }
@@ -76,7 +76,7 @@ trait Renderers {
     if (!interior) sb.append(format.formatName(open = true, maybeName))
     sb.append(renderer4(renderer4Constructor).render(renderer4Object, format.indent, None, interior = true))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, maybeAttributeName(r, 4)))
+    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, maybeAttributeName(r, 4, useName = true)))
     if (!interior) sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }

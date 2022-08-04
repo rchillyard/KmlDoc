@@ -186,7 +186,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorHotspot.extract(nodeSeq.head) match {
       case Success(hotSpot) =>
         hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
-        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), None) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a HotSpot object as is.
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), None) shouldBe """<HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot>"""
+        // XXX the second is rendering a HotSpot object as if it was in the context of its parent where the attribute name starts with lower case h.
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), Some("hotSpot")) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
       case Failure(x) => fail(x)
     }
   }
@@ -3464,7 +3468,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 87498
+        w.length shouldBe 88004
       case Failure(x) => fail(x)
     }
   }
