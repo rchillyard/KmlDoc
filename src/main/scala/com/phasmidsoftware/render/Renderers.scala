@@ -224,6 +224,7 @@ case class FormatText(indents: Int) extends BaseFormat(indents) {
   }
 }
 
+// TESTME
 case class FormatIndented(indents: Int) extends BaseFormat(indents) {
   val name: String = "FormatIndented"
 

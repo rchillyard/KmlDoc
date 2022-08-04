@@ -660,7 +660,7 @@ object Extractors {
       // NOTE child nodes are extracted using extractChildren, not here.
       case plural(x) =>
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
-      // NOTE optional members
+      // NOTE optional members such that the name begins with "maybe"
       case optional(x) =>
         s"optional: $x" -> extractOptional[P](node \ x)
       // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).

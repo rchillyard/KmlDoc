@@ -63,6 +63,8 @@ case class LineStyle(color: Color, width: Width)
  * Type A has IconStyle, LabelStyle, BalloonStyle;
  * Type B has LineStyle.
  *
+ * FIXME need to render Style (and StyleMap) correctly.
+ *
  * @param _id               the identifier of the Style.
  * @param maybeIconStyle    the icon style (optional)
  * @param maybeLabelStyle   the label style (optional)
