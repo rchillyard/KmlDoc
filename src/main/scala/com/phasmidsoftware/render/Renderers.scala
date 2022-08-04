@@ -81,8 +81,14 @@ trait Renderers {
     sb.toString()
   }
 
-  def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, _: Option[String], _: Boolean) => ro match {
-    case Some(r) => implicitly[Renderable[R]].render(r, format, None)
+  def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, maybeName: Option[String], _: Boolean) => ro match {
+    case Some(r) =>
+      val wo = maybeName match {
+        case Some(Extractors.optional(x)) => Some(x)
+        case Some(x) => Some(x)
+        case None => None
+      }
+      implicitly[Renderable[R]].render(r, format, wo)
     case None => ""
   }
 

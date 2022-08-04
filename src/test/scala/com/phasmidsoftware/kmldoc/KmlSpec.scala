@@ -90,8 +90,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Placemark"
 
-  // TODO fix this
-  ignore should "extract Placemark" in {
+  it should "extract Placemark" in {
     val xml: Elem = <xml>
       <Placemark>
         <name>Wakefield Branch of Eastern RR</name>
@@ -127,7 +126,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         coordinate.coordinates.size shouldBe 8
         val output = new KmlRenderers {}.rendererPlacemark.render(placemark, FormatXML(0), None)
         output shouldBe
-                """<Placemark><name>Wakefield Branch of Eastern RR</name> <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</Text> <styleUrl>#line-006600-5000</styleUrl> """ +
+                """<Placemark><name>Wakefield Branch of Eastern RR</name> <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description> <styleUrl>#line-006600-5000</styleUrl> """ +
                         """
   <LineString><tessellate>1</tessellate> """ +
                         """
@@ -3491,7 +3490,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 88004
+        w.length shouldBe 88368
       case Failure(x) => fail(x)
     }
   }
