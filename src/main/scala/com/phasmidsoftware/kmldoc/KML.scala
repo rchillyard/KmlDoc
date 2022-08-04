@@ -49,7 +49,7 @@ case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot)
 
 case class LabelStyle(scale: Scale)
 
-case class BalloonStyle(text: String)
+case class BalloonStyle(text: Text)
 
 case class Color($: String)
 
@@ -166,7 +166,7 @@ trait KmlRenderers extends Renderers {
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
   implicit val rendererWidth: Renderable[Width] = renderer1(Width)
-  implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot)
+  implicit val rendererHotSpot: Renderable[HotSpot] = (t: HotSpot, format: Format, _: Option[String], _: Boolean) => renderer4(HotSpot).render(t, format, Some("hotSpot"))
   implicit val rendererIconStyle: Renderable[IconStyle] = renderer3(IconStyle)
   implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer1(BalloonStyle)
   implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1(LabelStyle)

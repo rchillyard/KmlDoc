@@ -214,5 +214,4 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     }
     KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(0), None) shouldBe """<KVV>k="a" v="-1" b="false"</KVV>"""
   }
-
 }
