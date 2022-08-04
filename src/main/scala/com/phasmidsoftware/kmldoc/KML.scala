@@ -164,10 +164,21 @@ trait KmlRenderers extends Renderers {
 
   implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
+  implicit val rendererColor: Renderable[Color] = renderer1(Color)
+  implicit val rendererWidth: Renderable[Width] = renderer1(Width)
   implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot)
-  implicit val renderIconStyle: Renderable[IconStyle] = renderer3(IconStyle)
-  implicit val rendererStyle: Renderable[Style] = renderer0
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer0
+  implicit val rendererIconStyle: Renderable[IconStyle] = renderer3(IconStyle)
+  implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer1(BalloonStyle)
+  implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1(LabelStyle)
+  implicit val rendererLineStyle: Renderable[LineStyle] = renderer2(LineStyle)
+  implicit val rendererOptionLineStyle: Renderable[Option[LineStyle]] = optionRenderer
+  implicit val rendererOptionLabelStyle: Renderable[Option[LabelStyle]] = optionRenderer
+  implicit val rendererOptionBalloonStyle: Renderable[Option[BalloonStyle]] = optionRenderer
+  implicit val rendererOptionIconStyle: Renderable[Option[IconStyle]] = optionRenderer
+  implicit val rendererStyle: Renderable[Style] = renderer5(Style)
+  implicit val rendererPair: Renderable[Pair] = renderer2(Pair)
+  implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair]
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer2(StyleMap)
   implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Option[String], _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)

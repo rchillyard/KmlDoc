@@ -209,7 +209,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorIconStyle.extract(iconStyle) match {
       case Success(is) =>
         is shouldBe IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels"))
-        new KmlRenderers {}.renderIconStyle.render(is, FormatXML(0), None) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot></IconStyle>"""
+        new KmlRenderers {}.rendererIconStyle.render(is, FormatXML(0), None) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot></IconStyle>"""
       case Failure(x) => fail(x)
     }
   }
@@ -3457,7 +3457,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 86734
+        w.length shouldBe 87486
       case Failure(x) => fail(x)
     }
   }
