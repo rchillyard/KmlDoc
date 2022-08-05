@@ -3,6 +3,7 @@
 KML Doctor
 ==========
 
-Utilities to work with KML files.
+Utilities to parse and render KML files.
+
 
 

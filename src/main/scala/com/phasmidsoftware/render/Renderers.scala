@@ -1,9 +1,11 @@
 package com.phasmidsoftware.render
 
 import com.phasmidsoftware.xml.{Extractors, Text}
+
 import scala.annotation.unused
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import scala.util.matching.Regex
 
 /**
  * Trait which defines generic and standard renderers.
@@ -21,7 +23,7 @@ trait Renderers {
   }
 
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, maybeName: Option[String], interior: Boolean) => {
-    val sb = new StringBuilder()
+    val sb = new mutable.StringBuilder()
     if (!interior) sb.append(format.formatName(open = true, maybeName))
     val p0 = r.productElement(0)
     sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, maybeAttributeName(r, 0, useName = true)))
@@ -139,8 +141,13 @@ trait Renderers {
 
 object Renderers {
 
-  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, maybeName: Option[String], _: Boolean) =>
-    renderAttribute(t, maybeName)
+  val cdata: Regex = """.*([<&>]).*""".r
+  implicit val stringRenderer: Renderable[String] = (t: String, format: Format, maybeName: Option[String], _: Boolean) =>
+    renderAttribute(
+      t match {
+        case cdata(_) => s"""<![CDATA[$t]]>"""
+        case _ => t
+      }, maybeName)
 
   implicit val intRenderer: Renderable[Int] = (t: Int, _: Format, maybeName: Option[String], _: Boolean) =>
     renderAttribute(t.toString, maybeName)

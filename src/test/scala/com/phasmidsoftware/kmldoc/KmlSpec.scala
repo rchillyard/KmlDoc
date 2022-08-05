@@ -2,9 +2,10 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render.FormatXML
 import com.phasmidsoftware.xml.Text
-import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
+import java.io.FileWriter
 import scala.collection.Seq
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
@@ -3490,7 +3491,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 88368
+        w.length shouldBe 88680
       case Failure(x) => fail(x)
     }
   }
@@ -3498,14 +3499,21 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   it should "extract and render Kml as XML from file" in {
     val renderer = new KmlRenderers {}.rendererKml
     val url = KML.getClass.getResource("sample.kml")
-    val xml = XML.loadFile(url.getFile)
+    val xml: Elem = XML.loadFile(url.getFile)
+    val attributes: Map[String, String] = xml.attributes.asAttrMap
     extractorMultiKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = ks.head
-        val w = renderer.render(kml, FormatXML(0), None)
-        val fw = new FileWriter("xmlOutput.xml")
-        fw.append(w)
+        val w = renderer.render(kml, FormatXML(0), Some("kml"))
+        val filename = "xmlOutput.xml"
+        val result = XML.loadString(w)
+        val fw = new FileWriter(filename)
+        XML.write(fw, result, "UTF-8", xmlDecl = true, null)
+        fw.close()
+      //        val copy: Elem = XML.loadFile(filename)
+      //        val ksy: Try[scala.Seq[KML]] = extractorMultiKml.extract(copy)
+      //        ksy should matchPattern { case Success(x :: Nil) => }
       case Failure(x) => fail(x)
     }
   }

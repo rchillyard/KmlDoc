@@ -2,6 +2,7 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml._
+
 import java.net.URL
 import scala.io.Source
 import scala.reflect.ClassTag
@@ -17,6 +18,7 @@ import scala.xml.{Elem, Node, XML}
  *
  * @param Documents a sequence of Document.
  */
+// TODO add in the xmlns tag (a top-level attribute)
 case class KML(Documents: Seq[Document]) {
   override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML(0), None)
 }
