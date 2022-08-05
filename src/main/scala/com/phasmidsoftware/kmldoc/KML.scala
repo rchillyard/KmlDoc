@@ -4,11 +4,12 @@ import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml._
 
 import java.net.URL
+import scala.collection.mutable
 import scala.io.Source
 import scala.reflect.ClassTag
 import scala.util.Success
 import scala.util.matching.Regex
-import scala.xml.{Elem, Node, XML}
+import scala.xml.{Elem, NamespaceBinding, Node, XML}
 
 /**
  * Case class to define a KML object.
@@ -19,9 +20,9 @@ import scala.xml.{Elem, Node, XML}
  * @param Documents a sequence of Document.
  */
 // TODO add in the xmlns tag (a top-level attribute)
-case class KML(Documents: Seq[Document]) {
-  override def toString: String = new KmlRenderers {}.rendererKml.render(this, FormatXML(0), None)
-}
+case class KML(Documents: Seq[Document])
+
+case class KML_Binding(kml: KML, binding: NamespaceBinding)
 
 /**
  * Case class to represent a Document.
@@ -73,11 +74,11 @@ case class LineStyle(color: Color, width: Width)
  * @param maybeBalloonStyle the balloon style (optional)
  * @param maybeLineStyle    the line style (optional)
  */
-case class Style(_id: Text, maybeIconStyle: Option[IconStyle], maybeLabelStyle: Option[LabelStyle], maybeBalloonStyle: Option[BalloonStyle], maybeLineStyle: Option[LineStyle])
+case class Style(_id: String, maybeIconStyle: Option[IconStyle], maybeLabelStyle: Option[LabelStyle], maybeBalloonStyle: Option[BalloonStyle], maybeLineStyle: Option[LineStyle])
 
 case class Pair(key: String, styleUrl: String)
 
-case class StyleMap(_id: Text, Pairs: Seq[Pair])
+case class StyleMap(_id: String, Pairs: Seq[Pair])
 
 case class Folder(name: Text, Placemarks: Seq[Placemark])
 
@@ -198,6 +199,18 @@ trait KmlRenderers extends Renderers {
   implicit val rendererDocument: Renderable[Document] = renderer5(Document)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
+  implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, maybeName: Option[String], interior: Boolean) =>
+    doRenderKML_Binding(t, format, maybeName, interior)
+
+  private def doRenderKML_Binding(t: KML_Binding, format: Format, maybeName: Option[String], interior: Boolean) = {
+    val sb = new mutable.StringBuilder()
+    val r = t.kml
+    if (!interior) sb.append(format.formatName(open = true, Some(s"""kml ${t.binding}""")))
+    val p0 = r.productElement(0)
+    sb.append(implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, None))
+    if (!interior) sb.append(format.formatName(open = false, maybeName))
+    sb.toString()
+  }
 }
 
 object KMLCompanion {

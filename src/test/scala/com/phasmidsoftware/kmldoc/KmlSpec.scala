@@ -295,9 +295,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
         val output = new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), None)
         output shouldBe
-                """<Style><id>icon-22-nodesc-normal</id> <IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle> <LabelStyle><scale>0.0</scale></LabelStyle> <BalloonStyle><text>
-                  |            <h3>$[name]</h3>
-                  |          </text></BalloonStyle> </Style>""".stripMargin
+          """<Style>id="icon-22-nodesc-normal" <IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle> <LabelStyle><scale>0.0</scale></LabelStyle> <BalloonStyle><text>
+            |            <h3>$[name]</h3>
+            |          </text></BalloonStyle> </Style>""".stripMargin
       case Failure(x) => fail(x)
     }
 
@@ -381,7 +381,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ss) =>
         ss.size shouldBe 2
         val style: Style = ss.head
-        style shouldBe Style(Text("line-0000FF-5000-normal"), None, None, None, Some(LineStyle(Color("ffff0000"), Width(5.0))))
+        style shouldBe Style("line-0000FF-5000-normal", None, None, None, Some(LineStyle(Color("ffff0000"), Width(5.0))))
       case Failure(x) => fail(x)
     }
   }
@@ -3491,29 +3491,31 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml = ks.head
         val w = kml.toString
-        w.length shouldBe 88680
+        w.length shouldBe 80042
       case Failure(x) => fail(x)
     }
   }
 
   it should "extract and render Kml as XML from file" in {
-    val renderer = new KmlRenderers {}.rendererKml
+    val renderer = new KmlRenderers {}.rendererKml_Binding
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
-    val attributes: Map[String, String] = xml.attributes.asAttrMap
     extractorMultiKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
-        val kml = ks.head
+        val kml = KML_Binding(ks.head, xml.scope)
         val w = renderer.render(kml, FormatXML(0), Some("kml"))
         val filename = "xmlOutput.xml"
-        val result = XML.loadString(w)
         val fw = new FileWriter(filename)
-        XML.write(fw, result, "UTF-8", xmlDecl = true, null)
+        // NOTE we are unable to use XML.write because it replaces quotes with &quot;
+        fw.write(
+          """<?xml version="1.0" encoding="UTF-8"?>
+            |""".stripMargin)
+        fw.write(w)
         fw.close()
-      //        val copy: Elem = XML.loadFile(filename)
-      //        val ksy: Try[scala.Seq[KML]] = extractorMultiKml.extract(copy)
-      //        ksy should matchPattern { case Success(x :: Nil) => }
+      //              val copy: Elem = XML.loadFile(filename)
+      //              val ksy: Try[scala.Seq[KML]] = extractorMultiKml.extract(copy)
+      //              ksy should matchPattern { case Success(x :: Nil) => }
       case Failure(x) => fail(x)
     }
   }
