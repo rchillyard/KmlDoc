@@ -211,9 +211,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a HotSpot object as is.
-        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR()) shouldBe """<HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot>"""
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR()) shouldBe """<HotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></HotSpot>"""
         // XXX the second is rendering a HotSpot object as if it was in the context of its parent where the attribute name starts with lower case h.
-        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR().setName("hotSpot")) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR().setName("hotSpot")) shouldBe """<hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>"""
       case Failure(x) => fail(x)
     }
   }
@@ -236,7 +236,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorIconStyle.extract(iconStyle) match {
       case Success(is) =>
         is shouldBe IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels"))
-        new KmlRenderers {}.rendererIconStyle.render(is, FormatXML(0), StateR()) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle>"""
+        new KmlRenderers {}.rendererIconStyle.render(is, FormatXML(0), StateR()) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot></IconStyle>"""
       case Failure(x) => fail(x)
     }
   }
@@ -295,7 +295,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
         val output = new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), StateR())
         output shouldBe
-          """<Style>id="icon-22-nodesc-normal" <IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle> <LabelStyle><scale>0.0</scale></LabelStyle> <BalloonStyle><text>
+          """<Style>id="icon-22-nodesc-normal" <IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot></IconStyle> <LabelStyle><scale>0.0</scale></LabelStyle> <BalloonStyle><text>
             |            <h3>$[name]</h3>
             |          </text></BalloonStyle> </Style>""".stripMargin
       case Failure(x) => fail(x)

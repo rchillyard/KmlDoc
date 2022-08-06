@@ -43,21 +43,21 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object ComplexRenderers extends Renderers {
       val rendererComplex: Renderable[Complex] = renderer2(Complex)
     }
-    ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatText(0), StateR()) shouldBe """{r="1.0", i="-1.0"}"""
+    ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatText(0), StateR()) shouldBe """{ r="1.0", i="-1.0"}"""
   }
 
   it should "renderer2B" in {
     object KVRenderers extends Renderers {
       val rendererKV: Renderable[KV] = renderer2(KV)
     }
-    KVRenderers.rendererKV.render(KV("a", -1), FormatText(0), StateR()) shouldBe """{k="a", v="-1"}"""
+    KVRenderers.rendererKV.render(KV("a", -1), FormatText(0), StateR()) shouldBe """{ k="a", v="-1"}"""
   }
 
   it should "renderer4" in {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVV] = renderer4(KVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatText(0), StateR()) shouldBe """{k="a", v="-1", b="false", x="3.141592653589793"}"""
+    KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatText(0), StateR()) shouldBe """{ k="a", v="-1", b="false", x="3.141592653589793"}"""
   }
 
   it should "intRenderer" in {
@@ -92,7 +92,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVVV] = renderer5(KVVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatText(0), StateR()) shouldBe """{k="a", v="-1", b="false", x="3.141592653589793", l="42"}"""
+    KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatText(0), StateR()) shouldBe """{ k="a", v="-1", b="false", x="3.141592653589793", l="42"}"""
   }
 
   it should "optionRenderer" in {
@@ -111,7 +111,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVRenderers extends Renderers {
       val rendererKVV: Renderable[KVV] = renderer3(KVV)
     }
-    KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatText(0), StateR()) shouldBe """{k="a", v="-1", b="false"}"""
+    KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatText(0), StateR()) shouldBe """{ k="a", v="-1", b="false"}"""
   }
 
   behavior of "Renderers (FormatXML)"
@@ -154,21 +154,21 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object ComplexRenderers extends Renderers {
       val rendererComplex: Renderable[Complex] = renderer2(Complex)
     }
-    ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(0), StateR()) shouldBe "<Complex>r=\"1.0\" i=\"-1.0\"</Complex>"
+    ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(0), StateR()) shouldBe "<Complex r=\"1.0\" i=\"-1.0\"></Complex>"
   }
 
   it should "renderer2B" in {
     object KVRenderers extends Renderers {
       val rendererKV: Renderable[KV] = renderer2(KV)
     }
-    KVRenderers.rendererKV.render(KV("a", -1), FormatXML(0), StateR()) shouldBe """<KV>k="a" v="-1"</KV>"""
+    KVRenderers.rendererKV.render(KV("a", -1), FormatXML(0), StateR()) shouldBe """<KV k="a" v="-1"></KV>"""
   }
 
   it should "renderer4" in {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVV] = renderer4(KVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(0), StateR()) shouldBe """<KVVV>k="a" v="-1" b="false" x="3.141592653589793"</KVVV>"""
+    KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(0), StateR()) shouldBe """<KVVV k="a" v="-1" b="false" x="3.141592653589793"></KVVV>"""
   }
 
   it should "doubleRenderer" in {
@@ -193,7 +193,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVVV] = renderer5(KVVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(0), StateR()) shouldBe """<KVVVV>k="a" v="-1" b="false" x="3.141592653589793" l="42"</KVVVV>"""
+    KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(0), StateR()) shouldBe """<KVVVV k="a" v="-1" b="false" x="3.141592653589793" l="42"></KVVVV>"""
   }
 
   it should "optionRenderer" in {
@@ -212,6 +212,6 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVRenderers extends Renderers {
       val rendererKVV: Renderable[KVV] = renderer3(KVV)
     }
-    KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(0), StateR()) shouldBe """<KVV>k="a" v="-1" b="false"</KVV>"""
+    KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(0), StateR()) shouldBe """<KVV k="a" v="-1" b="false"></KVV>"""
   }
 }
