@@ -16,18 +16,18 @@ trait Renderers {
 
   def renderer0[R <: Product : ClassTag]: Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val sb = new mutable.StringBuilder()
-    sb.append(format.formatName(open = true, stateR.maybeName))
+    sb.append(format.formatName(open = true, stateR))
     sb.append(r.toString)
-    sb.append(format.formatName(open = false, stateR.maybeName))
+    sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val sb = new mutable.StringBuilder()
-    if (!stateR.interior) sb.append(format.formatName(open = true, stateR.maybeName))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR))
     val p0 = r.productElement(0)
-    sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, StateR(maybeAttributeName(r, 0, useName = true), false)))
-    if (!stateR.interior) sb.append(format.formatName(open = false, stateR.maybeName))
+    sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, StateR(maybeAttributeName(r, 0, useName = true))))
+    if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 
@@ -36,11 +36,11 @@ trait Renderers {
     val renderer1Constructor: P0 => R = construct(_, p1)
     val renderer1Object = renderer1Constructor(r.productElement(0).asInstanceOf[P0])
     val sb = new mutable.StringBuilder()
-    if (!stateR.interior) sb.append(format.formatName(open = true, stateR.maybeName))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR))
     sb.append(renderer1(renderer1Constructor).render(renderer1Object, format.indent, StateR(true)))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, StateR(maybeAttributeName(r, 1, useName = true), false)))
-    if (!stateR.interior) sb.append(format.formatName(open = false, stateR.maybeName))
+    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, StateR(maybeAttributeName(r, 1, useName = true))))
+    if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 
@@ -49,11 +49,11 @@ trait Renderers {
     val renderer2Constructor: (P0, P1) => R = construct(_, _, p2)
     val renderer2Object = renderer2Constructor(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
     val sb = new mutable.StringBuilder()
-    if (!stateR.interior) sb.append(format.formatName(open = true, stateR.maybeName))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR))
     sb.append(renderer2(renderer2Constructor).render(renderer2Object, format.indent, StateR(true)))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, StateR(maybeAttributeName(r, 2, useName = true), false)))
-    if (!stateR.interior) sb.append(format.formatName(open = false, stateR.maybeName))
+    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, StateR(maybeAttributeName(r, 2, useName = true))))
+    if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 
@@ -62,11 +62,11 @@ trait Renderers {
     val renderer3Constructor: (P0, P1, P2) => R = construct(_, _, _, p3)
     val renderer3Object = renderer3Constructor(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
     val sb = new mutable.StringBuilder()
-    if (!stateR.interior) sb.append(format.formatName(open = true, stateR.maybeName))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR))
     sb.append(renderer3(renderer3Constructor).render(renderer3Object, format.indent, StateR(true)))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, StateR(maybeAttributeName(r, 3, useName = true), false)))
-    if (!stateR.interior) sb.append(format.formatName(open = false, stateR.maybeName))
+    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, StateR(maybeAttributeName(r, 3, useName = true))))
+    if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 
@@ -75,11 +75,11 @@ trait Renderers {
     val renderer4Constructor: (P0, P1, P2, P3) => R = construct(_, _, _, _, p4)
     val renderer4Object = renderer4Constructor(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3])
     val sb = new mutable.StringBuilder()
-    if (!stateR.interior) sb.append(format.formatName(open = true, stateR.maybeName))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR))
     sb.append(renderer4(renderer4Constructor).render(renderer4Object, format.indent, StateR(true)))
     sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, StateR(maybeAttributeName(r, 4, useName = true), false)))
-    if (!stateR.interior) sb.append(format.formatName(open = false, stateR.maybeName))
+    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, StateR(maybeAttributeName(r, 4, useName = true))))
+    if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 
@@ -90,7 +90,7 @@ trait Renderers {
         case Some(x) => Some(x)
         case None => None
       }
-      implicitly[Renderable[R]].render(r, format, StateR(wo, false))
+      implicitly[Renderable[R]].render(r, format, StateR(wo))
     case None => ""
   }
 
@@ -108,7 +108,7 @@ trait Renderers {
     var first = true
     for (r <- rs) {
       if (!first) sb.append(if (separator == "\n") format.newline else separator)
-      sb.append(implicitly[Renderable[R]].render(r, format, StateR(maybeName, false)))
+      sb.append(implicitly[Renderable[R]].render(r, format, StateR(maybeName)))
       first = false
     }
     sb.append(format.newline)
@@ -142,7 +142,7 @@ trait Renderers {
 object Renderers {
 
   val cdata: Regex = """.*([<&>]).*""".r
-  implicit val stringRenderer: Renderable[String] = (t: String, format: Format, stateR: StateR) =>
+  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, stateR: StateR) =>
     renderAttribute(
       t match {
         case cdata(_) => s"""<![CDATA[$t]]>"""
@@ -193,7 +193,7 @@ trait Format {
 
   val indents: Int
 
-  def formatName[T: ClassTag](open: Boolean, maybeName: Option[String]): String
+  def formatName[T: ClassTag](open: Boolean, stateR: StateR): String
 
   def delimiter: String = ", "
 
@@ -218,8 +218,8 @@ case class FormatXML(indents: Int) extends BaseFormat(indents) {
 
   override def delimiter: String = " "
 
-  def formatName[T: ClassTag](open: Boolean, maybeName: Option[String]): String = {
-    val name = maybeName.getOrElse(implicitly[ClassTag[T]].runtimeClass.getSimpleName)
+  def formatName[T: ClassTag](open: Boolean, stateR: StateR): String = {
+    val name = stateR.maybeName.getOrElse(implicitly[ClassTag[T]].runtimeClass.getSimpleName)
     if (open) s"<$name>"
     else s"</$name>"
   }
@@ -232,7 +232,7 @@ case class FormatText(indents: Int) extends BaseFormat(indents) {
 
   def indent: Format = copy(indents = indents + 1)
 
-  def formatName[T: ClassTag](open: Boolean, maybeName: Option[String]): String = if (open) "{" else "}"
+  def formatName[T: ClassTag](open: Boolean, stateR: StateR): String = if (open) "{" else "}"
 
   def sequencer(open: Option[Boolean]): String = open match {
     case Some(true) => "["
@@ -247,7 +247,7 @@ case class FormatIndented(indents: Int) extends BaseFormat(indents) {
 
   def indent: Format = copy(indents = indents + 1)
 
-  def formatName[T: ClassTag](open: Boolean, maybeName: Option[String]): String = if (open) "{" else "}"
+  def formatName[T: ClassTag](open: Boolean, stateR: StateR): String = if (open) "{" else "}"
 
   def sequencer(open: Option[Boolean]): String = open match {
     case Some(true) => "["
@@ -256,7 +256,11 @@ case class FormatIndented(indents: Int) extends BaseFormat(indents) {
   }
 }
 
-case class StateR(maybeName: Option[String], interior: Boolean)
+case class StateR(maybeName: Option[String], interior: Boolean) {
+  def dive: StateR = copy(interior = true)
+
+  def isInternal: Boolean = interior
+}
 
 object StateR {
   def apply(maybeName: Option[String]): StateR = new StateR(maybeName, interior = false)

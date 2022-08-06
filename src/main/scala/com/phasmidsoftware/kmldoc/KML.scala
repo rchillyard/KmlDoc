@@ -155,7 +155,7 @@ trait KmlRenderers extends Renderers {
 
     def indent: Format = copy(indents = indents + 1)
 
-    def formatName[T: ClassTag](open: Boolean, maybeName: Option[String]): String = if (open) newline else ""
+    def formatName[T: ClassTag](open: Boolean, stateR: StateR): String = if (open) newline else ""
 
     def sequencer(open: Option[Boolean]): String = open match {
       case Some(false) => ""
@@ -200,16 +200,15 @@ trait KmlRenderers extends Renderers {
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
   implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>
-    doRenderKML_Binding(t, format, stateR.maybeName, stateR.interior)
+    doRenderKML_Binding(t, format, stateR)
 
-  // TODO rework using StateR
-  private def doRenderKML_Binding(t: KML_Binding, format: Format, maybeName: Option[String], interior: Boolean) = {
+  private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR) = {
     val sb = new mutable.StringBuilder()
     val r = t.kml
-    if (!interior) sb.append(format.formatName(open = true, Some(s"""kml ${t.binding}""")))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR.copy(maybeName = Some(s"""kml ${t.binding}"""))))
     val p0 = r.productElement(0)
     sb.append(implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, StateR()))
-    if (!interior) sb.append(format.formatName(open = false, maybeName))
+    if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
     sb.toString()
   }
 }
