@@ -213,7 +213,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         // XXX the first is simply rendering a HotSpot object as is.
         new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR()) shouldBe """<HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot>"""
         // XXX the second is rendering a HotSpot object as if it was in the context of its parent where the attribute name starts with lower case h.
-        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR(Some("hotSpot"), false)) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR().setName("hotSpot")) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
       case Failure(x) => fail(x)
     }
   }
@@ -3504,7 +3504,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = KML_Binding(ks.head, xml.scope)
-        val w = renderer.render(kml, FormatXML(0), StateR(Some("kml"), false))
+        val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
         val filename = "xmlOutput.xml"
         val fw = new FileWriter(filename)
         // NOTE we are unable to use XML.write because it replaces quotes with &quot;

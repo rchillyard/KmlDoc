@@ -182,7 +182,7 @@ trait KmlRenderers extends Renderers {
   implicit val rendererPair: Renderable[Pair] = renderer2(Pair)
   implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair]
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer2(StyleMap)
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, stateR: StateR) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: StateR) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
   // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
@@ -205,7 +205,7 @@ trait KmlRenderers extends Renderers {
   private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR) = {
     val sb = new mutable.StringBuilder()
     val r = t.kml
-    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR.copy(maybeName = Some(s"""kml ${t.binding}"""))))
+    if (!stateR.isInternal) sb.append(format.formatName(open = true, stateR.setName(s"""kml ${t.binding}""")))
     val p0 = r.productElement(0)
     sb.append(implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, StateR()))
     if (!stateR.isInternal) sb.append(format.formatName(open = false, stateR))
