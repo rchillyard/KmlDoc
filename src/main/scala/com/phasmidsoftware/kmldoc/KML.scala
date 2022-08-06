@@ -182,7 +182,7 @@ trait KmlRenderers extends Renderers {
   implicit val rendererPair: Renderable[Pair] = renderer2(Pair)
   implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair]
   implicit val rendererStyleMap: Renderable[StyleMap] = renderer2(StyleMap)
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: Option[String], _: Boolean) => s"${t.long}, ${t.lat}, ${t.alt}"
+  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, stateR: StateR) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
   // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
@@ -199,15 +199,16 @@ trait KmlRenderers extends Renderers {
   implicit val rendererDocument: Renderable[Document] = renderer5(Document)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
-  implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, maybeName: Option[String], interior: Boolean) =>
-    doRenderKML_Binding(t, format, maybeName, interior)
+  implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>
+    doRenderKML_Binding(t, format, stateR.maybeName, stateR.interior)
 
+  // TODO rework using StateR
   private def doRenderKML_Binding(t: KML_Binding, format: Format, maybeName: Option[String], interior: Boolean) = {
     val sb = new mutable.StringBuilder()
     val r = t.kml
     if (!interior) sb.append(format.formatName(open = true, Some(s"""kml ${t.binding}""")))
     val p0 = r.productElement(0)
-    sb.append(implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, None))
+    sb.append(implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, StateR()))
     if (!interior) sb.append(format.formatName(open = false, maybeName))
     sb.toString()
   }

@@ -1,6 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.render.FormatXML
+import com.phasmidsoftware.render.{FormatXML, StateR}
 import com.phasmidsoftware.xml.Text
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -41,7 +41,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         cs.size shouldBe 1
         val coordinates: Coordinates = cs.head
         coordinates.coordinates.size shouldBe 2
-        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML(0), None)
+        val output = new KmlRenderers {}.rendererCoordinates_s.render(cs, FormatXML(0), StateR())
         // TODO remove the final newline from the expected output.
         output shouldBe "\n<Coordinates>\n  -71.06992, 42.49424, 0\n  -71.07018, 42.49512, 0\n  </Coordinates>\n\n"
       case Failure(x) => fail(x)
@@ -84,7 +84,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val cs: Seq[Coordinates] = lineString.coordinates
         cs.size shouldBe 1
         cs.head.coordinates.size shouldBe 18
-        new KmlRenderers {}.rendererLineStrings.render(ls, FormatXML(0), None) shouldBe "\n<LineString><tessellate>1</tessellate> \n  <coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n    </coordinates>\n  \n  </LineString>\n\n".stripMargin
+        new KmlRenderers {}.rendererLineStrings.render(ls, FormatXML(0), StateR()) shouldBe "\n<LineString><tessellate>1</tessellate> \n  <coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n    </coordinates>\n  \n  </LineString>\n\n".stripMargin
       case Failure(x) => fail(x)
     }
   }
@@ -125,7 +125,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         coordinates.size shouldBe 1
         val coordinate = coordinates.head
         coordinate.coordinates.size shouldBe 8
-        val output = new KmlRenderers {}.rendererPlacemark.render(placemark, FormatXML(0), None)
+        val output = new KmlRenderers {}.rendererPlacemark.render(placemark, FormatXML(0), StateR())
         output shouldBe
                 """<Placemark><name>Wakefield Branch of Eastern RR</name> <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description> <styleUrl>#line-006600-5000</styleUrl> """ +
                         """
@@ -211,9 +211,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a HotSpot object as is.
-        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), None) shouldBe """<HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot>"""
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR()) shouldBe """<HotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</HotSpot>"""
         // XXX the second is rendering a HotSpot object as if it was in the context of its parent where the attribute name starts with lower case h.
-        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), Some("hotSpot")) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
+        new KmlRenderers {}.rendererHotSpot.render(hotSpot, FormatXML(0), StateR(Some("hotSpot"), false)) shouldBe """<hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot>"""
       case Failure(x) => fail(x)
     }
   }
@@ -236,7 +236,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorIconStyle.extract(iconStyle) match {
       case Success(is) =>
         is shouldBe IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels"))
-        new KmlRenderers {}.rendererIconStyle.render(is, FormatXML(0), None) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle>"""
+        new KmlRenderers {}.rendererIconStyle.render(is, FormatXML(0), StateR()) shouldBe """<IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle>"""
       case Failure(x) => fail(x)
     }
   }
@@ -293,7 +293,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ss.size shouldBe 2
         val style: Style = ss.head
         style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
-        val output = new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), None)
+        val output = new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), StateR())
         output shouldBe
           """<Style>id="icon-22-nodesc-normal" <IconStyle><scale>1.1</scale> <Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon> <hotSpot>x="16" xunits="pixels" y="32" yunits="insetPixels"</hotSpot></IconStyle> <LabelStyle><scale>0.0</scale></LabelStyle> <BalloonStyle><text>
             |            <h3>$[name]</h3>
@@ -3504,7 +3504,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = KML_Binding(ks.head, xml.scope)
-        val w = renderer.render(kml, FormatXML(0), Some("kml"))
+        val w = renderer.render(kml, FormatXML(0), StateR(Some("kml"), false))
         val filename = "xmlOutput.xml"
         val fw = new FileWriter(filename)
         // NOTE we are unable to use XML.write because it replaces quotes with &quot;
