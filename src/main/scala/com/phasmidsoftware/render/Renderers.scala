@@ -24,16 +24,23 @@ trait Renderers {
   }
 
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val sb = new mutable.StringBuilder()
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR))
-    if (!stateR.isInternal) {
-      if (!r.productElementName(0).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-      else sb.append(format.delimiter)
-    }
     val p0 = r.productElement(0)
+    val attribute = r.productElementName(0) match {
+      case Extractors.attribute(_) => true
+      case _ => false
+    }
+    val internal = stateR.isInternal
+    val sb = new mutable.StringBuilder()
+    if (!internal) {
+      sb.append(format.formatName(open = Some(true), stateR))
+      if (attribute) sb.append(format.delimiter)
+      else sb.append(format.formatName(open = None, stateR))
+    }
     sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, StateR().setName(r, 0)))
-    if (!stateR.isInternal && r.productElementName(0).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
+    if (!internal) {
+      if (attribute) sb.append(format.formatName(open = None, stateR))
+      sb.append(format.formatName(open = Some(false), stateR))
+    }
     sb.toString()
   }
 
