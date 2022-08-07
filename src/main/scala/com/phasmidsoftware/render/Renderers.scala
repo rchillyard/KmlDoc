@@ -24,96 +24,44 @@ trait Renderers {
   }
 
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val p0 = r.productElement(0)
-    val attribute = r.productElementName(0) match {
-      case Extractors.attribute(_) => true
-      case _ => false
-    }
-    val internal = stateR.isInternal
-    val sb = new mutable.StringBuilder()
-    if (!internal) {
-      sb.append(format.formatName(open = Some(true), stateR))
-      if (attribute) sb.append(format.delimiter)
-      else sb.append(format.formatName(open = None, stateR))
-    }
-    sb.append(implicitly[Renderable[P0]].render(p0.asInstanceOf[P0], format.indent, StateR().setName(r, 0)))
-    if (!internal) {
-      if (attribute) sb.append(format.formatName(open = None, stateR))
-      sb.append(format.formatName(open = Some(false), stateR))
-    }
-    sb.toString()
+    val wOuter = renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format)
+    doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
   def renderer2[P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val p1 = r.productElement(1).asInstanceOf[P1]
-    val renderer1Constructor: P0 => R = construct(_, p1)
-    val renderer1Object = renderer1Constructor(r.productElement(0).asInstanceOf[P0])
-    val sb = new mutable.StringBuilder()
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR))
-    if (!stateR.isInternal) {
-      if (!r.productElementName(1).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-      else sb.append(" ")
-    }
-    sb.append(renderer1(renderer1Constructor).render(renderer1Object, format.indent, StateR(true)))
-    sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P1]].render(p1, format.indent, StateR().setName(r, 1)))
-    if (!stateR.isInternal && r.productElementName(1).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
-    sb.toString()
+    val objectOuter = r.productElement(1).asInstanceOf[P1]
+    val constructorInner: P0 => R = construct(_, objectOuter)
+    val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0])
+    val wInner = renderer1(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wOuter = renderOuter(r, objectOuter, 1, format)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
   }
 
   def renderer3[P0: Renderable, P1: Renderable, P2: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val p2 = r.productElement(2).asInstanceOf[P2]
-    val renderer2Constructor: (P0, P1) => R = construct(_, _, p2)
-    val renderer2Object = renderer2Constructor(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
-    val sb = new mutable.StringBuilder()
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR))
-    if (!stateR.isInternal) {
-      if (!r.productElementName(2).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-      else sb.append(" ")
-    }
-    sb.append(renderer2(renderer2Constructor).render(renderer2Object, format.indent, StateR(true)))
-    sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P2]].render(p2, format.indent, StateR().setName(r, 2)))
-    if (!stateR.isInternal && r.productElementName(2).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
-    sb.toString()
+    val objectOuter = r.productElement(2).asInstanceOf[P2]
+    val constructorInner: (P0, P1) => R = construct(_, _, objectOuter)
+    val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
+    val wInner = renderer2(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wOuter = renderOuter(r, objectOuter, 2, format)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
   }
 
   def renderer4[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val p3 = r.productElement(3).asInstanceOf[P3]
-    val renderer3Constructor: (P0, P1, P2) => R = construct(_, _, _, p3)
-    val renderer3Object = renderer3Constructor(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
-    val sb = new mutable.StringBuilder()
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR))
-    if (!stateR.isInternal) {
-      if (!r.productElementName(3).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-      else sb.append(" ")
-    }
-    sb.append(renderer3(renderer3Constructor).render(renderer3Object, format.indent, StateR(true)))
-    sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P3]].render(p3, format.indent, StateR().setName(r, 3)))
-    if (!stateR.isInternal && r.productElementName(3).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
-    sb.toString()
+    val objectOuter = r.productElement(3).asInstanceOf[P3]
+    val constructorInner: (P0, P1, P2) => R = construct(_, _, _, objectOuter)
+    val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
+    val wInner = renderer3(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wOuter = renderOuter(r, objectOuter, 3, format)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
   }
 
   def renderer5[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val p4 = r.productElement(4).asInstanceOf[P4]
-    val renderer4Constructor: (P0, P1, P2, P3) => R = construct(_, _, _, _, p4)
-    val renderer4Object = renderer4Constructor(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3])
-    val sb = new mutable.StringBuilder()
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR))
-    if (!stateR.isInternal) {
-      if (!r.productElementName(4).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-      else sb.append(" ")
-    }
-    sb.append(renderer4(renderer4Constructor).render(renderer4Object, format.indent, StateR(true)))
-    sb.append(format.delimiter)
-    sb.append(implicitly[Renderable[P4]].render(p4, format.indent, StateR().setName(r, 4)))
-    if (!stateR.isInternal && r.productElementName(4).startsWith("_")) sb.append(format.formatName(open = None, stateR))
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
-    sb.toString()
+    val objectOuter = r.productElement(4).asInstanceOf[P4]
+    val constructorInner: (P0, P1, P2, P3) => R = construct(_, _, _, _, objectOuter)
+    val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3])
+    val wInner = renderer4(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wOuter = renderOuter(r, objectOuter, 4, format)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
   }
 
   def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, stateR: StateR) => ro match {
@@ -125,6 +73,30 @@ trait Renderers {
       }
       implicitly[Renderable[R]].render(r, format, StateR(wo))
     case None => ""
+  }
+
+  private def renderOuter[R <: Product : ClassTag, P: Renderable](r: R, objectOuter: P, indexOuter: Int, format: Format) =
+    implicitly[Renderable[P]].render(objectOuter, format.indent, StateR().setName(r, indexOuter))
+
+  private def doNestedRender[R <: Product : ClassTag](format: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String) = {
+    val attribute = attributeName match {
+      case Extractors.attribute(_) => true
+      case _ => false
+    }
+    val sb = new mutable.StringBuilder()
+    if (!stateR.isInternal) {
+      sb.append(format.formatName(open = Some(true), stateR))
+      if (!attribute) sb.append(format.formatName(open = None, stateR))
+      else sb.append(" ")
+    }
+    sb.append(wInner)
+    if (wInner.nonEmpty) sb.append(format.delimiter)
+    sb.append(wOuter)
+    if (!stateR.isInternal) {
+      if (attribute) sb.append(format.formatName(open = None, stateR))
+      sb.append(format.formatName(open = Some(false), stateR))
+    }
+    sb.toString()
   }
 
   private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String]) = {
