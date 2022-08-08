@@ -1,19 +1,27 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.xml.{Extractors, Text}
+import com.phasmidsoftware.render.Renderers.logger
+import com.phasmidsoftware.xml.{Extractors, Text, XmlException}
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.unused
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
+import scala.util.{Failure, Success, Using}
 
 /**
  * Trait which defines generic and standard renderers.
  *
- * NOTE that we should try to merge the various rendererX methods.
  */
 trait Renderers {
 
+  /**
+   * Method to create a renderer fpr a case class with no members, or a case object.
+   *
+   * @tparam R the type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def renderer0[R <: Product : ClassTag]: Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val sb = new mutable.StringBuilder()
     sb.append(format.formatName(open = Some(true), stateR))
@@ -23,47 +31,103 @@ trait Renderers {
     sb.toString()
   }
 
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with one member.
+   *
+   * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
+   * @tparam P0 the (Renderable) type of the (single) member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val wOuter = renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format)
     doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with two members.
+   *
+   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def renderer2[P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(1).asInstanceOf[P1]
     val constructorInner: P0 => R = construct(_, objectOuter)
     val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0])
-    val wInner = renderer1(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wInner = renderer1(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 1, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
   }
 
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with three members.
+   *
+   * @param construct a function which takes a P0, P1, P2 and yields an R (this is usually the apply method of a case class).
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def renderer3[P0: Renderable, P1: Renderable, P2: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(2).asInstanceOf[P2]
     val constructorInner: (P0, P1) => R = construct(_, _, objectOuter)
     val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
-    val wInner = renderer2(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wInner = renderer2(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 2, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
   }
 
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with four members.
+   *
+   * @param construct a function which takes a P0, P1, P2, P3 and yields an R (this is usually the apply method of a case class).
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam P3 the (Renderable) type of the fourth member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def renderer4[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(3).asInstanceOf[P3]
     val constructorInner: (P0, P1, P2) => R = construct(_, _, _, objectOuter)
     val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
-    val wInner = renderer3(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wInner = renderer3(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 3, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
   }
 
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with five members.
+   *
+   * @param construct a function which takes a P0, P1, P2, P3, P4 and yields an R (this is usually the apply method of a case class).
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam P3 the (Renderable) type of the fourth member of Product type R.
+   * @tparam P4 the (Renderable) type of the fifth member of Product type R.
+   * @tparam R  the (Renderable) type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def renderer5[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(4).asInstanceOf[P4]
     val constructorInner: (P0, P1, P2, P3) => R = construct(_, _, _, _, objectOuter)
     val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3])
-    val wInner = renderer4(constructorInner).render(objectInner, format.indent, StateR(true))
+    val wInner = renderer4(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 4, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
   }
 
+  /**
+   * Method to yield a renderer of Option[R].
+   *
+   * @tparam R the (Renderable) underyling type to be rendered.
+   * @return a function which takes an Option[R], a Format, and a StateR as parameters and yields a Renderable[R].
+   */
   def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, stateR: StateR) => ro match {
     case Some(r) =>
       val wo = stateR.maybeName match {
@@ -73,45 +137,6 @@ trait Renderers {
       }
       implicitly[Renderable[R]].render(r, format, StateR(wo))
     case None => ""
-  }
-
-  private def renderOuter[R <: Product : ClassTag, P: Renderable](r: R, objectOuter: P, indexOuter: Int, format: Format) =
-    implicitly[Renderable[P]].render(objectOuter, format.indent, StateR().setName(r, indexOuter))
-
-  private def doNestedRender[R <: Product : ClassTag](format: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String) = {
-    val attribute = attributeName match {
-      case Extractors.attribute(_) => true
-      case _ => false
-    }
-    val sb = new mutable.StringBuilder()
-    if (!stateR.isInternal) {
-      sb.append(format.formatName(open = Some(true), stateR))
-      if (!attribute) sb.append(format.formatName(open = None, stateR))
-      else sb.append(" ")
-    }
-    sb.append(wInner)
-    if (wInner.nonEmpty) sb.append(format.delimiter)
-    sb.append(wOuter)
-    if (!stateR.isInternal) {
-      if (attribute) sb.append(format.formatName(open = None, stateR))
-      sb.append(format.formatName(open = Some(false), stateR))
-    }
-    sb.toString()
-  }
-
-  private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String]) = {
-    val separator = format.sequencer(None)
-    val sb = new mutable.StringBuilder()
-    sb.append(format.sequencer(Some(true)))
-    var first = true
-    for (r <- rs) {
-      if (!first) sb.append(if (separator == "\n") format.newline else separator)
-      sb.append(implicitly[Renderable[R]].render(r, format, StateR(maybeName)))
-      first = false
-    }
-    sb.append(format.newline)
-    sb.append(format.sequencer(Some(false)))
-    sb.toString()
   }
 
   /**
@@ -135,9 +160,84 @@ trait Renderers {
    */
   def sequenceRendererFormatted[R: Renderable](formatFunc: Int => Format): Renderable[Seq[R]] = (rs: Seq[R], format: Format, stateR: StateR) =>
     doRenderSequence(rs, formatFunc(format.indents), stateR.maybeName)
+
+  private def renderOuter[R <: Product : ClassTag, P: Renderable](r: R, objectOuter: P, indexOuter: Int, format: Format): String = {
+    Using(StateR().setName(r, indexOuter)) { sr =>
+      val w1 = implicitly[Renderable[P]].render(objectOuter, format.indent, sr)
+      sr.getAttributes + w1
+    } match {
+      case Success(w) => w
+      case Failure(x) => logger.warn("renderOuter: ", x); ""
+    }
+  }
+
+  /**
+   * Method which is called at the end of each renderN method (above).
+   * Its purpose is to combine the textual information held in the following three parameters:
+   * <ol>
+   * <li>stateR: attributes are placed here temporarily;</li>
+   * <li>wInner: a String generated by a call to a renderN method with the next lower number;</li>
+   * <li>wOuter: a String based on the last member of this Product being rendered.</li>
+   *
+   * @param format        the format in which the Product should be rendered.
+   * @param stateR        the state of the rendition.
+   * @param wInner        a string based on the first n-1 members of the n-ary Product being rendered.
+   * @param wOuter        a string based on the last (nth) member of the n-ary Product being rendered.
+   * @param attributeName the name of the last member (used internally to distinguish between attributes and elements).
+   * @tparam R the Product type.
+   * @return a String.
+   */
+  private def doNestedRender[R <: Product : ClassTag](format: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String) = {
+    val attribute = attributeName match {
+      case Extractors.attribute(_) => true
+      case _ => false
+    }
+    // XXX: if attribute is true, then isInternal will usually be true
+    //      (the exception being for the last attribute of an all-attribute element).
+    if (attribute)
+      stateR.addAttribute(wOuter)
+    val sb = new mutable.StringBuilder()
+    if (!stateR.isInternal) {
+      sb.append(format.formatName(open = Some(true), stateR))
+      sb.append(stateR.getAttributes)
+      if (!attribute) sb.append(format.formatName(open = None, stateR))
+      else sb.append(" ")
+    }
+    if (!attribute)
+      sb.append(wInner)
+    // CONSIDER appending format.delimiter
+    if (!attribute)
+      sb.append(wOuter)
+    if (!stateR.isInternal) {
+      if (attribute) sb.append(format.formatName(open = None, stateR))
+      sb.append(format.formatName(open = Some(false), stateR))
+    }
+    sb.toString()
+  }
+
+  private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String]) = {
+    val separator = format.sequencer(None)
+    val sb = new mutable.StringBuilder()
+    sb.append(format.sequencer(Some(true)))
+    var first = true
+    for (r <- rs) {
+      if (!first) sb.append(if (separator == "\n") format.newline else separator)
+      val wy = Using(StateR(maybeName))(sr => implicitly[Renderable[R]].render(r, format, sr))
+      wy match {
+        case Success(w) => sb.append(w)
+        case Failure(x) => logger.warn("doRenderSequence: failure", x)
+      }
+      first = false
+    }
+    sb.append(format.newline)
+    sb.append(format.sequencer(Some(false)))
+    sb.toString()
+  }
 }
 
 object Renderers {
+
+  val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
   val cdata: Regex = """.*([<&>]).*""".r
   implicit val stringRenderer: Renderable[String] = (t: String, _: Format, stateR: StateR) =>
@@ -272,25 +372,51 @@ case class FormatIndented(indents: Int) extends BaseFormat(indents) {
   }
 }
 
-case class StateR(maybeName: Option[String], attributes: Map[String, String], interior: Boolean) {
-  def dive: StateR = copy(attributes = Map(), interior = true)
+/**
+ * Case class intended to take care of the state of rendering.
+ * Rendering is complex for several reasons:
+ * (1) a method such as render5 invokes render4, render3, etc. in order to process all of the members of a Product.
+ * (2) attributes are special and need to be rendered within the opening tag of the top-level element.
+ *
+ * NOTE: attributes is mutable (it's a StringBuilder). It is retained as we do operations such as setName, recurse.
+ * However, we must be careful to ensure that no attribute gets left behind.
+ *
+ * @param maybeName  an optional String.
+ * @param attributes a (private) StringBuilder: accessible via addAttribute or getAttributes.
+ * @param interior   false if we are at the top level of an element; false if we have been invoked from above.
+ */
+case class StateR(maybeName: Option[String], private val attributes: mutable.StringBuilder, interior: Boolean) extends AutoCloseable {
 
   def setName(name: String): StateR = maybeName match {
     case Some(_) => this
-    case None => copy(maybeName = Some(name), Map())
+    case None => copy(maybeName = Some(name))
   }
 
-  def setName[R <: Product](r: R, index: Int): StateR = copy(maybeName = Renderers.maybeAttributeName(r, index, useName = true), Map())
+  def recurse: StateR = copy(interior = true)
 
-  def addAttribute(k: String, v: String): StateR = copy(attributes = attributes + (k -> v))
+  def addAttribute(attrString: String): Unit = {
+    attributes.append(" " + attrString)
+  }
+
+  def getAttributes: String = {
+    val result = attributes.toString()
+    attributes.clear()
+    result
+  }
+
+  def setName[R <: Product](r: R, index: Int): StateR = copy(maybeName = Renderers.maybeAttributeName(r, index, useName = true))
 
   def isInternal: Boolean = interior
+
+  def close(): Unit = {
+    if (attributes.nonEmpty) throw XmlException("StateR.close: attributes not empty")
+  }
 }
 
 object StateR {
-  def apply(maybeName: Option[String]): StateR = new StateR(maybeName, Map(), interior = false)
+  def apply(maybeName: Option[String]): StateR = new StateR(maybeName, new mutable.StringBuilder(""), interior = false)
 
-  def apply(interior: Boolean): StateR = new StateR(None, Map(), interior)
+  def apply(interior: Boolean): StateR = new StateR(None, new mutable.StringBuilder(""), interior)
 
   def apply(): StateR = apply(None)
 }

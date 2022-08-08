@@ -2,13 +2,14 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml._
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URL
 import scala.collection.mutable
 import scala.io.Source
 import scala.reflect.ClassTag
-import scala.util.Success
 import scala.util.matching.Regex
+import scala.util.{Failure, Success, Using}
 import scala.xml.{Elem, NamespaceBinding, Node, XML}
 
 /**
@@ -210,13 +211,23 @@ trait KmlRenderers extends Renderers {
     val r = t.kml
     if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR.setName(s"""kml ${t.binding}""")))
     val p0 = r.productElement(0)
-    sb.append(implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, StateR()))
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
-    sb.toString()
+    val wy = Using(StateR())(sr => implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, sr))
+    wy match {
+      case Success(w) =>
+        sb.append(w)
+        if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
+        sb.toString()
+      case Failure(x) =>
+        KMLCompanion.logger.warn("doRenderKML_Binding: ", x)
+        ""
+    }
   }
 }
 
+// CONSIDER Rename as KML
 object KMLCompanion {
+
+  val logger: Logger = LoggerFactory.getLogger(KML.getClass)
 
   // TESTME
   def loadKML(resource: URL): KML = {

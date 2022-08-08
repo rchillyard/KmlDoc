@@ -4,6 +4,8 @@ import com.phasmidsoftware.kmldoc.Scale
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
+import scala.util.{Success, Using}
+
 class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   case class Greeting($: String)
@@ -29,51 +31,60 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererMyJunk: Renderable[MyJunk.type] = renderer0
     }
     import MyRenderers._
-    rendererMyJunk.render(MyJunk, FormatText(0), StateR()) shouldBe "{MyJunk}"
+    val wy = Using(StateR())(sr => rendererMyJunk.render(MyJunk, FormatText(0), sr))
+    wy shouldBe Success("{MyJunk}")
   }
 
   it should "renderer1" in {
     object MyRenderers extends Renderers {
       val rendererGreeting: Renderable[Greeting] = renderer1(Greeting)
     }
-    MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatText(1), StateR()) shouldBe "{Hello}"
+    val wy = Using(StateR())(sr => MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatText(1), sr))
+    wy shouldBe Success("{Hello}")
   }
 
   it should "renderer2A" in {
     object ComplexRenderers extends Renderers {
       val rendererComplex: Renderable[Complex] = renderer2(Complex)
     }
-    ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatText(0), StateR()) shouldBe """{ r="1.0", i="-1.0"}"""
+    val wy = Using(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatText(0), sr))
+    wy shouldBe Success("""{ r="1.0" i="-1.0" }""")
   }
 
   it should "renderer2B" in {
     object KVRenderers extends Renderers {
       val rendererKV: Renderable[KV] = renderer2(KV)
     }
-    KVRenderers.rendererKV.render(KV("a", -1), FormatText(0), StateR()) shouldBe """{ k="a", v="-1"}"""
+    val wy = Using(StateR())(sr => KVRenderers.rendererKV.render(KV("a", -1), FormatText(0), sr))
+    wy shouldBe Success("""{ k="a" v="-1" }""")
   }
 
   it should "renderer4" in {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVV] = renderer4(KVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatText(0), StateR()) shouldBe """{ k="a", v="-1", b="false", x="3.141592653589793"}"""
+    val wy = Using(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatText(0), sr))
+    wy shouldBe Success("""{ k="a" v="-1" b="false" x="3.141592653589793" }""")
   }
 
   it should "intRenderer" in {
-    Renderers.intRenderer.render(1, FormatText(0), StateR()) shouldBe "1"
+    val wy = Using(StateR())(sr => Renderers.intRenderer.render(1, FormatText(0), sr))
+    wy shouldBe Success("1")
   }
 
   it should "stringRenderer" in {
-    Renderers.stringRenderer.render("Hello", FormatText(0), StateR()) shouldBe "Hello"
+    val wy = Using(StateR())(sr => Renderers.stringRenderer.render("Hello", FormatText(0), sr))
+    wy shouldBe Success("Hello")
   }
 
   it should "booleanRenderer" in {
-    Renderers.booleanRenderer.render(true, FormatText(0), StateR()) shouldBe "true"
+    val wy = Using(StateR())(sr => Renderers.booleanRenderer.render(true, FormatText(0), sr))
+    wy shouldBe Success("true")
   }
 
   it should "doubleRenderer" in {
-    Renderers.doubleRenderer.render(math.Pi, FormatText(0), StateR()) shouldBe "3.141592653589793"
+    val wy = Using(StateR())(sr => Renderers.doubleRenderer.render(math.Pi, FormatText(0), sr))
+    wy shouldBe Success("3.141592653589793")
   }
 
   it should "sequenceRenderer" in {
@@ -81,18 +92,21 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererIntSeq: Renderable[Seq[Int]] = sequenceRenderer[Int]
     }
     import MyRenderers._
-    rendererIntSeq.render(Seq(42, 99, 1), FormatText(0), StateR()) shouldBe
-      """[42
-        |99
-        |1
-        |]""".stripMargin
+    val wy = Using(StateR())(sr => rendererIntSeq.render(Seq(42, 99, 1), FormatText(0), sr))
+    wy shouldBe
+      Success(
+        """[42
+          |99
+          |1
+          |]""".stripMargin)
   }
 
   it should "renderer5" in {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVVV] = renderer5(KVVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatText(0), StateR()) shouldBe """{ k="a", v="-1", b="false", x="3.141592653589793", l="42"}"""
+    val wy = Using(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatText(0), sr))
+    wy shouldBe Success("""{ k="a" v="-1" b="false" x="3.141592653589793" l="42" }""")
   }
 
   it should "optionRenderer" in {
@@ -100,18 +114,21 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererIntOption: Renderable[Option[Int]] = optionRenderer[Int]
     }
     import MyRenderers._
-    rendererIntOption.render(Some(42), FormatText(0), StateR()) shouldBe "42"
+    val wy = Using(StateR())(sr => rendererIntOption.render(Some(42), FormatText(0), sr))
+    wy shouldBe Success("42")
   }
 
   it should "longRenderer" in {
-    Renderers.longRenderer.render(42L, FormatText(0), StateR()) shouldBe "42"
+    val wy = Using(StateR())(sr => Renderers.longRenderer.render(42L, FormatText(0), sr))
+    wy shouldBe Success("42")
   }
 
   it should "renderer3" in {
     object KVVRenderers extends Renderers {
       val rendererKVV: Renderable[KVV] = renderer3(KVV)
     }
-    KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatText(0), StateR()) shouldBe """{ k="a", v="-1", b="false"}"""
+    val wy = Using(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatText(0), sr))
+    wy shouldBe Success("""{ k="a" v="-1" b="false" }""")
   }
 
   behavior of "Renderers (FormatXML)"
@@ -120,14 +137,16 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object MyRenderers extends Renderers {
       val rendererGreeting: Renderable[Greeting] = renderer1(Greeting)
     }
-    MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatXML(0), StateR()) shouldBe "<Greeting>Hello</Greeting>"
+    val wy = Using(StateR())(sr => MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatXML(0), sr))
+    wy shouldBe Success("<Greeting>Hello</Greeting>")
   }
 
   it should "renderer1A" in {
     object MyRenderers extends Renderers {
       val renderer: Renderable[Scale] = renderer1(Scale)
     }
-    MyRenderers.renderer.render(Scale(math.Pi), FormatXML(0), StateR()) shouldBe "<Scale>3.141592653589793</Scale>"
+    val wy = Using(StateR())(sr => MyRenderers.renderer.render(Scale(math.Pi), FormatXML(0), sr))
+    wy shouldBe Success("<Scale>3.141592653589793</Scale>")
   }
 
   it should "renderer0" in {
@@ -135,44 +154,52 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererMyJunk: Renderable[MyJunk.type] = renderer0
     }
     import MyRenderers._
-    rendererMyJunk.render(MyJunk, FormatXML(0), StateR()) shouldBe "<MyJunk$>MyJunk</MyJunk$>"
+    val wy = Using(StateR())(sr => rendererMyJunk.render(MyJunk, FormatXML(0), sr))
+    wy shouldBe Success("<MyJunk$>MyJunk</MyJunk$>")
   }
 
   it should "intRenderer" in {
-    Renderers.intRenderer.render(1, FormatXML(0), StateR()) shouldBe "1"
+    val wy = Using(StateR())(sr => Renderers.intRenderer.render(1, FormatXML(0), sr))
+    wy shouldBe Success("1")
   }
 
   it should "stringRenderer" in {
-    Renderers.stringRenderer.render("Hello", FormatXML(0), StateR()) shouldBe "Hello"
+    val wy = Using(StateR())(sr => Renderers.stringRenderer.render("Hello", FormatXML(0), sr))
+    wy shouldBe Success("Hello")
   }
 
   it should "booleanRenderer" in {
-    Renderers.booleanRenderer.render(true, FormatXML(0), StateR()) shouldBe "true"
+    val wy = Using(StateR())(sr => Renderers.booleanRenderer.render(true, FormatXML(0), sr))
+    wy shouldBe Success("true")
   }
 
   it should "renderer2A" in {
     object ComplexRenderers extends Renderers {
       val rendererComplex: Renderable[Complex] = renderer2(Complex)
     }
-    ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(0), StateR()) shouldBe "<Complex r=\"1.0\" i=\"-1.0\"></Complex>"
+    val wy = Using(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(0), sr))
+    wy shouldBe Success("<Complex r=\"1.0\" i=\"-1.0\" ></Complex>")
   }
 
   it should "renderer2B" in {
     object KVRenderers extends Renderers {
       val rendererKV: Renderable[KV] = renderer2(KV)
     }
-    KVRenderers.rendererKV.render(KV("a", -1), FormatXML(0), StateR()) shouldBe """<KV k="a" v="-1"></KV>"""
+    val wy = Using(StateR())(sr => KVRenderers.rendererKV.render(KV("a", -1), FormatXML(0), sr))
+    wy shouldBe Success("""<KV k="a" v="-1" ></KV>""")
   }
 
   it should "renderer4" in {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVV] = renderer4(KVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(0), StateR()) shouldBe """<KVVV k="a" v="-1" b="false" x="3.141592653589793"></KVVV>"""
+    val wy = Using(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(0), sr))
+    wy shouldBe Success("""<KVVV k="a" v="-1" b="false" x="3.141592653589793" ></KVVV>""")
   }
 
   it should "doubleRenderer" in {
-    Renderers.doubleRenderer.render(math.Pi, FormatXML(0), StateR()) shouldBe "3.141592653589793"
+    val wy = Using(StateR())(sr => Renderers.doubleRenderer.render(math.Pi, FormatXML(0), sr))
+    wy shouldBe Success("3.141592653589793")
   }
 
   it should "sequenceRenderer" in {
@@ -180,20 +207,22 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererIntSeq: Renderable[Seq[Int]] = sequenceRenderer[Int]
     }
     import MyRenderers._
-    rendererIntSeq.render(Seq(42, 99, 1), FormatXML(0), StateR()) shouldBe
+    val wy = Using(StateR())(sr => rendererIntSeq.render(Seq(42, 99, 1), FormatXML(0), sr))
+    wy shouldBe Success(
       """
         |42
         |99
         |1
         |
-        |""".stripMargin
+        |""".stripMargin)
   }
 
   it should "renderer5" in {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderable[KVVVV] = renderer5(KVVVV)
     }
-    KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(0), StateR()) shouldBe """<KVVVV k="a" v="-1" b="false" x="3.141592653589793" l="42"></KVVVV>"""
+    val wy = Using(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(0), sr))
+    wy shouldBe Success("""<KVVVV k="a" v="-1" b="false" x="3.141592653589793" l="42" ></KVVVV>""")
   }
 
   it should "optionRenderer" in {
@@ -201,17 +230,20 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererIntOption: Renderable[Option[Int]] = optionRenderer[Int]
     }
     import MyRenderers._
-    rendererIntOption.render(Some(42), FormatXML(0), StateR()) shouldBe "42"
+    val wy = Using(StateR())(sr => rendererIntOption.render(Some(42), FormatXML(0), sr))
+    wy shouldBe Success("42")
   }
 
   it should "longRenderer" in {
-    Renderers.longRenderer.render(42L, FormatXML(0), StateR()) shouldBe "42"
+    val wy = Using(StateR())(sr => Renderers.longRenderer.render(42L, FormatXML(0), sr))
+    wy shouldBe Success("42")
   }
 
   it should "renderer3" in {
     object KVVRenderers extends Renderers {
       val rendererKVV: Renderable[KVV] = renderer3(KVV)
     }
-    KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(0), StateR()) shouldBe """<KVV k="a" v="-1" b="false"></KVV>"""
+    val wy = Using(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(0), sr))
+    wy shouldBe Success("""<KVV k="a" v="-1" b="false" ></KVV>""")
   }
 }
