@@ -3,7 +3,6 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames}
 import com.phasmidsoftware.xml.Utilities.show
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -11,20 +10,18 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
 /**
- * Trait which defines many useful Extractors.
+ * Trait which defines many useful Extractors, where the result is an instance of Extractor[T].
  */
 trait Extractors {
 
   /**
-   * Method to yield an Extractor of Option[P].
+   * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
+   * This is generally used in conjunction with naming a case class member as "maybe"name.
    *
-   * TESTME
-   *
-   * @param ignored NOTE: unused parameter.
    * @tparam P the underlying type of the result.
    * @return an Extractor of Option[P].
    */
-  def extractorOption[P: Extractor](ignored: String): Extractor[Option[P]] =
+  def extractorOption[P: Extractor]: Extractor[Option[P]] =
     (node: Node) =>
       implicitly[Extractor[P]].extract(node) match {
         case Success(p) => Success(Some(p))
@@ -32,7 +29,7 @@ trait Extractors {
       }
 
   /**
-   * Extractor which will convert an Xml Node into a sequence of P objects.
+   * Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
    *
    * @param label the label of the child nodes to be returned.
    * @tparam P the underlying type of the result.
@@ -41,6 +38,15 @@ trait Extractors {
   def extractorSequence[P: Extractor](label: String): Extractor[Seq[P]] =
     (node: Node) =>
       Extractors.extractSequence[P](node \ label)
+
+  /**
+   * Method to create a new MultiExtractor based on type P such that the underlying type of the result
+   * is Seq[P].
+   *
+   * @tparam P the underlying (Extractor) type.
+   * @return a MultiExtractor of Seq[P]
+   */
+  def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
   /**
    * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
@@ -93,8 +99,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * TESTME
-   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -135,8 +139,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * TESTME
-   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -152,6 +154,27 @@ trait Extractors {
             t <- extractor01(construct.curried(p0), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs")) // TESTME
+      }
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with three members.
+   *
+   * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with three members.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractor30[P0: Extractor, P1: Extractor, P2: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
+    (node: Node) =>
+      fieldNames(fields) match {
+        case member0 :: fs =>
+          for {
+            p0 <- extractField[P0](member0)(node)
+            t <- extractor20[P1, P2, T](construct(p0, _, _), fs).extract(node)
+          } yield t
+        case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
       }
 
   /**
@@ -201,8 +224,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
-   * TESTME
-   *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -219,6 +240,28 @@ trait Extractors {
             t <- extractor02[P1, P2, T](construct(p0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
+      }
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with four members.
+   *
+   * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with four members.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractor40[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => T, fields: Seq[String] = Nil): Extractor[T] =
+    (node: Node) =>
+      fieldNames(fields) match {
+        case member0 :: fs =>
+          for {
+            p0 <- extractField[P0](member0)(node)
+            t <- extractor30[P1, P2, P3, T](construct(p0, _, _, _), fs).extract(node)
+          } yield t
+        case fs => Failure(XmlException(s"extractor4: insufficient field names: $fs")) // TESTME
       }
 
   /**
@@ -270,8 +313,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
-   * TESTME
-   *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -318,6 +359,29 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
+   * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with five members.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractor50[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
+    (node: Node) =>
+      fieldNames(fields) match {
+        case member0 :: fs =>
+          for {
+            p0 <- extractField[P0](member0)(node)
+            t <- extractor40[P1, P2, P3, P4, T](construct(p0, _, _, _, _), fs).extract(node)
+          } yield t
+        case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs")) // TESTME
+      }
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with five members.
+   *
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
@@ -342,8 +406,6 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
-   *
-   * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
@@ -414,15 +476,6 @@ trait Extractors {
           } yield t
         case fs => Failure(XmlException(s"extractor5: insufficient field names: $fs"))
       }
-
-  /**
-   * Method to create a new MultiExtractor based on type P such that the underlying type of the result
-   * is Seq[P].
-   *
-   * @tparam P the underlying (Extractor) type.
-   * @return a MultiExtractor of Seq[P]
-   */
-  def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 }
 
 /**
@@ -507,6 +560,9 @@ object Extractors {
    */
   implicit object LongMultiExtractor extends MultiExtractorBase[Long]
 
+  implicit val extractorText: Extractor[Text] = new Extractors {}.extractor10(Text)
+  implicit val extractorOptionalText: Extractor[Option[Text]] = new Extractors {}.extractorOption[Text]
+
   /**
    * Method to extract an optional value from a NodeSeq.
    *
@@ -520,25 +576,12 @@ object Extractors {
 
   /**
    * method to extract a singleton from a NodeSeq.
-   *
-   * CONSIDER why is this identical with extractAttribute?
    */
   def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
     extractSequence[P](nodeSeq) match {
       case Success(p :: Nil) => Success(p)
       // TESTME
       case Success(ps) => Failure(XmlException(s"extractSingleton: non-unique value: $ps"))
-      case Failure(x) => Failure(x)
-    }
-
-  /**
-   * method to extract an attribute from a NodeSeq.
-   */
-  def extractAttribute[P: Extractor](nodeSeq: NodeSeq): Try[P] =
-    extractSequence[P](nodeSeq) match {
-      case Success(p :: Nil) => Success(p)
-      // TESTME
-      case Success(ps) => Failure(XmlException(s"extractAttribute: non-unique value: $ps"))
       case Failure(x) => Failure(x)
     }
 
@@ -593,8 +636,9 @@ object Extractors {
    * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
    *
    * @param field the name of a member field:
-   *              if a singleton child, then field is as is
-   *              if an attribute, then field should begin with "_"
+   *              if the (text) content of the node, then the field should be "$";
+   *              if a singleton child, then field is as is;
+   *              if an attribute, then field should begin with "_";
    *              if an optional child, then field should begin with "maybe".
    * @param node  a Node whence field is to be extracted.
    * @tparam P the type to which Node should be converted [must be Extractor].
@@ -602,6 +646,9 @@ object Extractors {
    */
   def extractField[P: Extractor](field: String)(node: Node): Try[P] =
     (field match {
+      // NOTE special name for the (text) content of a node.
+      case "$" =>
+        "$" -> implicitly[Extractor[P]].extract(node)
       // NOTE attributes must match names where the case class member name starts with "_"
       case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
       case attribute(x) =>
@@ -610,21 +657,20 @@ object Extractors {
           case Some(py :: Nil) => py
           case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
         })
-      // NOTE child nodes are extracted using extractChildren
+      // NOTE child nodes are extracted using extractChildren, not here.
       case plural(x) =>
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
-      // NOTE attributes must match names where the case class member name starts with "_"
+      // NOTE optional members such that the name begins with "maybe"
       case optional(x) =>
-        // TESTME
         s"optional: $x" -> extractOptional[P](node \ x)
-      // NOTE this is a default case which is currently identical to the plural case.
+      // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
       case x =>
-        s"default: $x" -> extractSingleton[P](node \ x)
+        s"singleton: $x" -> extractSingleton[P](node \ x)
     }) match {
       case _ -> Success(p) => Success(p)
       case m -> Failure(x) =>
-        val message = s"extractField: field=$field, node=${show(node)}, m=$m"
-        logger.info(s"$message caused by $x")
+        val message = s"extractField ($m): field '$field' from node:\n    {${show(node)}}"
+        logger.warn(s"$message caused by $x")
         Failure(XmlException(message, x))
     }
 

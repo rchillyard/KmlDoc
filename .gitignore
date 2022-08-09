@@ -4,3 +4,8 @@
 .bsp/
 target/
 project/target
+
+xmlOutput.xml
+/xmlOutput.kml
+
+miniSampleOutput.kml
