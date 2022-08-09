@@ -2,10 +2,8 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml._
-import org.slf4j.{Logger, LoggerFactory}
-
 import java.net.URL
-import scala.collection.mutable
+import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -83,11 +81,13 @@ case class StyleMap(_id: String, Pairs: Seq[Pair])
 
 case class Folder(name: Text, Placemarks: Seq[Placemark])
 
-case class Placemark(name: Text, maybedescription: Option[Text], styleUrl: Text, LineStrings: Seq[LineString])
+case class Placemark(name: Text, maybedescription: Option[Text], styleUrl: Text, LineStrings: Seq[LineString], Points: Seq[Point])
 
 case class Tessellate($: String)
 
 case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])
+
+case class Point(coordinates: Seq[Coordinates])
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
@@ -137,7 +137,9 @@ object KmlExtractors extends Extractors {
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
   implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
-  implicit val extractorPlacemark: Extractor[Placemark] = extractor31(Placemark)
+  implicit val extractorPoint: Extractor[Point] = extractor01(Point)
+  implicit val extractorMultiPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point]
+  implicit val extractorPlacemark: Extractor[Placemark] = extractor32(Placemark)
   implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
   implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
   implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
@@ -194,7 +196,9 @@ trait KmlRenderers extends Renderers {
   implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate)
   implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
   implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer4(Placemark)
+  implicit val rendererPoint: Renderable[Point] = renderer1(Point)
+  implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point]
+  implicit val rendererPlacemark: Renderable[Placemark] = renderer5(Placemark)
   implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
   implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
@@ -206,20 +210,12 @@ trait KmlRenderers extends Renderers {
   implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>
     doRenderKML_Binding(t, format, stateR)
 
-  private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR) = {
-    val sb = new mutable.StringBuilder()
-    val r = t.kml
-    if (!stateR.isInternal) sb.append(format.formatName(open = Some(true), stateR.setName(s"""kml ${t.binding}""")))
-    val p0 = r.productElement(0)
-    val wy = Using(StateR())(sr => implicitly[Renderable[Seq[Document]]].render(p0.asInstanceOf[Seq[Document]], format.indent, sr))
+  private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR): String = {
+    val renderer: Renderable[KML] = renderer1(KML)
+    val wy = Using(stateR.addAttribute(s"""${t.binding}"""))(rs => renderer.render(t.kml, format, rs))
     wy match {
-      case Success(w) =>
-        sb.append(w)
-        if (!stateR.isInternal) sb.append(format.formatName(open = Some(false), stateR))
-        sb.toString()
-      case Failure(x) =>
-        KMLCompanion.logger.warn("doRenderKML_Binding: ", x)
-        ""
+      case Success(w) => w
+      case Failure(x) => logger.warn("doRenderKML_Binding", x); ""
     }
   }
 }

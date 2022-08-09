@@ -2,9 +2,21 @@ package com.phasmidsoftware.xml
 
 import scala.collection.mutable
 import scala.util.Try
-import scala.xml.Node
+import scala.xml.{Elem, Node}
 
 object Utilities {
+
+  /**
+   * The purpose of this method is to allow a String to be parsed as an XML entity, WITHOUT replace " by &quot;
+   *
+   * @param w the XML string to be parsed.
+   * @return an XML element.
+   */
+  def parseUnparsed(w: String): Elem = {
+    val unparsed = scala.xml.Unparsed(w) // unparsed is really used.
+    <xml>$unparsed</xml>
+  }
+
 
   def sequence[X](xys: Seq[Try[X]]): Try[Seq[X]] = xys.foldLeft(Try(Seq[X]())) {
     (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x

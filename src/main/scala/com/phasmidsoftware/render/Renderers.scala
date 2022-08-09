@@ -3,7 +3,6 @@ package com.phasmidsoftware.render
 import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractors, Text, XmlException}
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.annotation.unused
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -22,14 +21,8 @@ trait Renderers {
    * @tparam R the type of Renderable to be returned (must be a Product).
    * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
    */
-  def renderer0[R <: Product : ClassTag]: Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val sb = new mutable.StringBuilder()
-    sb.append(format.formatName(open = Some(true), stateR))
-    sb.append(format.formatName(open = None, stateR))
-    sb.append(r.toString)
-    sb.append(format.formatName(open = Some(false), stateR))
-    sb.toString()
-  }
+  def renderer0[R <: Product : ClassTag]: Renderable[R] = (_: R, format: Format, stateR: StateR) =>
+    doNestedRender(format, stateR, "", "", "")
 
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with one member.
@@ -125,7 +118,7 @@ trait Renderers {
   /**
    * Method to yield a renderer of Option[R].
    *
-   * @tparam R the (Renderable) underyling type to be rendered.
+   * @tparam R the (Renderable) underlying type to be rendered.
    * @return a function which takes an Option[R], a Format, and a StateR as parameters and yields a Renderable[R].
    */
   def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, stateR: StateR) => ro match {
@@ -313,6 +306,8 @@ abstract class BaseFormat(indents: Int) extends Format {
   val tab = "  "
 
   def newline: String = "\n" + (tab * indents)
+
+  protected def getClassName[T: ClassTag](stateR: StateR): String = stateR.maybeName.getOrElse(implicitly[ClassTag[T]].runtimeClass.getSimpleName)
 }
 
 case class FormatXML(indents: Int) extends BaseFormat(indents) {
@@ -324,7 +319,7 @@ case class FormatXML(indents: Int) extends BaseFormat(indents) {
   override def delimiter: String = " "
 
   def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = {
-    val name = stateR.maybeName.getOrElse(implicitly[ClassTag[T]].runtimeClass.getSimpleName)
+    val name = getClassName(stateR)
     open match {
       case Some(true) => s"<$name"
       case Some(false) => s"</$name>"
@@ -340,10 +335,13 @@ case class FormatText(indents: Int) extends BaseFormat(indents) {
 
   def indent: Format = copy(indents = indents + 1)
 
-  def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = open match {
-    case Some(true) => "{"
-    case Some(false) => "}"
-    case None => ""
+  def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = {
+    val name = getClassName(stateR)
+    open match {
+      case Some(true) => s"$name{"
+      case Some(false) => "}"
+      case None => ""
+    }
   }
 
   def sequencer(open: Option[Boolean]): String = open match {
@@ -394,8 +392,9 @@ case class StateR(maybeName: Option[String], private val attributes: mutable.Str
 
   def recurse: StateR = copy(interior = true)
 
-  def addAttribute(attrString: String): Unit = {
+  def addAttribute(attrString: String): StateR = {
     attributes.append(" " + attrString)
+    this
   }
 
   def getAttributes: String = {

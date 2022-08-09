@@ -2,12 +2,12 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.render.{FormatXML, StateR}
 import com.phasmidsoftware.xml.Text
+import com.phasmidsoftware.xml.Utilities.parseUnparsed
+import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-
-import java.io.FileWriter
 import scala.collection.Seq
-import scala.util.{Failure, Success, Using}
+import scala.util.{Failure, Success, Try, Using}
 import scala.xml.{Elem, XML}
 
 class KmlSpec extends AnyFlatSpec with should.Matchers {
@@ -48,7 +48,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  behavior of "LineString"
+  behavior of "Geometry"
 
   it should "extract LineString" in {
     val xml: Elem = <xml>
@@ -91,6 +91,30 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  it should "extract Point" in {
+    val xml: Elem = <xml>
+      <Point>
+        <coordinates>
+          -71.097293,42.478238,0
+        </coordinates>
+      </Point>
+    </xml>
+    extractorMultiPoint.extract(xml \ "Point") match {
+      case Success(ps) =>
+        ps.size shouldBe 1
+        val point: Point = ps.head
+        val cs: scala.Seq[Coordinates] = point.coordinates
+        cs.size shouldBe 1
+        val coordinates: Coordinates = cs.head
+        coordinates.coordinates.size shouldBe 1
+        val wy = Using(StateR())(sr => new KmlRenderers {}.rendererPoint.render(point, FormatXML(0), sr))
+        wy.isSuccess shouldBe true
+        println(wy.get)
+        wy.get shouldBe "<Point>\n  <coordinates>\n    -71.097293, 42.478238, 0\n    </coordinates>\n  \n  </Point>"
+      case Failure(x) => fail(x)
+    }
+  }
+
   behavior of "Placemark"
 
   it should "extract Placemark" in {
@@ -129,27 +153,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         coordinate.coordinates.size shouldBe 8
         val wy = Using(StateR())(sr => new KmlRenderers {}.rendererPlacemark.render(placemark, FormatXML(0), sr))
         wy.isSuccess shouldBe true
-        wy.get shouldBe
-          """<Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>""" +
-            """
-  <LineString><tessellate>1</tessellate>""" +
-            """
-    <coordinates>
-      -71.06992, 42.49424, 0
-      -71.07018, 42.49512, 0
-      -71.07021, 42.49549, 0
-      -71.07008, 42.49648, 0
-      -71.069849, 42.497415, 0
-      -71.06954, 42.49833, 0
-      -70.9257614, 42.5264001, 0
-      -70.9254345, 42.5262817, 0
-      </coordinates>
-    """ +
-                        """
-    </LineString>
-  """ +
-                        """
-  </Placemark>"""
+        wy.get shouldBe "<Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>" +
+                "<styleUrl>#line-006600-5000</styleUrl>\n    " +
+                "<LineString>" +
+                "<tessellate>1</tessellate>\n      <coordinates>\n        -71.06992, 42.49424, 0\n        -71.07018, 42.49512, 0\n        -71.07021, 42.49549, 0\n        -71.07008, 42.49648, 0\n        -71.069849, 42.497415, 0\n        -71.06954, 42.49833, 0\n        -70.9257614, 42.5264001, 0\n        -70.9254345, 42.5262817, 0\n        </coordinates>\n      \n      " +
+                "</LineString>" +
+                "\n    \n    \n  \n  \n  </Placemark>"
       case Failure(x) => fail(x)
     }
   }
@@ -199,7 +208,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         coordinate.coordinates.size shouldBe 8
         val wy = Using(StateR())(sr => new KmlRenderers {}.rendererFolder.render(folder, FormatXML(0), sr))
         wy.isSuccess shouldBe true
-        wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n    <LineString><tessellate>1</tessellate>\n      <coordinates>\n        -71.06992, 42.49424, 0\n        -71.07018, 42.49512, 0\n        -71.07021, 42.49549, 0\n        -71.07008, 42.49648, 0\n        -71.069849, 42.497415, 0\n        -71.06954, 42.49833, 0\n        -70.9257614, 42.5264001, 0\n        -70.9254345, 42.5262817, 0\n        </coordinates>\n      \n      </LineString>\n    \n    </Placemark>\n  \n  </Folder>".stripMargin
+        wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>"
       case Failure(x) => fail(x)
     }
   }
@@ -3054,6 +3063,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         coordinate.coordinates.size shouldBe 94
         val wy = Using(StateR())(sr => new KmlRenderers {}.rendererDocument.render(document, FormatXML(0), sr))
         wy.isSuccess shouldBe true
+        println(wy.get)
         wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n      <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
       case Failure(x) => fail(x)
     }
@@ -3502,7 +3512,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  it should "extract and render Kml from file" in {
+  it should "extract and render sample Kml from file" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
     extractorMultiKml.extract(xml) match {
@@ -3510,12 +3520,49 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml: KML = ks.head
         val w = kml.toString
-        w.length shouldBe 80042
+        w.length shouldBe 80808
       case Failure(x) => fail(x)
     }
   }
 
-  it should "extract and render Kml as XML from file" in {
+  it should "extract and render mini sample Kml from file" in {
+    val url = KML.getClass.getResource("minisample.kml")
+    val xml = XML.loadFile(url.getFile)
+    extractorMultiKml.extract(xml) match {
+      case Success(ks) =>
+        ks.size shouldBe 1
+        val kml: KML = ks.head
+        val w = kml.toString
+        w.length shouldBe 4977
+      case Failure(x) => fail(x)
+    }
+  }
+
+  it should "extract and render mini sample kml as XML from file" in {
+    val renderer = new KmlRenderers {}.rendererKml_Binding
+    val url = KML.getClass.getResource("minisample.kml")
+    val xml: Elem = XML.loadFile(url.getFile)
+    extractorMultiKml.extract(xml) match {
+      case Success(ks) =>
+        ks.size shouldBe 1
+        val kml = KML_Binding(ks.head, xml.scope)
+        val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
+        val filename = "miniSampleOutput.kml"
+        val fw = new FileWriter(filename)
+        fw.write(
+          """<?xml version="1.0" encoding="UTF-8"?>
+            |""".stripMargin)
+        fw.write(w)
+        fw.close()
+        val copy: Elem = parseUnparsed(w)
+        val ksy: Try[scala.Seq[KML]] = extractorMultiKml.extract(copy)
+        ksy should matchPattern { case Success(_ :: Nil) => }
+      case Failure(x) => fail(x)
+    }
+  }
+
+
+  it should "extract and render sample kml as XML from file" in {
     val renderer = new KmlRenderers {}.rendererKml_Binding
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -3526,15 +3573,14 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
         val filename = "xmlOutput.kml"
         val fw = new FileWriter(filename)
-        // NOTE we are unable to use XML.write because it replaces quotes with &quot;
         fw.write(
           """<?xml version="1.0" encoding="UTF-8"?>
             |""".stripMargin)
         fw.write(w)
         fw.close()
-      //              val copy: Elem = XML.loadFile(filename)
-      //              val ksy: Try[scala.Seq[KML]] = extractorMultiKml.extract(copy)
-      //              ksy should matchPattern { case Success(x :: Nil) => }
+        val copy: Elem = parseUnparsed(w)
+        val ksy: Try[scala.Seq[KML]] = extractorMultiKml.extract(copy)
+        ksy should matchPattern { case Success(_ :: Nil) => }
       case Failure(x) => fail(x)
     }
   }

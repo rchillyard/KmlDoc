@@ -602,7 +602,7 @@ object Extractors {
   private def extractChildren[P: MultiExtractor](node: Node, member: String): Try[P] = {
     val w = translateMemberName(member)
     val nodeSeq = node \ w
-    if (nodeSeq.isEmpty) logger.warn(s"extractChildren: no children found for child $w (for member $member) in ${show(node)}")
+    if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children found for child $w (for member $member) in ${show(node)}")
     implicitly[MultiExtractor[P]].extract(nodeSeq)
   }
 
@@ -669,7 +669,7 @@ object Extractors {
     }) match {
       case _ -> Success(p) => Success(p)
       case m -> Failure(x) =>
-        val message = s"extractField: field=$field, node=${show(node)}, m=$m"
+        val message = s"extractField ($m): field '$field' from node:\n    {${show(node)}}"
         logger.warn(s"$message caused by $x")
         Failure(XmlException(message, x))
     }
