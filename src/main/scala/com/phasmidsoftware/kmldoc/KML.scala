@@ -30,11 +30,10 @@ case class KML_Binding(kml: KML, binding: NamespaceBinding)
  *
  * @param name        an XML element of the form: <name>the name</name>.
  * @param description an XML element of the form: <description>the description</description>.
- * @param Styles      a sequence of Style elements.
- * @param StyleMaps   a sequence of StyleMap elements.
+ * @param Styles      a sequence of Style or StyleMap elements.
  * @param Folders     a sequence of Folder elements.
  */
-case class Document(name: Text, maybeOpen: Option[Int], description: Text, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
+case class Document(name: Text, maybeOpen: Option[Int], description: Text, Styles: Seq[StyleType], Folders: Seq[Folder])
 
 /**
  * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
@@ -61,6 +60,13 @@ case class Width($: Double)
 case class LineStyle(color: Color, width: Width)
 
 /**
+ * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
+ */
+sealed trait StyleType {
+  val _id: String
+}
+
+/**
  * Style element.
  * It seems there are two completely different types of Style element, but they are not distinguished.
  * Type A has IconStyle, LabelStyle, BalloonStyle;
@@ -74,11 +80,11 @@ case class LineStyle(color: Color, width: Width)
  * @param maybeBalloonStyle the balloon style (optional)
  * @param maybeLineStyle    the line style (optional)
  */
-case class Style(_id: String, maybeIconStyle: Option[IconStyle], maybeLabelStyle: Option[LabelStyle], maybeBalloonStyle: Option[BalloonStyle], maybeLineStyle: Option[LineStyle])
+case class Style(_id: String, maybeIconStyle: Option[IconStyle], maybeLabelStyle: Option[LabelStyle], maybeBalloonStyle: Option[BalloonStyle], maybeLineStyle: Option[LineStyle]) extends StyleType
 
 case class Pair(key: String, styleUrl: String)
 
-case class StyleMap(_id: String, Pairs: Seq[Pair])
+case class StyleMap(_id: String, Pairs: Seq[Pair]) extends StyleType
 
 case class Folder(name: Text, Placemarks: Seq[Placemark])
 
@@ -135,6 +141,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
   implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
   implicit val extractorStyleMap: Extractor[StyleMap] = extractor11(StyleMap)
+  implicit val extractorStyleType: Extractor[StyleType] = extractorAlt[StyleType, Style, StyleMap]
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
@@ -145,10 +152,10 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
   implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
   implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
-  implicit val extractorMultiStyle: MultiExtractor[Seq[Style]] = multiExtractor[Style]
+  implicit val extractorMultiStyle: MultiExtractor[Seq[StyleType]] = multiExtractor[StyleType]
   implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
   implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
-  implicit val extractorDocument: Extractor[Document] = extractor33(Document)
+  implicit val extractorDocument: Extractor[Document] = extractor32(Document)
   implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
   implicit val extractorKml: Extractor[KML] = extractor01(KML)
   implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
@@ -208,8 +215,10 @@ trait KmlRenderers extends Renderers {
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
   implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
+  implicit val rendererStyleType: Renderable[StyleType] = altRenderer[StyleType, Style, StyleMap]
+  implicit val rendererStyleTypes: Renderable[Seq[StyleType]] = sequenceRenderer[StyleType]
   implicit val renderOptionOpen: Renderable[Option[Int]] = optionRenderer
-  implicit val rendererDocument: Renderable[Document] = renderer6(Document)
+  implicit val rendererDocument: Renderable[Document] = renderer5(Document)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
   implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>

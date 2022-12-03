@@ -311,14 +311,17 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorMultiStyle.extract(xml \ "Style") match {
       case Success(ss) =>
         ss.size shouldBe 2
-        val style: Style = ss.head
-        style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
-        val wy = Using(StateR())(sr => new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), sr))
-        wy.isSuccess shouldBe true
-        wy.get shouldBe
-          """<Style id="icon-22-nodesc-normal"><IconStyle><scale>1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels" ></hotSpot></IconStyle><LabelStyle><scale>0.0</scale></LabelStyle><BalloonStyle><text>
-            |            <h3>$[name]</h3>
-            |          </text></BalloonStyle></Style>""".stripMargin
+        val styleType: StyleType = ss.head
+        styleType match {
+          case style: Style =>
+            style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
+            val wy = Using(StateR())(sr => new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), sr))
+            wy.isSuccess shouldBe true
+            wy.get shouldBe
+                    """<Style id="icon-22-nodesc-normal"><IconStyle><scale>1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels" ></hotSpot></IconStyle><LabelStyle><scale>0.0</scale></LabelStyle><BalloonStyle><text>
+                      |            <h3>$[name]</h3>
+                      |          </text></BalloonStyle></Style>""".stripMargin
+        }
       case Failure(x) => fail(x)
     }
 
@@ -374,11 +377,14 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorMultiStyle.extract(xml \ "Style") match {
       case Success(ss) =>
         ss.size shouldBe 2
-        val style: Style = ss.head
-        style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
-        val wy = Using(StateR())(sr => new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), sr))
-        wy.isSuccess shouldBe true
-        wy.get shouldBe "<Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\" ></hotSpot></IconStyle><LabelStyle><scale>0.0</scale></LabelStyle><BalloonStyle><text>\n            <h3>$[name]</h3>\n          </text></BalloonStyle></Style>".stripMargin
+        val styleType: StyleType = ss.head
+        styleType match {
+          case style: Style =>
+            style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
+            val wy = Using(StateR())(sr => new KmlRenderers {}.rendererStyle.render(style, FormatXML(0), sr))
+            wy.isSuccess shouldBe true
+            wy.get shouldBe "<Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\" ></hotSpot></IconStyle><LabelStyle><scale>0.0</scale></LabelStyle><BalloonStyle><text>\n            <h3>$[name]</h3>\n          </text></BalloonStyle></Style>".stripMargin
+        }
       case Failure(x) => fail(x)
     }
   }
@@ -3063,8 +3069,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         coordinate.coordinates.size shouldBe 94
         val wy = Using(StateR())(sr => new KmlRenderers {}.rendererDocument.render(document, FormatXML(0), sr))
         wy.isSuccess shouldBe true
-        println(wy.get)
-        wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n      <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
+//        println(wy.get)
+        wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
       case Failure(x) => fail(x)
     }
   }
@@ -3520,7 +3526,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml: KML = ks.head
         val w = kml.toString
-        w.length shouldBe 80813
+        println(w)
+        w.length shouldBe 79644
       case Failure(x) => fail(x)
     }
   }
@@ -3533,7 +3540,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         ks.size shouldBe 1
         val kml: KML = ks.head
         val w = kml.toString
-        w.length shouldBe 4982
+        println(w)
+        w.length shouldBe 4749
       case Failure(x) => fail(x)
     }
   }

@@ -153,6 +153,11 @@ trait Renderers {
     case None => ""
   }
 
+  def altRenderer[R, R0 <: R : Renderable, R1 <: R : Renderable]: Renderable[R] = (t: R, format: Format, stateR: StateR) => t match {
+    case r0: R0 => implicitly[Renderable[R0]].render(r0, format, stateR);
+    case r1: R1 => implicitly[Renderable[R1]].render(r1, format, stateR);
+  }
+
   /**
    * Method to return a Renderable of Seq[R].
    *
