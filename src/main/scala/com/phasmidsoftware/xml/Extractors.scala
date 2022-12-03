@@ -76,55 +76,55 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
-   * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
-   * @tparam T  the underlying type of the result, a Product with one member of type P0.
+   * @param construct a function (E0) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first (only) member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with one member of type E0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor10[E0: Extractor, T <: Product : ClassTag](construct: E0 => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member :: Nil =>
           for {
-            p0 <- extractField[P0](member)(node)
-          } yield construct(p0)
+            e0 <- extractField[E0](member)(node)
+          } yield construct(e0)
         case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
       }
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
-   * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
-   * @tparam T  the underlying type of the result, a Product with one member of type P0.
+   * @param construct a function (M0) => T, usually the apply method of a case class.
+   * @tparam M0 the (MultiExtractor) type of the first (only) member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with one member of type M0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor01[P0: MultiExtractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor01[M0: MultiExtractor, T <: Product : ClassTag](construct: M0 => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member :: Nil =>
           for {
-            p0 <- extractChildren(node, member)
-          } yield construct(p0)
+            m0 <- extractChildren(node, member)
+          } yield construct(m0)
         case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
       }
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @param construct a function (E0,E1) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first member of the Product type T.
+   * @tparam E1 the (Extractor) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor20[P0: Extractor, P1: Extractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor20[E0: Extractor, E1: Extractor, T <: Product : ClassTag](construct: (E0, E1) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractField[P0](member0)(node)
-            t <- extractor10(construct.curried(p0), fs).extract(node)
+            e0 <- extractField[E0](member0)(node)
+            t <- extractor10(construct.curried(e0), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs"))
       }
@@ -132,19 +132,19 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @param construct a function (E0,M0) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first member of the Product type T.
+   * @tparam M0 the (MultiExtractor) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor11[P0: Extractor, P1: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor11[E0: Extractor, M0: MultiExtractor, T <: Product : ClassTag](construct: (E0, M0) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractField[P0](member0)(node)
-            t <- extractor01(construct.curried(p0), fs).extract(node)
+            e0 <- extractField[E0](member0)(node)
+            t <- extractor01(construct.curried(e0), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs")) // TESTME
       }
@@ -152,19 +152,19 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
-   * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @param construct a function (M0,M1) => T, usually the apply method of a case class.
+   * @tparam M0 the (MultiExtractor) type of the first member of the Product type T.
+   * @tparam M1 the (MultiExtractor) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor02[P0: MultiExtractor, P1: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor02[M0: MultiExtractor, M1: MultiExtractor, T <: Product : ClassTag](construct: (M0, M1) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractChildren[P0](node, member0)
-            t <- extractor01(construct.curried(p0), fs).extract(node)
+            m0 <- extractChildren[M0](node, member0)
+            t <- extractor01(construct.curried(m0), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor2: insufficient field names: $fs")) // TESTME
       }
@@ -172,20 +172,20 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
-   * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @param construct a function (E0,E1,E2) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first member of the Product type T.
+   * @tparam E1 the (Extractor) type of the second member of the Product type T.
+   * @tparam E2 the (Extractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor30[P0: Extractor, P1: Extractor, P2: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor30[E0: Extractor, E1: Extractor, E2: Extractor, T <: Product : ClassTag](construct: (E0, E1, E2) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractField[P0](member0)(node)
-            t <- extractor20[P1, P2, T](construct(p0, _, _), fs).extract(node)
+            e0 <- extractField[E0](member0)(node)
+            t <- extractor20[E1, E2, T](construct(e0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
       }
@@ -193,20 +193,20 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
-   * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @param construct a function (E0,E1,M0) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first member of the Product type T.
+   * @tparam E1 the (Extractor) type of the second member of the Product type T.
+   * @tparam M0 the (MultiExtractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor21[P0: Extractor, P1: Extractor, P2: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor21[E0: Extractor, E1: Extractor, M0: MultiExtractor, T <: Product : ClassTag](construct: (E0, E1, M0) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractField[P0](member0)(node)
-            t <- extractor11[P1, P2, T](construct(p0, _, _), fs).extract(node)
+            e0 <- extractField[E0](member0)(node)
+            t <- extractor11[E1, M0, T](construct(e0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs")) // TESTME
       }
@@ -216,20 +216,20 @@ trait Extractors {
    *
    * TESTME
    *
-   * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @param construct a function (E0,M0,M1) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first member of the Product type T.
+   * @tparam M0 the (MultiExtractor) type of the second member of the Product type T.
+   * @tparam M1 the (MultiExtractor) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor12[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
+  def extractor12[E0: Extractor, M0: MultiExtractor, M1: MultiExtractor, T <: Product : ClassTag](construct: (E0, M0, M1) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) =>
       fieldNames(fields) match {
         case member0 :: fs =>
           for {
-            p0 <- extractField[P0](member0)(node)
-            t <- extractor02[P1, P2, T](construct(p0, _, _), fs).extract(node)
+            e0 <- extractField[E0](member0)(node)
+            t <- extractor02[M0, M1, T](construct(e0, _, _), fs).extract(node)
           } yield t
         case fs => Failure(XmlException(s"extractor3: insufficient field names: $fs"))
       }
