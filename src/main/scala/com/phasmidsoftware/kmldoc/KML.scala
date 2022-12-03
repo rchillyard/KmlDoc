@@ -34,7 +34,7 @@ case class KML_Binding(kml: KML, binding: NamespaceBinding)
  * @param StyleMaps   a sequence of StyleMap elements.
  * @param Folders     a sequence of Folder elements.
  */
-case class Document(name: Text, description: Text, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
+case class Document(name: Text, maybeOpen: Option[Int], description: Text, Styles: Seq[Style], StyleMaps: Seq[StyleMap], Folders: Seq[Folder])
 
 /**
  * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
@@ -48,6 +48,7 @@ case class Icon(href: Text)
 case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
 
 case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot)
+//case class IconStyle(maybeScale: Option[Scale], Icon: Icon, hotSpot: HotSpot)
 
 case class LabelStyle(scale: Scale)
 
@@ -117,6 +118,7 @@ object KmlExtractors extends Extractors {
 
   implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
   implicit val extractorScale: Extractor[Scale] = extractor10(Scale)
+  //  implicit val extractMaybeScale: Extractor[Option[Scale]] = extractorOption
   implicit val extractorIcon: Extractor[Icon] = extractor10(Icon)
   implicit val extractorColor: Extractor[Color] = extractor10(Color)
   implicit val extractorWidth: Extractor[Width] = extractor10(Width)
@@ -145,7 +147,8 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
   implicit val extractorMultiStyle: MultiExtractor[Seq[Style]] = multiExtractor[Style]
   implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
-  implicit val extractorDocument: Extractor[Document] = extractor23(Document)
+  implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
+  implicit val extractorDocument: Extractor[Document] = extractor33(Document)
   implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
   implicit val extractorKml: Extractor[KML] = extractor01(KML)
   implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
@@ -172,6 +175,7 @@ trait KmlRenderers extends Renderers {
   import Renderers._
 
   implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
+  //  implicit val rendererOptionScale: Renderable[Option[Scale]] = optionRenderer
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
   implicit val rendererWidth: Renderable[Width] = renderer1(Width)
@@ -204,7 +208,8 @@ trait KmlRenderers extends Renderers {
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
   implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
-  implicit val rendererDocument: Renderable[Document] = renderer5(Document)
+  implicit val renderOptionOpen: Renderable[Option[Int]] = optionRenderer
+  implicit val rendererDocument: Renderable[Document] = renderer6(Document)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
   implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>

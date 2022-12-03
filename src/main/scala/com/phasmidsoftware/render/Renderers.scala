@@ -116,6 +116,27 @@ trait Renderers {
   }
 
   /**
+   * Method to create a renderer fpr a Product (e.g., case class) with five members.
+   *
+   * @param construct a function which takes a P0, P1, P2, P3, P4 and yields an R (this is usually the apply method of a case class).
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam P3 the (Renderable) type of the fourth member of Product type R.
+   * @tparam P4 the (Renderable) type of the fifth member of Product type R.
+   * @tparam R  the (Renderable) type of Renderable to be returned (must be a Product).
+   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   */
+  def renderer6[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, P5: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val objectOuter = r.productElement(5).asInstanceOf[P5]
+    val constructorInner: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _, objectOuter)
+    val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3], r.productElement(4).asInstanceOf[P4])
+    val wInner = renderer5(constructorInner).render(objectInner, format.indent, stateR.recurse)
+    val wOuter = renderOuter(r, objectOuter, 4, format)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
+  }
+
+  /**
    * Method to yield a renderer of Option[R].
    *
    * @tparam R the (Renderable) underlying type to be rendered.
