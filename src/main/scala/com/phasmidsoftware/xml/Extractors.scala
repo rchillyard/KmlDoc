@@ -94,6 +94,24 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
+   * @param construct a function (E0) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first (only) member of the Product type T.
+   * @tparam T  the underlying type of the result, a Product with one member of type E0.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractor10B[B, E0: Extractor, T <: Product : ClassTag](construct: E0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
+    (node: Node) =>
+      fieldNames(fields) match {
+        case member :: Nil =>
+          for {
+            e0 <- extractField[E0](member)(node)
+          } yield construct(e0)
+        case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
+      }
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with one member.
+   *
    * @param construct a function (M0) => T, usually the apply method of a case class.
    * @tparam M0 the (MultiExtractor) type of the first (only) member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with one member of type M0.
