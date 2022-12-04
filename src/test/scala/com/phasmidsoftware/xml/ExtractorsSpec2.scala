@@ -49,8 +49,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         }
 
         implicit val extractorBase: Extractor[Base] = extractor10[Int, Base](Base.apply, Base.names)
-        private val extractorPartial: Extractor[Base => Simple] = extractor10B(Simple.apply)
-        implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractorPartial)
+        implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10B(Simple.apply))
     }
 
     behavior of "Extractors1"

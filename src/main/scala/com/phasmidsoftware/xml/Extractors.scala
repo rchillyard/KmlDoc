@@ -81,15 +81,10 @@ trait Extractors {
    * @tparam T  the underlying type of the result, a Product with one member of type E0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor10[E0: Extractor, T <: Product : ClassTag](construct: E0 => T, fields: Seq[String] = Nil): Extractor[T] =
-    (node: Node) =>
-      fieldNames(fields) match {
-        case member :: Nil =>
-          for {
-            e0 <- extractField[E0](member)(node)
-          } yield construct(e0)
-        case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
-      }
+  def extractor10[E0: Extractor, T <: Product : ClassTag](construct: E0 => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => {
+    val extractor: Extractor[Unit => T] = extractor10B[Unit, E0, T](e0 => u => construct(e0), fields)
+    extractor.extract(node) map (z => z())
+  }
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
