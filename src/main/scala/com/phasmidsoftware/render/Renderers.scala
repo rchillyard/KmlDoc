@@ -37,6 +37,10 @@ trait Renderers {
     doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
+//  def renderer1B[B >: R: Renderable, P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => B => R): Renderable[B => R] = new Renderable[B => R] {
+//    def render(t: B => R, format: Format, stateR: StateR): String = ???
+//  }
+
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with two members.
    *

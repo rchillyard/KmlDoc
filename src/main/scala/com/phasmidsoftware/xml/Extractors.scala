@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames}
+import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames, fieldNamesMaybeDropLast}
 import com.phasmidsoftware.xml.Utilities.show
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
@@ -82,7 +82,7 @@ trait Extractors {
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
   def extractor10[E0: Extractor, T <: Product : ClassTag](construct: E0 => T, fields: Seq[String] = Nil): Extractor[T] = (node: Node) => {
-    val extractor: Extractor[Unit => T] = extractor10B[Unit, E0, T](e0 => u => construct(e0), fields)
+    val extractor: Extractor[Unit => T] = extractor10B[Unit, E0, T](e0 => u => construct(e0), dropLast = false, fields)
     extractor.extract(node) map (z => z())
   }
 
@@ -94,9 +94,9 @@ trait Extractors {
    * @tparam T  the underlying type of the result, a Product with one member of type E0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractor10B[B, E0: Extractor, T <: Product : ClassTag](construct: E0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
+  def extractor10B[B, E0: Extractor, T <: Product : ClassTag](construct: E0 => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
     (node: Node) =>
-      fieldNames(fields) match {
+      fieldNamesMaybeDropLast(fields, dropLast) match {
         case member :: Nil =>
           for {
             e0 <- extractField[E0](member)(node)
@@ -773,8 +773,12 @@ object Extractors {
    * @tparam T the type (typically a case class) from which we will use reflection to get the field names (referred to only if fields is Nil)
    * @return the field names to be used.
    */
-  private def fieldNames[T: ClassTag](fields: Seq[String]) = fields match {
-    case Nil => Reflection.extractFieldNames(implicitly[ClassTag[T]]).toList
+  private def fieldNames[T: ClassTag](fields: Seq[String]) = Extractors.fieldNamesMaybeDropLast(fields)
+
+  private def fieldNamesMaybeDropLast[T: ClassTag](fields: Seq[String], dropLast: Boolean = false) = fields match {
+    case Nil =>
+      val result = Reflection.extractFieldNames(implicitly[ClassTag[T]], dropLast).toList
+      if (dropLast) result.init else result
     case ps => ps
   }
 
