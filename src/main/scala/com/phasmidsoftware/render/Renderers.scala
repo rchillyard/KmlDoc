@@ -1,5 +1,6 @@
 package com.phasmidsoftware.render
 
+import com.phasmidsoftware.core.WithSuper
 import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractors, Text, XmlException}
 import org.slf4j.{Logger, LoggerFactory}
@@ -8,11 +9,6 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Using}
-
-
-trait WithSuper[B] {
-  val superObject: B
-}
 
 /**
  * Trait which defines generic and standard renderers.
@@ -42,7 +38,7 @@ trait Renderers {
     doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
-  def renderer1Super[B: Renderable, P0: Renderable, R <: Product with WithSuper[B] : ClassTag](@unused ignored: P0 => B => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+  def renderer1Super[B <: Product: Renderable, P0: Renderable, R <: Product with WithSuper[R,B] : ClassTag](@unused ignored: P0 => B => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val p0 = r.productElement(0).asInstanceOf[P0]
     val wOuter = renderOuter(r, p0, 0, format)
     val wInner = implicitly[Renderable[B]].render(r.superObject, format, stateR)

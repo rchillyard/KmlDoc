@@ -1,5 +1,6 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.core.WithSuper
 import com.phasmidsoftware.render._
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
@@ -9,38 +10,9 @@ import scala.util.{Success, Try, Using}
 import scala.xml.{Elem, Node}
 
 class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
-    class Base(val _id: Int) extends Product {
-        def productArity: Int = 1
+    case class Base( _id: Int)
 
-        def productElement(n: Int): Any = n match {
-            case 0 => _id
-            case _ => XmlException(s"$n is out of range for class $getClass")
-        }
-
-        override def productElementName(n: Int): String = Base.names(n)
-
-        override def productElementNames: Iterator[String] = Base.names.iterator
-
-        def canEqual(that: Any): Boolean = that.isInstanceOf[Base]
-
-        override def equals(obj: Any): Boolean = obj match {
-            case Base(x) => x == _id
-            case _ => false
-        }
-
-    }
-
-    object Base {
-        def apply(x: Int): Base = new Base(x)
-
-        def unapply(base: Base): Option[Int] =
-            if (base eq null) None
-            else Some(base._id)
-
-        val names: List[String] = List("_id")
-    }
-
-    case class Simple($: String)(val superObject: Base) extends WithSuper[Base]
+    case class Simple($: String)(val superObject: Base) extends WithSuper[Simple, Base]
 
     import Extractors._
 
@@ -55,14 +27,14 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
          * @tparam T the underlying type of the resulting extractor.
          * @return an Extractor[T].
          */
-        def extractorSuper[B: Extractor, T <: Product with WithSuper[B] : ClassTag](extractorBT: Extractor[B => T]): Extractor[T] =
+        def extractorSuper[B <: Product: Extractor, T <: Product with WithSuper[T, B] : ClassTag](extractorBT: Extractor[B => T]): Extractor[T] =
             (node: Node) => {
                 val qy: Try[B => T] = extractorBT.extract(node)
                 val by: Try[B] = implicitly[Extractor[B]].extract(node)
                 for (q <- qy; b <- by) yield q(b)
             }
 
-        implicit val extractorBase: Extractor[Base] = extractor10[Int, Base](Base.apply, Base.names)
+        implicit val extractorBase: Extractor[Base] = extractor10[Int, Base](Base)
         implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10B(Simple.apply, dropLast = true))
     }
 
