@@ -38,17 +38,13 @@ trait Renderers {
     doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
-  def renderer1Super[B <: Product: Renderable, P0: Renderable, R <: Product with WithSuper[R,B] : ClassTag](@unused ignored: P0 => B => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val p0 = r.productElement(0).asInstanceOf[P0]
-    val wOuter = renderOuter(r, p0, 0, format)
-    val wInner = implicitly[Renderable[B]].render(r.superObject, format, stateR)
+  def renderer1Super[B <: Product : Renderable, P0: Renderable, R <: Product with WithSuper[R, B] : ClassTag](construct: P0 => B => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b: B = r.superObject
+    val constructOuter: P0 => R = construct(_)(b)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    val wOuter = renderer1(constructOuter).render(r, format.indent, stateR.recurse)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
   }
-
-//  def renderer1B[B >: R: Renderable, P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => B => R): Renderable[B => R] = new Renderable[B => R] {
-//    def render(t: B => R, format: Format, stateR: StateR): String =
-//      "renderer1B"
-//  }
 
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with two members.

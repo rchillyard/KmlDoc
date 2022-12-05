@@ -41,14 +41,8 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
     import Renderers._
 
     object MyRenderers extends Renderers {
-
-        def rendererSuper[B >: R : Renderable, R <: Product : ClassTag](rendererBR: Renderable[B => R], lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-            implicitly[Renderable[B]].render(lens(r), format, stateR)
-        }
-
         implicit val renderableBase: Renderable[Base] = renderer1[Int, Base](Base.apply)
         implicit val renderableSimple: Renderable[Simple] = renderer1Super(Simple.apply)
-//        implicit val renderableSimple: Renderable[Simple] = rendererSuper[Base, Simple](renderableB, s => s.base)
     }
 
     behavior of "Extractors"
@@ -76,8 +70,6 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         println(s"element 0: ${simple.productElement(0)}")
         val renderer: Renderable[Simple] = implicitly[Renderable[Simple]]
         val wy = Using(StateR())(sr => renderer.render(simple, FormatXML(0), sr))
-        // TODO swap these because it's the second one that we really want.
-        wy shouldBe Success("""<Simple><Base id="2" ></Base>Robin</Simple>""")
-//        wy shouldBe Success("""<Simple id="2" >Robin</Simple>""")
+        wy shouldBe Success("""<Simple id="2">Robin</Simple>""")
     }
 }
