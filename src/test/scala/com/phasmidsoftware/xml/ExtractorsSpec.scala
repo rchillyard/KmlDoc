@@ -1,10 +1,9 @@
 package com.phasmidsoftware.xml
 
+import java.util.regex.Matcher
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-
-import java.util.regex.Matcher
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, Node}
 
@@ -160,7 +159,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Simple1(1))
   }
 
-  it should "extractor10B" in {
+  it should "extractor10Super" in {
     val xml: Elem = <xml id="1"></xml>
     val extracted = MyExtractors.extractor10(Simple2).extract(xml)
     extracted shouldBe Success(Simple2("1"))

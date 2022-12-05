@@ -5,9 +5,8 @@ import com.phasmidsoftware.render._
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import scala.reflect.ClassTag
 import scala.util.{Success, Try, Using}
-import scala.xml.{Elem, Node}
+import scala.xml.Elem
 
 class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
     case class Base( _id: Int)
@@ -17,25 +16,8 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
     import Extractors._
 
     object MyExtractors extends Extractors {
-
-        /**
-         * Method to yield an Extractor[B => T] which will be used to extract the properties
-         * of T which do NOT belong to B.
-         *
-         * @param extractorBT an extractor for the type B => T.
-         * @tparam B the supertype of T.
-         * @tparam T the underlying type of the resulting extractor.
-         * @return an Extractor[T].
-         */
-        def extractorSuper[B <: Product: Extractor, T <: Product with WithSuper[T, B] : ClassTag](extractorBT: Extractor[B => T]): Extractor[T] =
-            (node: Node) => {
-                val qy: Try[B => T] = extractorBT.extract(node)
-                val by: Try[B] = implicitly[Extractor[B]].extract(node)
-                for (q <- qy; b <- by) yield q(b)
-            }
-
         implicit val extractorBase: Extractor[Base] = extractor10[Int, Base](Base)
-        implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10B(Simple.apply, dropLast = true))
+        implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10Super(Simple.apply, dropLast = true))
     }
 
     import Renderers._
