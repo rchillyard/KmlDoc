@@ -42,7 +42,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
     object MyRenderers extends Renderers {
         implicit val renderableBase: Renderable[Base] = renderer1[Int, Base](Base.apply)
-        implicit val renderableSimple: Renderable[Simple] = renderer1Super(Simple.apply)
+        implicit val renderableSimple: Renderable[Simple] = renderer1Super(Simple.apply)(_.superObject)
     }
 
     behavior of "Extractors"

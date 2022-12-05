@@ -2,12 +2,12 @@ package com.phasmidsoftware.core
 
 /**
  * Trait which defines the behavior of a super-type in XML object terms (especially KML).
- * Note that both types are expected to extend Product, typically as case classes.
+ * Note that both types are typically as case classes, but this is not required.
  *
  * @tparam T the type of the element.
  * @tparam S the type of its super-type.
  */
-trait WithSuper[T <: Product, S <: Product] {
+trait WithSuper[T, S] {
     val superObject: S
 }
 

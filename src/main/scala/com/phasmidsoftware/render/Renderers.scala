@@ -1,7 +1,5 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.core.WithSuper
-import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractors, Text, XmlException}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
@@ -16,11 +14,13 @@ import scala.util.{Failure, Success, Using}
  */
 trait Renderers {
 
+  import Renderers._
+
   /**
    * Method to create a renderer fpr a case class with no members, or a case object.
    *
    * @tparam R the type of Renderable to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return a Renderable[R].
    */
   def renderer0[R <: Product : ClassTag]: Renderable[R] = (_: R, format: Format, stateR: StateR) =>
     doNestedRender(format, stateR, "", "", "")
@@ -31,15 +31,25 @@ trait Renderers {
    * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
    * @tparam P0 the (Renderable) type of the (single) member of Product type R.
    * @tparam R  the type of Renderable to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return a Renderable[R].
    */
   def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val wOuter = renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format)
     doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
-  def renderer1Super[B <: Product : Renderable, P0: Renderable, R <: Product with WithSuper[R, B] : ClassTag](construct: P0 => B => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
-    val b: B = r.superObject
+  /**
+   * Alternative method to create a renderer fpr a Product (e.g., case class) with one member but also a super-object in a second parameter set.
+   *
+   * @param construct a function which takes a P0 and yields a function of B => R
+   *                  (this is usually the apply method of a case class that has a second parameter set with one parameter of type B).
+   * @tparam B  the (Renderable) type of the super-object of type R.
+   * @tparam P0 the (Renderable) type of the (single) member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer1Super[B: Renderable, P0: Renderable, R <: Product : ClassTag](construct: P0 => B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
     val constructOuter: P0 => R = construct(_)(b)
     val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
     val wOuter = renderer1(constructOuter).render(r, format.indent, stateR.recurse)
@@ -65,6 +75,24 @@ trait Renderers {
   }
 
   /**
+   * Method to create a renderer fpr a Product (e.g., case class) with two members but also a super-object in a second parameter set.
+   *
+   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @tparam B  the (Renderable) type of the super-object of type R.
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer2Super[B: Renderable, P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
+    val constructOuter: (P0, P1) => R = construct(_, _)(b)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    val wOuter = renderer2(constructOuter).render(r, format.indent, stateR.recurse)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
+  }
+
+  /**
    * Method to create a renderer fpr a Product (e.g., case class) with three members.
    *
    * @param construct a function which takes a P0, P1, P2 and yields an R (this is usually the apply method of a case class).
@@ -72,7 +100,7 @@ trait Renderers {
    * @tparam P1 the (Renderable) type of the second member of Product type R.
    * @tparam P2 the (Renderable) type of the third member of Product type R.
    * @tparam R  the type of Renderable to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return a Renderable[R].
    */
   def renderer3[P0: Renderable, P1: Renderable, P2: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(2).asInstanceOf[P2]
@@ -92,7 +120,7 @@ trait Renderers {
    * @tparam P2 the (Renderable) type of the third member of Product type R.
    * @tparam P3 the (Renderable) type of the fourth member of Product type R.
    * @tparam R  the type of Renderable to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return Renderable[R].
    */
   def renderer4[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(3).asInstanceOf[P3]
@@ -113,7 +141,7 @@ trait Renderers {
    * @tparam P3 the (Renderable) type of the fourth member of Product type R.
    * @tparam P4 the (Renderable) type of the fifth member of Product type R.
    * @tparam R  the (Renderable) type of Renderable to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return Renderable[R].
    */
   def renderer5[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(4).asInstanceOf[P4]
@@ -134,7 +162,7 @@ trait Renderers {
    * @tparam P3 the (Renderable) type of the fourth member of Product type R.
    * @tparam P4 the (Renderable) type of the fifth member of Product type R.
    * @tparam R  the (Renderable) type of Renderable to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return Renderable[R].
    */
   def renderer6[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, P5: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
     val objectOuter = r.productElement(5).asInstanceOf[P5]
@@ -149,7 +177,7 @@ trait Renderers {
    * Method to yield a renderer of Option[R].
    *
    * @tparam R the (Renderable) underlying type to be rendered.
-   * @return a function which takes an Option[R], a Format, and a StateR as parameters and yields a Renderable[R].
+   * @return a Renderable of Option[R].
    */
   def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, stateR: StateR) => ro match {
     case Some(r) =>
@@ -162,6 +190,16 @@ trait Renderers {
     case None => ""
   }
 
+  /**
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for sub-types of R.
+   *
+   * CONSIDER renaming and adding more possible sub-types.
+   *
+   * @tparam R  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of R.
+   * @tparam R1 another sub-type of R.
+   * @return a Renderable[R].
+   */
   def altRenderer[R, R0 <: R : Renderable, R1 <: R : Renderable]: Renderable[R] = (t: R, format: Format, stateR: StateR) => t match {
     case r0: R0 => implicitly[Renderable[R0]].render(r0, format, stateR);
     case r1: R1 => implicitly[Renderable[R1]].render(r1, format, stateR);
