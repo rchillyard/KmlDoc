@@ -9,6 +9,11 @@ import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Using}
 
+
+trait WithSuper[B] {
+  val superObject: B
+}
+
 /**
  * Trait which defines generic and standard renderers.
  *
@@ -37,8 +42,16 @@ trait Renderers {
     doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
   }
 
+  def renderer1Super[B: Renderable, P0: Renderable, R <: Product with WithSuper[B] : ClassTag](@unused ignored: P0 => B => R): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val p0 = r.productElement(0).asInstanceOf[P0]
+    val wOuter = renderOuter(r, p0, 0, format)
+    val wInner = implicitly[Renderable[B]].render(r.superObject, format, stateR)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
+  }
+
 //  def renderer1B[B >: R: Renderable, P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => B => R): Renderable[B => R] = new Renderable[B => R] {
-//    def render(t: B => R, format: Format, stateR: StateR): String = ???
+//    def render(t: B => R, format: Format, stateR: StateR): String =
+//      "renderer1B"
 //  }
 
   /**

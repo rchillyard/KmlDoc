@@ -1,7 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.kmldoc.KmlRenderers
-import com.phasmidsoftware.render.{Format, FormatXML, Renderable, Renderers, StateR}
+import com.phasmidsoftware.render._
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -10,11 +9,15 @@ import scala.util.{Success, Try, Using}
 import scala.xml.{Elem, Node}
 
 class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
-
     class Base(val _id: Int) extends Product {
         def productArity: Int = 1
 
-        def productElement(n: Int): Any = Base.names(n)
+        def productElement(n: Int): Any = n match {
+            case 0 => _id
+            case _ => XmlException(s"$n is out of range for class $getClass")
+        }
+
+        override def productElementName(n: Int): String = Base.names(n)
 
         override def productElementNames: Iterator[String] = Base.names.iterator
 
@@ -24,6 +27,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
             case Base(x) => x == _id
             case _ => false
         }
+
     }
 
     object Base {
@@ -36,7 +40,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val names: List[String] = List("_id")
     }
 
-    case class Simple($: String)(val base: Base) extends Base(base._id)
+    case class Simple($: String)(val superObject: Base) extends WithSuper[Base]
 
     import Extractors._
 
@@ -51,7 +55,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
          * @tparam T the underlying type of the resulting extractor.
          * @return an Extractor[T].
          */
-        def extractorSuper[B >: T : Extractor, T <: Product : ClassTag](extractorBT: Extractor[B => T]): Extractor[T] =
+        def extractorSuper[B: Extractor, T <: Product with WithSuper[B] : ClassTag](extractorBT: Extractor[B => T]): Extractor[T] =
             (node: Node) => {
                 val qy: Try[B => T] = extractorBT.extract(node)
                 val by: Try[B] = implicitly[Extractor[B]].extract(node)
@@ -62,29 +66,46 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10B(Simple.apply, dropLast = true))
     }
 
-//    object MyRenderers extends Renderers {
-//
-//        def rendererSuper[B >: R : Renderable, R <: Product : ClassTag](rendererBR: Renderable[B => R], lens: R => B): Renderable[R] = new Renderable[R] {
-//            def render(r: R, format: Format, stateR: StateR): String = {
-//                val w: String = implicitly[Renderable[B]].render(lens(r), format, stateR)
-//w
-//            }
-//        }
-//
-//        implicit val renderableBase: Renderable[Base] = renderer1[Int, Base](Base.apply)
-//        val renderableB: Renderable[Base => Simple] = renderer1B(Simple.apply)
-//        implicit val renderableSimple: Renderable[Simple] = rendererSuper[Base, Simple](renderableB, s => s.base)
-//    }
+    import Renderers._
 
-    behavior of "Extractors1"
+    object MyRenderers extends Renderers {
+
+        def rendererSuper[B >: R : Renderable, R <: Product : ClassTag](rendererBR: Renderable[B => R], lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+            implicitly[Renderable[B]].render(lens(r), format, stateR)
+        }
+
+        implicit val renderableBase: Renderable[Base] = renderer1[Int, Base](Base.apply)
+        implicit val renderableSimple: Renderable[Simple] = renderer1Super(Simple.apply)
+//        implicit val renderableSimple: Renderable[Simple] = rendererSuper[Base, Simple](renderableB, s => s.base)
+    }
+
+    behavior of "Extractors"
 
     it should "extract normal attribute" in {
         val xml: Elem = <simple id="2">Robin</simple>
         val extracted: Try[Simple] = MyExtractors.extractorSimple.extract(xml)
         extracted.isSuccess shouldBe true
         extracted.get.$ shouldBe "Robin"
-        extracted.get._id shouldBe 2
-//        val wy = Using(StateR())(sr => MyRenderers.renderableSimple.render(extracted.get, FormatXML(0), sr))
-//        wy shouldBe Success("")
+        extracted.get.superObject._id shouldBe 2
+    }
+
+    behavior of "Renderers"
+
+    it should "render Base" in {
+        import MyRenderers._
+        val base = Base(2)
+        val wy = Using(StateR())(sr => implicitly[Renderable[Base]].render(base, FormatXML(0), sr))
+        wy shouldBe Success("""<Base id="2" ></Base>""")
+    }
+
+    it should "render" in {
+        import MyRenderers._
+        val simple = Simple("Robin")(Base(2))
+        println(s"element 0: ${simple.productElement(0)}")
+        val renderer: Renderable[Simple] = implicitly[Renderable[Simple]]
+        val wy = Using(StateR())(sr => renderer.render(simple, FormatXML(0), sr))
+        // TODO swap these because it's the second one that we really want.
+        wy shouldBe Success("""<Simple><Base id="2" ></Base>Robin</Simple>""")
+//        wy shouldBe Success("""<Simple id="2" >Robin</Simple>""")
     }
 }
