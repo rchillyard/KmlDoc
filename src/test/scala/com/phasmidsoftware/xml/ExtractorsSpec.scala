@@ -159,7 +159,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Simple1(1))
   }
 
-  it should "extractor10Super" in {
+  it should "extractor10Partial" in {
     val xml: Elem = <xml id="1"></xml>
     val extracted = MyExtractors.extractor10(Simple2).extract(xml)
     extracted shouldBe Success(Simple2("1"))

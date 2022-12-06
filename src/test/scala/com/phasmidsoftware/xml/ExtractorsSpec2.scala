@@ -17,7 +17,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
     object MyExtractors extends Extractors {
         implicit val extractorBase: Extractor[Base] = extractor10[Int, Base](Base)
-        implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10Super(Simple.apply, dropLast = true))
+        implicit val extractorSimple: Extractor[Simple] = extractorSuper[Base, Simple](extractor10Partial(extractField[String], Simple.apply, dropLast = true))
     }
 
     import Renderers._
