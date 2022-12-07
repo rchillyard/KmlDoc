@@ -62,11 +62,12 @@ trait Extractors {
   def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
   /**
-   * Method to yield an Extractor[T] where T extends WithSuper[T, B].
-   * of T which do NOT belong to B.
+   * Method to yield an Extractor[T] where we have an Extractor[B => T].
+   * This will occur when we have a case class with an additional parameter set
+   * including one parameter of type B.
    *
    * @param extractorBtoT an extractor for the type B => T.
-   * @tparam B the supertype of T.
+   * @tparam B the type of the value in the additional parameter set of T.
    * @tparam T the underlying type of the resulting extractor.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -706,6 +707,13 @@ trait Extractors {
  * Companion object to Extractors.
  */
 object Extractors {
+
+  /**
+   * String extractor.
+   */
+  implicit object UnitExtractor extends Extractor[Unit] {
+    def extract(node: Node): Try[Unit] = Success(())
+  }
 
   /**
    * String extractor.
