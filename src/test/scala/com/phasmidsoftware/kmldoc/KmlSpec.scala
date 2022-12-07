@@ -311,7 +311,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorMultiStyle.extract(xml \ "Style") match {
       case Success(ss) =>
         ss.size shouldBe 2
-        val styleType: StyleSelectorBase = ss.head
+        val styleType: StyleType = ss.head
         styleType match {
           case style: Style =>
             style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
@@ -322,9 +322,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                       |            <h3>$[name]</h3>
                       |          </text></BalloonStyle></Style>""".stripMargin
         }
-      case Failure(x) =>
-        x.printStackTrace()
-        fail(x)
+      case Failure(x) => fail(x)
     }
 
   }
@@ -379,7 +377,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorMultiStyle.extract(xml \ "Style") match {
       case Success(ss) =>
         ss.size shouldBe 2
-        val styleType: StyleSelectorBase = ss.head
+        val styleType: StyleType = ss.head
         styleType match {
           case style: Style =>
             style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
@@ -411,7 +409,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ss) =>
         ss.size shouldBe 1
         val styleMap: StyleMap = ss.head
-        styleMap shouldBe StyleMap(KMLObject("icon-22-nodesc"), List(Pair("normal", "#icon-22-nodesc-normal"), Pair("highlight", "#icon-22-nodesc-highlight")))
+        styleMap shouldBe StyleMap("icon-22-nodesc", List(Pair("normal", "#icon-22-nodesc-normal"), Pair("highlight", "#icon-22-nodesc-highlight")))
         val wy = Using(StateR())(sr => new KmlRenderers {}.rendererStyleMap.render(styleMap, FormatXML(0), sr))
         wy.isSuccess shouldBe true
         wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n  <Pair>key=\"normal\"styleUrl=\"#icon-22-nodesc-normal\"</Pair>\n  <Pair>key=\"highlight\"styleUrl=\"#icon-22-nodesc-highlight\"</Pair>\n  \n  </StyleMap>"
