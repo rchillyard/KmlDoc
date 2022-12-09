@@ -311,7 +311,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorMultiStyle.extract(xml \ "Style") match {
       case Success(ss) =>
         ss.size shouldBe 2
-        val styleType: StyleSelector = ss.head
+        val styleType: StyleType = ss.head
         styleType match {
           case style: Style =>
             style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
@@ -377,7 +377,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractorMultiStyle.extract(xml \ "Style") match {
       case Success(ss) =>
         ss.size shouldBe 2
-        val styleType: StyleSelector = ss.head
+        val styleType: StyleType = ss.head
         styleType match {
           case style: Style =>
             style.maybeIconStyle shouldBe Some(IconStyle(Scale(1.1), Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png")), HotSpot(16, "pixels", 32, "insetPixels")))
