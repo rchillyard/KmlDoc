@@ -120,10 +120,11 @@ trait Extractors {
    *
    * @param construct a function (E0) => T, usually the apply method of a case class.
    * @tparam E0 the (Extractor) type of the first (only) member of the Product type T.
+   * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product with one member of type E0.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractorPartial10[B, E0: Extractor, T <: Product : ClassTag](construct: E0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] = (node: Node) => {
+  def extractorPartial10[E0: Extractor, B, T <: Product : ClassTag](construct: E0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] = (node: Node) => {
     val extractor: Extractor[B => T] = extractorPartial1[B, E0, T](extractField[E0], e0 => b => construct(e0)(b), dropLast = true, fields)
     extractor.extract(node)
   }
@@ -901,6 +902,7 @@ object Extractors {
         s"optional: $x" -> extractOptional[P](node \ x)
       // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
       case x =>
+        println(show(node))
         s"singleton: $x" -> extractSingleton[P](node \ x)
     }) match {
       case _ -> Success(p) => Success(p)
