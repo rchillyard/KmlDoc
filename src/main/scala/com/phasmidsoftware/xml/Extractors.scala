@@ -3,6 +3,7 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, fieldNames, fieldNamesMaybeDropLast}
 import com.phasmidsoftware.xml.Utilities.show
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -178,19 +179,20 @@ trait Extractors {
   def extractor02[M0: MultiExtractor, M1: MultiExtractor, T <: Product : ClassTag](construct: (M0, M1) => T, fields: Seq[String] = Nil): Extractor[T] =
     nestedExtractor2(extractChildren[M0], extractor01[M1, T], construct, fields)
 
-//  /**
-//   * Extractor which will convert an Xml Node into an instance of a case class with one member and one additional (non-member) parameter.
-//   *
-//   * @param construct a function (E0) => T, usually the apply method of a case class.
-//   * @tparam E0 the (Extractor) type of the first (only) member of the Product type T.
-//   * @tparam B  the type of the non-member parameter of T.
-//   * @tparam T  the underlying type of the result, a Product with one member of type E0.
-//   * @return an Extractor[T] whose method extract will convert a Node into a T.
-//   */
-//  def extractorPartial20[E0: Extractor, E1: Extractor, B, T <: Product : ClassTag](construct: (E0, E1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] = (node: Node) => {
-//    val extractor: Extractor[B => T] = extractorPartial2[B, E0, T](extractField[E0], e0 => b => construct(e0)(b), dropLast = true, fields)
-//    extractor.extract(node)
-//  }
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with one member and one additional (non-member) parameter.
+   *
+   * @param construct a function (E0) => T, usually the apply method of a case class.
+   * @tparam E0 the (Extractor) type of the first (only) member of the Product type T.
+   * @tparam B  the type of the non-member parameter of T.
+   * @tparam T  the underlying type of the result, a Product with one member of type E0.
+   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   */
+  def extractorPartial20[E0: Extractor, E1: Extractor, B, T <: Product : ClassTag](construct: (E0, E1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] = (node: Node) => {
+    val f: (E1 => B => T, Seq[String]) => Extractor[B => T] = extractorPartial10[E1, B, T](_, _)
+    val extractor: Extractor[B => T] = extractorPartial2[E0, E1, B, T](extractField[E0], f, construct, dropLast = true, fields)
+    extractor.extract(node)
+  }
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
@@ -700,12 +702,14 @@ trait Extractors {
     }
 
   /**
-   * Extractor which will convert an Xml Node into an instance of a case class with one member.
+   * Extractor which will convert an Xml Node into an instance of a case class with one member plus
+   * an "auxiliary" parameter of type B, declared in its own parameter set.
    *
    * @param construct a function P0 => T, usually the apply method of a case class.
    * @tparam P the (Extractor) type of the first (only) member of the Product type T.
-   * @tparam T the underlying type of the result, a Product with one member of type P0.
-   * @return an Extractor[T] whose method extract will convert a Node into a T.
+   * @tparam B the type of the auxiliary parameter of T.
+   * @tparam T the underlying type of the result, a Product.
+   * @return an Extractor[B => T] whose method extract will convert a Node into a B => T.
    */
   private def extractorPartial1[P, B, T <: Product : ClassTag](extractElementFunction: String => Node => Try[P], construct: P => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
     (node: Node) =>
@@ -716,6 +720,31 @@ trait Extractors {
           } yield construct(e0)
         case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
       }
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with two members plus
+   * an "auxiliary" parameter of type B, declared in its own parameter set.
+   *
+   * @param construct a function (P0, P1) => B => T, usually the apply method of a case class.
+   * @tparam P0 the type of the first member of the Product type T.
+   * @tparam P1 the type of the second member of the Product type T.
+   * @tparam B the type of the auxiliary parameter of T.
+   * @tparam T the underlying type of the result, a Product.
+   * @return an Extractor[B => T] whose method extract will convert a Node into a B => T.
+   */
+  private def extractorPartial2[P0, P1, B, T <: Product : ClassTag](extractElementFunction: String => Node => Try[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
+    (node: Node) => {
+      fieldNamesMaybeDropLast(fields, dropLast) match {
+        case member0 :: fs =>
+          for {
+            e0 <- extractElementFunction(member0)(node)
+            t <- nestedExtractorFunction(construct.curried(e0), fs).extract(node)
+          } yield t
+        case fs => Failure(XmlException(s"extractorPartial2: insufficient field names: $fs")) // TESTME
+      }
+    }
+
+  // END OF Extractors
 }
 
 /**
