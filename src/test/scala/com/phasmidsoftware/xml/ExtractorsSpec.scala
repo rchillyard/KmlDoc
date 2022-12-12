@@ -13,6 +13,15 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   case class Simple2(_id: String)
 
+  case class Simple3(__id: String = "Hello World!")
+
+  object Simple3 {
+    def apply(__id: Option[String]): Simple3 = __id match {
+      case Some(x) => new Simple3(x)
+      case None => new Simple3()
+    }
+  }
+
   /**
    * A case object for testing using extractor0.
    */
@@ -90,6 +99,12 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
   }
 
+  it should "extract normal optional attribute" in {
+    val xml: Elem = <kml id="2.2"></kml>
+    import Extractors.StringExtractor
+    extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
+  }
+
   it should "not extract reserved attribute" in {
     val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
     import Extractors.StringExtractor
@@ -159,10 +174,20 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Simple1(1))
   }
 
-  it should "extractorPartial1" in {
+  it should "extractor10B" in {
     val xml: Elem = <xml id="1"></xml>
     val extracted = MyExtractors.extractor10(Simple2).extract(xml)
     extracted shouldBe Success(Simple2("1"))
+  }
+
+  it should "extractor10C" in {
+    implicit val zz: Extractor[Option[String]] = new Extractors {}.extractorOption[String]
+    val xml: Elem = <xml></xml>
+    val construct: Option[String] => Simple3 = Simple3.apply
+    val extracted: Try[Simple3] = MyExtractors.extractor10(construct).extract(xml)
+    extracted.isSuccess shouldBe true
+    val result: Simple3 = extracted.get
+    result.__id shouldBe "Hello World!"
   }
 
   it should "multiExtractor[Document1]" in {
@@ -265,12 +290,12 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   // TODO add tests for extractor1, etc.
 
-  it should "extractorSequence" in {
+  it should "extractorIterable" in {
     implicit val ee: Extractor[Empty.type] = MyExtractors.extractor0[Empty.type](_ => Empty)
     val xml: Elem = <xml>
       <empty></empty> <empty></empty>
     </xml>
-    val extractedSeq: Try[Seq[Empty.type]] = MyExtractors.extractorSequence[Empty.type]("empty").extract(xml)
+    val extractedSeq: Try[Iterable[Empty.type]] = MyExtractors.extractorIterable[Empty.type]("empty").extract(xml)
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
   }
 
