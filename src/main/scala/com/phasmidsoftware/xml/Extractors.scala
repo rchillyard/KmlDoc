@@ -160,6 +160,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -257,6 +259,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -283,6 +287,8 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
+   *
+   * TESTME
    *
    * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
@@ -312,6 +318,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -340,6 +348,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
+   * TESTME
+   *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -353,6 +363,8 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
+   *
+   * TESTME
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
@@ -415,6 +427,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -445,6 +459,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -459,6 +475,8 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
+   *
+   * TESTME
    *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
@@ -573,6 +591,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -588,6 +608,8 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
+   *
+   * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
@@ -605,6 +627,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -620,6 +644,8 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
+   *
+   * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
@@ -637,6 +663,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
@@ -652,6 +680,8 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
+   *
+   * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
@@ -793,6 +823,8 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with six members and one auxiliary (non-member) parameter.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first member of the Product type T.
    * @tparam P1 the (Extractor) type of the second member of the Product type T.
@@ -929,6 +961,8 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with six members plus
    * an "auxiliary" parameter of type B, declared in its own parameter set.
    *
+   * TESTME
+   *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
    * @tparam P0 the type of the first member of the Product type T.
    * @tparam P1 the type of the second member of the Product type T.
@@ -960,6 +994,7 @@ object Extractors {
 
   /**
    * String extractor.
+   * TESTME
    */
   implicit object UnitExtractor extends Extractor[Unit] {
     def extract(node: Node): Try[Unit] = Success(())
@@ -1104,43 +1139,13 @@ object Extractors {
     case _ -> Success(p) => Success(p)
     case m -> Failure(x) =>
       x match {
-        case e: NoSuchFieldException => Success(None.asInstanceOf[P])
+        case _: NoSuchFieldException => Success(None.asInstanceOf[P])
         case _ =>
           val message = s"extractField ($m): field '$field' from node:\n    {${show(node)}}"
           logger.warn(s"$message caused by $x")
           Failure(XmlException(message, x))
       }
   }
-
-  private def doExtractField[P: Extractor](field: String, node: Node) = field match {
-    // NOTE special name for the (text) content of a node.
-    case "$" => "$" -> extractText[P](node)
-    // NOTE attributes must match names where the case class member name starts with "_"
-    case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
-    case optionalAttribute(x) => s"optional attribute: $x" -> extractOptionalAttribute[P](node, x)
-    case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-    // NOTE child nodes are extracted using extractChildren, not here.
-    case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
-    // NOTE optional members such that the name begins with "maybe"
-    case optional(x) => s"optional: $x" -> extractOptional[P](node \ x)
-    // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
-    case x => s"singleton: $x" -> extractSingleton[P](node \ x)
-  }
-
-  private def extractText[P: Extractor](node: Node) = implicitly[Extractor[P]].extract(node)
-
-  private def extractAttribute[P: Extractor](node: Node, x: String) =
-    (for (ns <- node.attribute(x)) yield for (n <- ns) yield implicitly[Extractor[P]].extract(n)) match {
-      case Some(py :: Nil) => py
-      case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
-    }
-
-  private def extractOptionalAttribute[P: Extractor](node: Node, x: String) =
-    (for (ns <- node.attribute(x)) yield for (n <- ns) yield implicitly[Extractor[P]].extract(n)) match {
-      case Some(py :: Nil) => py
-      case _ => Failure(new NoSuchFieldException)
-    }
-
   /**
    * Regular expression to match a plural name, viz. .....s
    */
@@ -1179,6 +1184,30 @@ object Extractors {
     if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children found for child $w (for member $member) in ${show(node)}")
     implicitly[MultiExtractor[P]].extract(nodeSeq)
   }
+
+  private def doExtractField[P: Extractor](field: String, node: Node) = field match {
+    // NOTE special name for the (text) content of a node.
+    case "$" => "$" -> extractText[P](node)
+    // NOTE attributes must match names where the case class member name starts with "_"
+    case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
+    case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
+    case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
+    // NOTE child nodes are extracted using extractChildren, not here.
+    case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
+    // NOTE optional members such that the name begins with "maybe"
+    case optional(x) => s"optional: $x" -> extractOptional[P](node \ x)
+    // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
+    case x => s"singleton: $x" -> extractSingleton[P](node \ x)
+  }
+
+  private def extractText[P: Extractor](node: Node): Try[P] = implicitly[Extractor[P]].extract(node)
+
+  private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
+    (for (ns <- node.attribute(x)) yield for (n <- ns) yield implicitly[Extractor[P]].extract(n)) match {
+      case Some(py :: Nil) => py
+      case _ if optional => Failure(new NoSuchFieldException)
+      case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
+    }
 
   /**
    * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
