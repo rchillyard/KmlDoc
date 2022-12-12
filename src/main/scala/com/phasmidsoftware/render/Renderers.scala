@@ -1,6 +1,7 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.xml.{Extractors, Text, XmlException}
+import com.phasmidsoftware.core.{Text, XmlException}
+import com.phasmidsoftware.xml.Extractors
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
 import scala.collection.mutable

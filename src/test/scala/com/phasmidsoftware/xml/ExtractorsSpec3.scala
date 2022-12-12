@@ -1,18 +1,16 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.WithSuper
 import com.phasmidsoftware.render._
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-
 import scala.util.{Success, Try, Using}
 import scala.xml.Elem
 
 class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
     case class Base(_id: Int)
 
-    case class Simple($: String, _x: Int)(val superObject: Base) extends WithSuper[Simple, Base]
+    case class Simple($: String, _x: Int)(val superObject: Base)
 
     import Extractors._
 

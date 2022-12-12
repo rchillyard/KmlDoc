@@ -1,4 +1,4 @@
-package com.phasmidsoftware.xml
+package com.phasmidsoftware.core
 
 import scala.collection.mutable
 import scala.util.Try
@@ -6,16 +6,16 @@ import scala.xml.{Elem, Node}
 
 object Utilities {
 
-  /**
-   * The purpose of this method is to allow a String to be parsed as an XML entity, WITHOUT replace " by &quot;
-   *
-   * @param w the XML string to be parsed.
-   * @return an XML element.
-   */
-  def parseUnparsed(w: String): Elem = {
-      val unparsed = scala.xml.Unparsed(w) // NOTE: unparsed really is used (ignore warning).
-      <xml>$unparsed</xml>
-  }
+    /**
+     * The purpose of this method is to allow a String to be parsed as an XML entity, WITHOUT replace " by &quot;
+     *
+     * @param w the XML string to be parsed.
+     * @return an XML element.
+     */
+    def parseUnparsed(w: String): Elem = {
+        val unparsed = scala.xml.Unparsed(w) // NOTE: unparsed really is used (ignore warning).
+        <xml>$unparsed</xml>
+    }
 
     /**
      * Method to transform a Seq of Try[X] into a Try of Seq[X].

@@ -1,5 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
+import com.phasmidsoftware.core.{Text, XmlException}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml._
 import java.net.URL

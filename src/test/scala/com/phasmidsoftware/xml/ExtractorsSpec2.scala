@@ -1,6 +1,5 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.WithSuper
 import com.phasmidsoftware.render._
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
@@ -11,7 +10,7 @@ import scala.xml.Elem
 class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
     case class Base( _id: Int)
 
-    case class Simple($: String)(val superObject: Base) extends WithSuper[Simple, Base]
+    case class Simple($: String)(val superObject: Base)
 
     import Extractors._
 

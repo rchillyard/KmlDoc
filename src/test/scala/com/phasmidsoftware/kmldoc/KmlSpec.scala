@@ -1,8 +1,8 @@
 package com.phasmidsoftware.kmldoc
 
+import com.phasmidsoftware.core.Text
+import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.render.{FormatXML, StateR}
-import com.phasmidsoftware.xml.Text
-import com.phasmidsoftware.xml.Utilities.parseUnparsed
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
