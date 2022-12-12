@@ -12,6 +12,188 @@ import scala.util.{Failure, Success, Using}
 import scala.xml.{Elem, NamespaceBinding, Node, XML}
 
 /**
+ * Super-type of all KML entities.
+ * See https://developers.google.com/kml/documentation/kmlreference
+ */
+class KmlObject
+
+/**
+ * Properties of KMLObject
+ *
+ * @param _id an optional identifier.
+ */
+case class KmlProperties(_id: String)
+
+/**
+ * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
+ */
+class StyleSelector() extends KmlObject
+
+case class StyleSelectorProperties(kmlProperties: KmlProperties)
+
+/**
+ * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
+ */
+class SubStyle() extends KmlObject
+
+case class SubStyleProperties()(val kmlProperties: KmlProperties)
+
+object SubStyleProperties {
+  val applyFunction: KmlProperties => SubStyleProperties = new SubStyleProperties()(_)
+}
+
+class ColorStyle() extends SubStyle
+
+case class ColorStyleProperties(color: Color, maybeColorMode: Option[ColorMode])(val subStyleProperties: SubStyleProperties)
+
+/**
+ * BalloonStyle
+ *
+ * NOTE Use of the color element has been deprecated (use bgColor instead.)
+ * NOTE According to the current KML reference, this object extends SubStyle or ColorStyle (it's not clear which).
+ *
+ * @param text                 the balloon text.
+ * @param maybeBgColor         optional background color (maybe it isn't optional if there's no color element).
+ * @param maybeTextColor       optional text color.
+ * @param displayMode          the display mode.
+ * @param colorStyleProperties the (auxiliary) color style properties.
+ */
+case class BalloonStyle(text: Text, maybeBgColor: Option[BgColor], maybeTextColor: Option[TextColor], displayMode: DisplayMode)(val colorStyleProperties: ColorStyleProperties) extends ColorStyle
+
+/**
+ * ListStyle
+ *
+ * NOTE According to the current KML reference, this object extends SubStyle or ColorStyle (it's not clear which).
+ *
+ * @param bgColor              optional background color (maybe it isn't optional if there's no color element).
+ * @param maybeListItemType    optional ListItemType.
+ * @param maybeItemIcon        the display mode.
+ * @param colorStyleProperties the (auxiliary) color style properties.
+ */
+case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], maybeItemIcon: Option[ItemIcon])(val colorStyleProperties: ColorStyleProperties) extends ColorStyle
+
+/**
+ * LineStyle
+ *
+ * @param width                the line width
+ * @param colorStyleProperties the (auxiliary) color style properties.
+ */
+case class LineStyle(width: Width)(val colorStyleProperties: ColorStyleProperties) extends ColorStyle
+
+/**
+ * PolyStyle
+ *
+ * @param fill                 the value of fill.
+ * @param outline              the value of outline.
+ * @param colorStyleProperties the (auxiliary) color style properties.
+ */
+case class PolyStyle(fill: Fill, outline: Outline)(val colorStyleProperties: ColorStyleProperties) extends ColorStyle
+
+/**
+ * LabelStyle
+ *
+ * @param scale                the scale.
+ * @param colorStyleProperties the (auxiliary) color style properties.
+ */
+case class LabelStyle(scale: Scale)(val colorStyleProperties: ColorStyleProperties) extends ColorStyle
+
+/**
+ * IconStyle
+ *
+ * @param scale                the Scale.
+ * @param Icon                 the Icon.
+ * @param hotSpot              the HotSpot
+ * @param maybeHeading         an optional Heading.
+ * @param colorStyleProperties the (auxiliary) color style properties.
+ */
+case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot, maybeHeading: Option[Heading])(val colorStyleProperties: ColorStyleProperties) extends ColorStyle
+
+/**
+ * Fill.
+ * NOTE that this is a boolean that is represented by 0 or 1.
+ *
+ * @param boolean whether to fill or not.
+ */
+case class Fill(boolean: Int)
+
+/**
+ * Outline.
+ * NOTE that this is a boolean that is represented by 0 or 1.
+ *
+ * @param boolean whether to outline or not.
+ */
+case class Outline(boolean: Int)
+
+/**
+ * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
+ *
+ * @param $ the value of the scale (a Double).
+ */
+case class Scale($: Double)
+
+/**
+ * Case class to represent a Heading which is represented in XML as, for example: <heading>1.1</heading>
+ *
+ * @param $ the value of the heading (a Double).
+ */
+case class Heading($: Double)
+
+case class BgColor($: String)
+
+/**
+ * TextColor
+ * Used by BalloonStyle.
+ *
+ * @param $ the color.
+ */
+case class TextColor($: String)
+
+/**
+ * DisplayMode which has values "default" or "hide".
+ * Used by BalloonStyle.
+ *
+ * @param $ the mode.
+ */
+case class DisplayMode($: String)
+
+/**
+ * ListItemType
+ * TODO this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
+ *
+ * @param $ the value.
+ */
+case class ListItemType($: String)
+
+/**
+ * State
+ * TODO this should be an enumerated type with values: open, closed, error, fetching0, fetching1, or fetching2
+ *
+ * @param $ the value.
+ */
+case class State($: String)
+
+/**
+ * ItemIcon
+ *
+ * @param state the state.
+ */
+case class ItemIcon(state: State, href: Text)
+
+case class Icon(href: Text)
+
+case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
+
+case class Color($: String)
+
+case class ColorMode($: String)
+
+case class Width($: Double)
+
+/**
+ * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
+ */
+
+/**
  * Case class to define a KML object.
  *
  * NOTE WELL: do not be tempted to add "_xmlns" as a member.
@@ -34,38 +216,7 @@ case class KML_Binding(kml: KML, binding: NamespaceBinding)
  * @param Styles      a sequence of Style or StyleMap elements.
  * @param Folders     a sequence of Folder elements.
  */
-case class Document(name: Text, maybeOpen: Option[Int], description: Text, Styles: Seq[StyleType], Folders: Seq[Folder])
-
-/**
- * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
- *
- * @param $ the value of the scale (a Double).
- */
-case class Scale($: Double)
-
-case class Icon(href: Text)
-
-case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
-
-case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot)
-//case class IconStyle(maybeScale: Option[Scale], Icon: Icon, hotSpot: HotSpot)
-
-case class LabelStyle(scale: Scale)
-
-case class BalloonStyle(text: Text)
-
-case class Color($: String)
-
-case class Width($: Double)
-
-case class LineStyle(color: Color, width: Width)
-
-/**
- * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
- */
-sealed trait StyleType {
-  val _id: String
-}
+case class Document(name: Text, maybeOpen: Option[Int], description: Text, Styles: Seq[StyleSelector], Folders: Seq[Folder])
 
 /**
  * Style element.
@@ -75,17 +226,14 @@ sealed trait StyleType {
  *
  * FIXME need to render Style (and StyleMap) correctly.
  *
- * @param _id               the identifier of the Style.
- * @param maybeIconStyle    the icon style (optional)
- * @param maybeLabelStyle   the label style (optional)
- * @param maybeBalloonStyle the balloon style (optional)
- * @param maybeLineStyle    the line style (optional)
+ * @param Styles a set of different types of Style.
+ *               CONSIDER constraining this set to be distinct.
  */
-case class Style(_id: String, maybeIconStyle: Option[IconStyle], maybeLabelStyle: Option[LabelStyle], maybeBalloonStyle: Option[BalloonStyle], maybeLineStyle: Option[LineStyle]) extends StyleType
+case class Style(Styles: Seq[ColorStyle])(val styleSelectorProperties: StyleSelectorProperties) extends StyleSelector
 
 case class Pair(key: String, styleUrl: String)
 
-case class StyleMap(_id: String, Pairs: Seq[Pair]) extends StyleType
+case class StyleMap(Pairs: Seq[Pair])(val styleSelectorProperties: StyleSelectorProperties) extends StyleSelector
 
 case class Folder(name: Text, Placemarks: Seq[Placemark])
 
@@ -109,7 +257,7 @@ object Coordinates {
 case class Coordinate(lat: String, long: String, alt: String)
 
 object Coordinate {
-  val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+  private val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
 
   def apply(w: String): Coordinate = w match {
     case latLong(long, lat, alt) => Coordinate(lat, long, alt)
@@ -123,26 +271,60 @@ object KmlExtractors extends Extractors {
 
   import Extractors._
 
+  implicit val extractorKmlProperties: Extractor[KmlProperties] = extractor10(KmlProperties)
+  implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
+  implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
+  implicit val extractorStyleSelectorProperties: Extractor[StyleSelectorProperties] = extractor10(StyleSelectorProperties.apply)
+  implicit val extractorBT1: Extractor[StyleSelectorProperties => Style] = extractorPartial01(Style.apply)
+  implicit val extractorBT2: Extractor[StyleSelectorProperties => StyleMap] = extractorPartial01(StyleMap.apply)
+  implicit val extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorProperties, Style](extractorBT1)
+  implicit val extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorProperties, StyleMap](extractorBT2)
+  implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
   implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
+  implicit val extractorFill: Extractor[Fill] = extractor10(Fill)
+  implicit val extractorOutline: Extractor[Outline] = extractor10(Outline)
   implicit val extractorScale: Extractor[Scale] = extractor10(Scale)
+  implicit val extractorHeading: Extractor[Heading] = extractor10(Heading)
+  implicit val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption
+  implicit val extractorListItemType: Extractor[ListItemType] = extractor10(ListItemType)
+  implicit val extractMaybeListItemType: Extractor[Option[ListItemType]] = extractorOption
+  implicit val extractorState: Extractor[State] = extractor10(State)
+  implicit val extractorTextColor: Extractor[TextColor] = extractor10(TextColor)
+  implicit val extractMaybeTextColor: Extractor[Option[TextColor]] = extractorOption
+  implicit val extractorItemIcon: Extractor[ItemIcon] = extractor20(ItemIcon)
+  implicit val extractMaybeItemIcon: Extractor[Option[ItemIcon]] = extractorOption
   //  implicit val extractMaybeScale: Extractor[Option[Scale]] = extractorOption
   implicit val extractorIcon: Extractor[Icon] = extractor10(Icon)
+  implicit val extractorBgColor: Extractor[BgColor] = extractor10(BgColor)
+  implicit val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption
   implicit val extractorColor: Extractor[Color] = extractor10(Color)
   implicit val extractorWidth: Extractor[Width] = extractor10(Width)
   implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot)
-  implicit val extractorIconStyle: Extractor[IconStyle] = extractor30(IconStyle)
-  implicit val extractorBalloonStyle: Extractor[BalloonStyle] = extractor10(BalloonStyle)
-  implicit val extractorLabelStyle: Extractor[LabelStyle] = extractor10(LabelStyle)
-  implicit val extractorLineStyle: Extractor[LineStyle] = extractor20(LineStyle)
+  implicit val extractorDisplayMode: Extractor[DisplayMode] = extractor10(DisplayMode)
+  implicit val extractorColorMode: Extractor[ColorMode] = extractor10(ColorMode)
+  implicit val extractMaybeColorMode: Extractor[Option[ColorMode]] = extractorOption
+  implicit val extractorKPP2SubStyleProperties: Extractor[KmlProperties => SubStyleProperties] = extractorPartial0[KmlProperties, SubStyleProperties](SubStyleProperties.applyFunction)
+  implicit val extractorSubStyleProperties: Extractor[SubStyleProperties] = extractorPartial[KmlProperties, SubStyleProperties](extractorKPP2SubStyleProperties)
+  implicit val extractorSSP2ColorStyleProperties: Extractor[SubStyleProperties => ColorStyleProperties] = extractorPartial20(ColorStyleProperties.apply)
+  implicit val extractorColorStyleProperties: Extractor[ColorStyleProperties] = extractorPartial[SubStyleProperties, ColorStyleProperties](extractorSSP2ColorStyleProperties)
+  implicit val extractorCSP2PolyStyle: Extractor[ColorStyleProperties => PolyStyle] = extractorPartial20(PolyStyle.apply)
+  implicit val extractorPolyStyle: Extractor[PolyStyle] = extractorPartial[ColorStyleProperties, PolyStyle](extractorCSP2PolyStyle)
+  implicit val extractorCSP2ListStyle: Extractor[ColorStyleProperties => ListStyle] = extractorPartial30(ListStyle.apply)
+  implicit val extractorListStyle: Extractor[ListStyle] = extractorPartial[ColorStyleProperties, ListStyle](extractorCSP2ListStyle)
+  implicit val extractorCSP2IconStyle: Extractor[ColorStyleProperties => IconStyle] = extractorPartial40(IconStyle.apply)
+  implicit val extractorIconStyle: Extractor[IconStyle] = extractorPartial[ColorStyleProperties, IconStyle](extractorCSP2IconStyle)
+  implicit val extractorCSP2BalloonStyle: Extractor[ColorStyleProperties => BalloonStyle] = extractorPartial40(BalloonStyle.apply)
+  implicit val extractorBalloonStyle: Extractor[BalloonStyle] = extractorPartial[ColorStyleProperties, BalloonStyle](extractorCSP2BalloonStyle)
+  implicit val extractorCSP2LabelStyle: Extractor[ColorStyleProperties => LabelStyle] = extractorPartial10(LabelStyle.apply)
+  implicit val extractorLabelStyle: Extractor[LabelStyle] = extractorPartial[ColorStyleProperties, LabelStyle](extractorCSP2LabelStyle)
+  implicit val extractorCSP2LineStyle: Extractor[ColorStyleProperties => LineStyle] = extractorPartial10(LineStyle.apply)
+  implicit val extractorLineStyle: Extractor[LineStyle] = extractorPartial[ColorStyleProperties, LineStyle](extractorCSP2LineStyle)
   implicit val extractMaybeIconStyle: Extractor[Option[IconStyle]] = extractorOption
   implicit val extractMaybeLabelStyle: Extractor[Option[LabelStyle]] = extractorOption
   implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption
   implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption
-  implicit val extractorStyle: Extractor[Style] = extractor50(Style)
-  implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
-  implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
-  implicit val extractorStyleMap: Extractor[StyleMap] = extractor11(StyleMap)
-  implicit val extractorStyleType: Extractor[StyleType] = extractorAlt[StyleType, Style, StyleMap]
+  implicit val extractorColorStyle: Extractor[ColorStyle] = Extractor.none[ColorStyle].orElse[BalloonStyle]().orElse[LineStyle]().orElse[IconStyle]().orElse[ListStyle]().orElse[PolyStyle]().orElse[LabelStyle]()
+  implicit val extractorMultiColorStyle: MultiExtractor[Seq[ColorStyle]] = multiExtractor[ColorStyle]
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
@@ -153,7 +335,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
   implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
   implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
-  implicit val extractorMultiStyle: MultiExtractor[Seq[StyleType]] = multiExtractor[StyleType]
+  implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractor[StyleSelector]
   implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
   implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
   implicit val extractorDocument: Extractor[Document] = extractor32(Document)
@@ -182,24 +364,50 @@ trait KmlRenderers extends Renderers {
 
   import Renderers._
 
+  implicit val rendererKmlProperties: Renderable[KmlProperties] = renderer1(KmlProperties)
   implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
   //  implicit val rendererOptionScale: Renderable[Option[Scale]] = optionRenderer
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
+  implicit val rendererBgColor: Renderable[BgColor] = renderer1(BgColor)
+  implicit val rendererOptionBgColor: Renderable[Option[BgColor]] = optionRenderer
+  implicit val rendererTextColor: Renderable[TextColor] = renderer1(TextColor)
+  implicit val rendererOptionTextColor: Renderable[Option[TextColor]] = optionRenderer
+  implicit val rendererColorMode: Renderable[ColorMode] = renderer1(ColorMode)
+  implicit val rendererOptionColorMode: Renderable[Option[ColorMode]] = optionRenderer
   implicit val rendererWidth: Renderable[Width] = renderer1(Width)
+  implicit val rendererHeading: Renderable[Heading] = renderer1(Heading)
+  implicit val rendererFill: Renderable[Fill] = renderer1(Fill)
+  implicit val rendererOutline: Renderable[Outline] = renderer1(Outline)
+  implicit val rendererOptionHeading: Renderable[Option[Heading]] = optionRenderer
+  implicit val rendererListItemType: Renderable[ListItemType] = renderer1(ListItemType)
+  implicit val rendererOptionListItemType: Renderable[Option[ListItemType]] = optionRenderer
   implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot)
-  implicit val rendererIconStyle: Renderable[IconStyle] = renderer3(IconStyle)
-  implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer1(BalloonStyle)
-  implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1(LabelStyle)
-  implicit val rendererLineStyle: Renderable[LineStyle] = renderer2(LineStyle)
+  implicit val rendererState: Renderable[State] = renderer1(State)
+  implicit val rendererOptionState: Renderable[Option[State]] = optionRenderer
+  implicit val rendererItemIcon: Renderable[ItemIcon] = renderer2(ItemIcon)
+  implicit val rendererOptionItemIcon: Renderable[Option[ItemIcon]] = optionRenderer
+  private val fKP2SSP: KmlProperties => SubStyleProperties = k => new SubStyleProperties()(k)
+  implicit val rendererSubStyleProperties: Renderable[SubStyleProperties] = renderer0Super(fKP2SSP)(x => x.kmlProperties)
+  implicit val rendererColorStyleProperties: Renderable[ColorStyleProperties] = renderer2Super(ColorStyleProperties.apply)(x => x.subStyleProperties)
+  implicit val rendererIconStyle: Renderable[IconStyle] = renderer4Super(IconStyle.apply)(x => x.colorStyleProperties)
+  implicit val rendererDisplayMode: Renderable[DisplayMode] = renderer1(DisplayMode)
+  implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer4Super(BalloonStyle.apply)(_.colorStyleProperties)
+  implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1Super(LabelStyle.apply)(_.colorStyleProperties)
+  implicit val rendererLineStyle: Renderable[LineStyle] = renderer1Super(LineStyle.apply)(_.colorStyleProperties)
+  implicit val rendererListStyle: Renderable[ListStyle] = renderer3Super(ListStyle.apply)(_.colorStyleProperties)
+  implicit val rendererPolyStyle: Renderable[PolyStyle] = renderer2Super(PolyStyle.apply)(_.colorStyleProperties)
   implicit val rendererOptionLineStyle: Renderable[Option[LineStyle]] = optionRenderer
   implicit val rendererOptionLabelStyle: Renderable[Option[LabelStyle]] = optionRenderer
   implicit val rendererOptionBalloonStyle: Renderable[Option[BalloonStyle]] = optionRenderer
   implicit val rendererOptionIconStyle: Renderable[Option[IconStyle]] = optionRenderer
-  implicit val rendererStyle: Renderable[Style] = renderer5(Style)
+  implicit val rendererStyleSelectorProperties: Renderable[StyleSelectorProperties] = renderer1(StyleSelectorProperties)
+  implicit val rendererColorStyle: Renderable[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle]
+  implicit val rendererColorStyles: Renderable[Seq[ColorStyle]] = sequenceRenderer[ColorStyle]
+  implicit val rendererStyle: Renderable[Style] = renderer1Super(Style.apply)(_.styleSelectorProperties)
   implicit val rendererPair: Renderable[Pair] = renderer2(Pair)
   implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair]
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer2(StyleMap)
+  implicit val rendererStyleMap: Renderable[StyleMap] = renderer1Super(StyleMap.apply)(_.styleSelectorProperties)
   implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: StateR) => s"${t.long}, ${t.lat}, ${t.alt}"
   implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
   implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
@@ -216,8 +424,8 @@ trait KmlRenderers extends Renderers {
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
   implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
-  implicit val rendererStyleType: Renderable[StyleType] = altRenderer[StyleType, Style, StyleMap]
-  implicit val rendererStyleTypes: Renderable[Seq[StyleType]] = sequenceRenderer[StyleType]
+  implicit val rendererStyleType: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap]
+  implicit val rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector]
   implicit val renderOptionOpen: Renderable[Option[Int]] = optionRenderer
   implicit val rendererDocument: Renderable[Document] = renderer5(Document)
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]

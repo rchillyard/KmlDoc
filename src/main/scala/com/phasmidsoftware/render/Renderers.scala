@@ -27,6 +27,23 @@ trait Renderers {
     doNestedRender(format, stateR, "", "", "")
 
   /**
+   * Alternative method to create a renderer fpr a Product (e.g., case class) with one member but also an auxiliary object in a second parameter set.
+   *
+   * CONSIDER rename each of theses renderXSuper methods to renderXAux.
+   *
+   * @param construct a function which takes a P0 and yields a function of B => R
+   *                  (this is usually the apply method of a case class that has a second parameter set with one parameter of type B).
+   * @tparam B the (Renderable) type of the auxiliary object of type R.
+   * @tparam R the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer0Super[B: Renderable, R <: Product : ClassTag](construct: B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    doNestedRender(format, stateR, wInner, "", r.productElementName(0))
+  }
+
+  /**
    * Method to create a renderer fpr a Product (e.g., case class) with one member.
    *
    * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
@@ -40,11 +57,11 @@ trait Renderers {
   }
 
   /**
-   * Alternative method to create a renderer fpr a Product (e.g., case class) with one member but also a super-object in a second parameter set.
+   * Alternative method to create a renderer fpr a Product (e.g., case class) with one member but also an auxiliary object in a second parameter set.
    *
    * @param construct a function which takes a P0 and yields a function of B => R
    *                  (this is usually the apply method of a case class that has a second parameter set with one parameter of type B).
-   * @tparam B  the (Renderable) type of the super-object of type R.
+   * @tparam B  the (Renderable) type of the auxiliary object of type R.
    * @tparam P0 the (Renderable) type of the (single) member of Product type R.
    * @tparam R  the type of Renderable to be returned (must be a Product).
    * @return a Renderable[R].
@@ -76,10 +93,10 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer fpr a Product (e.g., case class) with two members but also a super-object in a second parameter set.
+   * Method to create a renderer fpr a Product (e.g., case class) with two members but also an auxiliary object in a second parameter set.
    *
    * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
-   * @tparam B  the (Renderable) type of the super-object of type R.
+   * @tparam B  the (Renderable) type of the auxiliary object of type R.
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
    * @tparam R  the type of Renderable to be returned (must be a Product).
@@ -113,6 +130,25 @@ trait Renderers {
   }
 
   /**
+   * Method to create a renderer fpr a Product (e.g., case class) with three members but also an auxiliary object in a second parameter set.
+   *
+   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @tparam B  the (Renderable) type of the auxiliary object of type R.
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer3Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2) => B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
+    val constructOuter: (P0, P1, P2) => R = construct(_, _, _)(b)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    val wOuter = renderer3(constructOuter).render(r, format.indent, stateR.recurse)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
+  }
+
+  /**
    * Method to create a renderer fpr a Product (e.g., case class) with four members.
    *
    * @param construct a function which takes a P0, P1, P2, P3 and yields an R (this is usually the apply method of a case class).
@@ -130,6 +166,26 @@ trait Renderers {
     val wInner = renderer3(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 3, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
+  }
+
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with four members but also an auxiliary object in a second parameter set.
+   *
+   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @tparam B  the (Renderable) type of the auxiliary object of type R.
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam P3 the (Renderable) type of the fourth member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer4Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
+    val constructOuter: (P0, P1, P2, P3) => R = construct(_, _, _, _)(b)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    val wOuter = renderer4(constructOuter).render(r, format.indent, stateR.recurse)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
   }
 
   /**
@@ -192,18 +248,93 @@ trait Renderers {
   }
 
   /**
-   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for sub-types of R.
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for two sub-types of T.
    *
-   * CONSIDER renaming and adding more possible sub-types.
-   *
-   * @tparam R  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of R.
-   * @tparam R1 another sub-type of R.
-   * @return a Renderable[R].
+   * @tparam T  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of T.
+   * @tparam R1 another sub-type of T.
+   * @return a Renderable[T].
    */
-  def altRenderer[R, R0 <: R : Renderable, R1 <: R : Renderable]: Renderable[R] = (t: R, format: Format, stateR: StateR) => t match {
-    case r0: R0 => implicitly[Renderable[R0]].render(r0, format, stateR);
-    case r1: R1 => implicitly[Renderable[R1]].render(r1, format, stateR);
+  def rendererSuper2[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag]: Renderable[T] = (t: T, format: Format, stateR: StateR) => t match {
+    case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
+    case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
+    case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+  }
+
+  /**
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for three sub-types of T.
+   *
+   * @tparam T  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of T.
+   * @tparam R1 another sub-type of T.
+   * @tparam R2 another sub-type of T.
+   * @return a Renderable[T].
+   */
+  def rendererSuper3[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag]: Renderable[T] = (t: T, format: Format, stateR: StateR) => t match {
+    case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
+    case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
+    case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
+    case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+  }
+
+  /**
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for four sub-types of T.
+   *
+   * @tparam T  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of T.
+   * @tparam R1 another sub-type of T.
+   * @tparam R2 another sub-type of T.
+   * @tparam R3 another sub-type of T.
+   * @return a Renderable[T].
+   */
+  def rendererSuper4[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag, R3 <: T : Renderable : ClassTag]: Renderable[T] = (t: T, format: Format, stateR: StateR) => t match {
+    case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
+    case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
+    case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
+    case r: R3 => implicitly[Renderable[R3]].render(r, format, stateR);
+    case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+  }
+
+  /**
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for five sub-types of T.
+   *
+   * @tparam T  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of T.
+   * @tparam R1 another sub-type of T.
+   * @tparam R2 another sub-type of T.
+   * @tparam R3 another sub-type of T.
+   * @tparam R4 another sub-type of T.
+   * @return a Renderable[T].
+   */
+  def rendererSuper5[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag, R3 <: T : Renderable : ClassTag, R4 <: T : Renderable : ClassTag]: Renderable[T] = (t: T, format: Format, stateR: StateR) => t match {
+    case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
+    case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
+    case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
+    case r: R3 => implicitly[Renderable[R3]].render(r, format, stateR);
+    case r: R4 => implicitly[Renderable[R4]].render(r, format, stateR);
+    case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+  }
+
+  /**
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for six sub-types of T.
+   *
+   * @tparam T  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of T.
+   * @tparam R1 another sub-type of T.
+   * @tparam R2 another sub-type of T.
+   * @tparam R3 another sub-type of T.
+   * @tparam R4 another sub-type of T.
+   * @tparam R5 another sub-type of T.
+   * @return a Renderable[T].
+   */
+  def rendererSuper6[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag, R3 <: T : Renderable : ClassTag, R4 <: T : Renderable : ClassTag, R5 <: T : Renderable : ClassTag]: Renderable[T] = (t: T, format: Format, stateR: StateR) => t match {
+    case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
+    case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
+    case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
+    case r: R3 => implicitly[Renderable[R3]].render(r, format, stateR);
+    case r: R4 => implicitly[Renderable[R4]].render(r, format, stateR);
+    case r: R5 => implicitly[Renderable[R5]].render(r, format, stateR);
+    case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
   }
 
   /**
@@ -306,7 +437,8 @@ object Renderers {
 
   val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
-  val cdata: Regex = """.*([<&>]).*""".r
+  private val cdata: Regex = """.*([<&>]).*""".r
+
   implicit val stringRenderer: Renderable[String] = (t: String, _: Format, stateR: StateR) =>
     renderAttribute(
       t match {
@@ -377,7 +509,7 @@ trait Format {
 abstract class BaseFormat(indents: Int) extends Format {
   val name: String
 
-  val tab = "  "
+  private val tab = "  "
 
   def newline: String = "\n" + (tab * indents)
 

@@ -66,6 +66,8 @@ trait Extractors {
    * This will occur when we have a case class with an additional parameter set
    * including one parameter of type B.
    *
+   * CONSIDER rename this (compose? or extractorCompose?) and couldn't it go inside Extractor?
+   *
    * @param extractorBtoT an extractor for the type B => T.
    * @tparam B the type of the value in the additional parameter set of T.
    * @tparam T the underlying type of the resulting extractor.
@@ -86,6 +88,19 @@ trait Extractors {
    * @return an Extractor[T] whose method extract will construct a T while ignoring the input Node.
    */
   def extractor0[T <: Product : ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
+
+  /**
+   * Extractor which will convert an Xml Node into an instance of a case class with zero members and one auxiliary (non-member) parameter.
+   *
+   * NOTE: the construct function will have to be an explicitly declared function of the form: B => T.
+   * This is because the compiler gets a little confused, otherwise.
+   *
+   * @param construct a function B => T, an explicitly declared function.
+   * @tparam B the type of the non-member parameter of T.
+   * @tparam T the underlying type of the result, a Product.
+   * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
+   */
+  def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = (_: Node) => Success(construct)
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
