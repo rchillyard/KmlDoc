@@ -855,6 +855,25 @@ trait Extractors {
     (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, B, T](extractField[P0], extractorPartial50[P1, P2, P3, P4, P5, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
   /**
+   * Extractor which will convert an Xml Node into an instance of a case class with six members and one auxiliary (non-member) parameter.
+   *
+   * TESTME
+   *
+   * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
+   * @tparam P0 the (Extractor) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @tparam B  the type of the non-member parameter of T.
+   * @tparam T  the underlying type of the result, a Product.
+   * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
+   */
+  def extractorPartial51[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, P5: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
+    (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, B, T](extractField[P0], extractorPartial41[P1, P2, P3, P4, P5, B, T](_, _), construct, dropLast = true, fields).extract(node)
+
+  /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member plus
    * an "auxiliary" parameter of type B, declared in its own parameter set.
    *

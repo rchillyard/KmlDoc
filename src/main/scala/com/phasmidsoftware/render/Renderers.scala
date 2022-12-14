@@ -77,7 +77,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with two members.
    *
-   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1) => R (this is usually the apply method of a case class).
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
    * @tparam R  the type of Renderable to be returned (must be a Product).
@@ -95,7 +95,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with two members but also an auxiliary object in a second parameter set.
    *
-   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1) => R (this is usually the apply method of a case class).
    * @tparam B  the (Renderable) type of the auxiliary object of type R.
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
@@ -113,7 +113,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with three members.
    *
-   * @param construct a function which takes a P0, P1, P2 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1, P2) => R (this is usually the apply method of a case class).
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
    * @tparam P2 the (Renderable) type of the third member of Product type R.
@@ -132,7 +132,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with three members but also an auxiliary object in a second parameter set.
    *
-   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1, P2) => R (this is usually the apply method of a case class).
    * @tparam B  the (Renderable) type of the auxiliary object of type R.
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
@@ -151,7 +151,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with four members.
    *
-   * @param construct a function which takes a P0, P1, P2, P3 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1, P2, P3) => R (this is usually the apply method of a case class).
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
    * @tparam P2 the (Renderable) type of the third member of Product type R.
@@ -171,7 +171,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with four members but also an auxiliary object in a second parameter set.
    *
-   * @param construct a function which takes a P0, P1 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1, P2, P3) => R (this is usually the apply method of a case class).
    * @tparam B  the (Renderable) type of the auxiliary object of type R.
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
@@ -191,7 +191,7 @@ trait Renderers {
   /**
    * Method to create a renderer fpr a Product (e.g., case class) with five members.
    *
-   * @param construct a function which takes a P0, P1, P2, P3, P4 and yields an R (this is usually the apply method of a case class).
+   * @param construct a function (P0, P1, P2, P3, P4) => R (this is usually the apply method of a case class).
    * @tparam P0 the (Renderable) type of the first member of Product type R.
    * @tparam P1 the (Renderable) type of the second member of Product type R.
    * @tparam P2 the (Renderable) type of the third member of Product type R.
@@ -207,6 +207,27 @@ trait Renderers {
     val wInner = renderer4(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 4, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
+  }
+
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with five members but also an auxiliary object in a second parameter set.
+   *
+   * @param construct a function (P0, P1, P2, P3, P4) => R (this is usually the apply method of a case class).
+   * @tparam B  the (Renderable) type of the auxiliary object of type R.
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam P3 the (Renderable) type of the fourth member of Product type R.
+   * @tparam P4 the (Renderable) type of the fifth member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer5Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
+    val constructOuter: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _)(b)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    val wOuter = renderer5(constructOuter).render(r, format.indent, stateR.recurse)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
   }
 
   /**
@@ -228,6 +249,28 @@ trait Renderers {
     val wInner = renderer5(constructorInner).render(objectInner, format.indent, stateR.recurse)
     val wOuter = renderOuter(r, objectOuter, 4, format)
     doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
+  }
+
+  /**
+   * Method to create a renderer fpr a Product (e.g., case class) with six members but also an auxiliary object in a second parameter set.
+   *
+   * @param construct a function (P0, P1, P2, P3, P4, P5) => R (this is usually the apply method of a case class).
+   * @tparam B  the (Renderable) type of the auxiliary object of type R.
+   * @tparam P0 the (Renderable) type of the first member of Product type R.
+   * @tparam P1 the (Renderable) type of the second member of Product type R.
+   * @tparam P2 the (Renderable) type of the third member of Product type R.
+   * @tparam P3 the (Renderable) type of the fourth member of Product type R.
+   * @tparam P4 the (Renderable) type of the fifth member of Product type R.
+   * @tparam P5 the (Renderable) type of the sixth member of Product type R.
+   * @tparam R  the type of Renderable to be returned (must be a Product).
+   * @return a Renderable[R].
+   */
+  def renderer6Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, P5: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => B => R)(lens: R => B): Renderable[R] = (r: R, format: Format, stateR: StateR) => {
+    val b = lens(r)
+    val constructOuter: (P0, P1, P2, P3, P4, P5) => R = construct(_, _, _, _, _, _)(b)
+    val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
+    val wOuter = renderer6(constructOuter).render(r, format.indent, stateR.recurse)
+    doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
   }
 
   /**

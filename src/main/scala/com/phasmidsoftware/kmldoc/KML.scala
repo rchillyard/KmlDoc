@@ -2,6 +2,7 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.{Text, XmlException}
 import com.phasmidsoftware.render._
+import com.phasmidsoftware.xml.Extractor.none
 import com.phasmidsoftware.xml._
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
@@ -20,9 +21,15 @@ class KmlObject
 /**
  * Properties of KMLObject
  *
- * @param _id an optional identifier.
+ * @param __id an optional identifier.
  */
-case class KmlData(_id: String)
+case class KmlData(__id: String)
+
+class Feature extends KmlObject
+
+case class FeatureData(name: Text, description: Text, styleUrl: String, maybeOpen: Option[Int], Styles: Seq[StyleSelector])(val kmlData: KmlData)
+
+case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
 
 class Geometry extends KmlObject
 
@@ -251,11 +258,9 @@ case class StyleMap(Pairs: Seq[Pair])(val styleSelectorData: StyleSelectorData) 
 
 case class Folder(name: Text, Placemarks: Seq[Placemark])
 
-case class Placemark(name: Text, maybedescription: Option[Text], styleUrl: Text, LineStrings: Seq[LineString], Points: Seq[Point])
-
 case class Tessellate($: String)
 
-case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])
+case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates]) extends Geometry
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
@@ -290,8 +295,19 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
   implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
+  implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
+  implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
+  implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractor[StyleSelector]
+  implicit val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply)
+  implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
+  implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
   implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply)
   implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point)
+  implicit val extractorGeometry: Extractor[Geometry] = none[Geometry].orElse[Point]().orElse[LineString]()
+  implicit val extractorMultiGeometry: MultiExtractor[Seq[Geometry]] = multiExtractor[Geometry]
+  implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorKD2FD)
+  implicit val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply)
+  implicit val extractorPlacemark: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorFD2Placemark)
   implicit val extractorMultiPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point]
   implicit val extractorFill: Extractor[Fill] = extractor10(Fill)
   implicit val extractorOutline: Extractor[Outline] = extractor10(Outline)
@@ -340,19 +356,16 @@ object KmlExtractors extends Extractors {
   implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorKPP2StyleSelectorData)
   implicit val extractorBT1: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply)
   implicit val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(StyleMap.apply)
-  implicit val extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorBT1)
-  implicit val extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
-  implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
-  implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
-  implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
+
+  implicit def extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorBT1)
+
+  implicit def extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
+
   implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
-  implicit val extractorPlacemark: Extractor[Placemark] = extractor32(Placemark)
   implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
   implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
   implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
-  implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractor[StyleSelector]
   implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
-  implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
   implicit val extractorDocument: Extractor[Document] = extractor32(Document)
   implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
   implicit val extractorKml: Extractor[KML] = extractor01(KML)
@@ -381,6 +394,7 @@ trait KmlRenderers extends Renderers {
 
   implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData)
   implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)
+  implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData)
   implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
@@ -433,7 +447,9 @@ trait KmlRenderers extends Renderers {
   implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
   implicit val rendererPoint: Renderable[Point] = renderer1Super(Point.apply)(_.geometryData)
   implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point]
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer5(Placemark)
+  implicit val rendererGeometry: Renderable[Geometry] = rendererSuper2[Geometry, Point, LineString]
+  implicit val rendererGeometrys: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry]
+  implicit val rendererPlacemark: Renderable[Placemark] = renderer1Super(Placemark.apply)(_.featureData)
   implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
   implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
