@@ -93,6 +93,9 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
     object MyRenderers extends Renderers {
         implicit val renderableBase: Renderable[Base] = renderer1[Int, Base](Base.apply)
         implicit val renderableSimple: Renderable[Simple] = renderer1Super(Simple.apply)(_.superObject)
+        implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)
+        implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)
+        implicit val renderablePoint: Renderable[Point] = renderer2Super(Point.apply)(_.geometryData)
     }
 
     behavior of "Extractors"
@@ -129,6 +132,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val py: Try[Seq[Point]] = implicitly[MultiExtractor[Seq[Point]]].extract(xml \ "Point")
         py.isSuccess shouldBe true
         val p = py.get.head
+        println(p)
         p.x shouldBe 1.0
         p.y shouldBe 2.0
         p.geometryData.kmlData._id shouldBe "2"
@@ -143,12 +147,22 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         wy shouldBe Success("""<Base id="2" ></Base>""")
     }
 
-    it should "render" in {
+    it should "render Simple" in {
         import MyRenderers._
         val simple = Simple("Robin")(Base(2))
         println(s"element 0: ${simple.productElement(0)}")
         val renderer: Renderable[Simple] = implicitly[Renderable[Simple]]
         val wy = Using(StateR())(sr => renderer.render(simple, FormatXML(0), sr))
         wy shouldBe Success("""<Simple id="2">Robin</Simple>""")
+    }
+
+    it should "render Point" in {
+        import MyRenderers._
+        val point = Point(1.0, 2.0)(GeometryData(KmlData("42")))
+        println(point)
+        val renderer: Renderable[Point] = implicitly[Renderable[Point]]
+        val wy = Using(StateR())(sr => renderer.render(point, FormatXML(0), sr))
+        // TODO this isn't a good rendering of Point. x and y should be tagged.
+        wy shouldBe Success("""<Point id="42">x="1.0"y="2.0"</Point>""")
     }
 }

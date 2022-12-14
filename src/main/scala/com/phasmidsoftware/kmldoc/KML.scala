@@ -380,6 +380,7 @@ trait KmlRenderers extends Renderers {
   import Renderers._
 
   implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData)
+  implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)
   implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
@@ -430,7 +431,6 @@ trait KmlRenderers extends Renderers {
   implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate)
   implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
   implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
-  implicit val rendererGeometryData: Renderable[GeometryData] = renderer1(GeometryData.apply)
   implicit val rendererPoint: Renderable[Point] = renderer1Super(Point.apply)(_.geometryData)
   implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point]
   implicit val rendererPlacemark: Renderable[Placemark] = renderer5(Placemark)
