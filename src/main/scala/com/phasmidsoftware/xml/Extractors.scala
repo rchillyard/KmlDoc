@@ -146,7 +146,7 @@ trait Extractors {
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
   def extractorPartial01[P0: MultiExtractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-    (node: Node) => extractorPartial1[P0, B, T](extractChildren[P0], m0 => b => construct(m0)(b), dropLast = false, fields).extract(node)
+    (node: Node) => extractorPartial1[P0, B, T](extractChildren[P0], m0 => b => construct(m0)(b), dropLast = true, fields).extract(node)
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
@@ -1101,6 +1101,11 @@ object Extractors {
    * Optional text extractor.
    */
   implicit val extractorOptionalText: Extractor[Option[Text]] = new Extractors {}.extractorOption[Text]
+
+  /**
+   * Optional string extractor.
+   */
+  implicit val extractorOptionalString: Extractor[Option[String]] = new Extractors {}.extractorOption[String]
 
   /**
    * Method to extract an optional value from a NodeSeq.

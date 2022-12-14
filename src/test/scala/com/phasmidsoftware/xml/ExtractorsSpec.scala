@@ -181,7 +181,6 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "extractor10C" in {
-    implicit val zz: Extractor[Option[String]] = new Extractors {}.extractorOption[String]
     val xml: Elem = <xml></xml>
     val construct: Option[String] => Simple3 = Simple3.apply
     val extracted: Try[Simple3] = MyExtractors.extractor10(construct).extract(xml)
