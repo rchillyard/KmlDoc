@@ -2,6 +2,7 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.Utilities.{sequence, show}
 import com.phasmidsoftware.core.{Reflection, Text, XmlException}
+import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.none
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, extractSequence, fieldNamesMaybeDropLast}
 import org.slf4j.{Logger, LoggerFactory}
@@ -16,6 +17,10 @@ import scala.xml.{Node, NodeSeq}
  * Trait which defines many useful Extractors, where the result is an instance of Extractor[T].
  */
 trait Extractors {
+
+  private val flog = Flog[Extractors]
+
+  import flog._
 
   /**
    * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].

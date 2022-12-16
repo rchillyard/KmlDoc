@@ -21,9 +21,26 @@ class KmlObject
 /**
  * Properties of KMLObject
  *
- * @param __id an optional identifier.
+ * TODO make this identifier optional (i.e., with an extra underscore).
+ *
+ * @param _id an optional identifier.
  */
-case class KmlData(__id: String)
+case class KmlData(_id: String)
+
+object KmlData {
+  def nemo: KmlData = KmlData("")
+}
+
+/**
+ * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
+ *
+ * @param $ the value of the scale (a Double).
+ */
+case class Scale($: Double)(val kmlData: KmlData) extends KmlObject
+
+object Scale {
+  def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
+}
 
 class Feature extends KmlObject
 
@@ -144,13 +161,6 @@ case class Fill(boolean: Int)
  * @param boolean whether to outline or not.
  */
 case class Outline(boolean: Int)
-
-/**
- * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
- *
- * @param $ the value of the scale (a Double).
- */
-case class Scale($: Double)
 
 /**
  * Case class to represent a Heading which is represented in XML as, for example: <heading>1.1</heading>
@@ -288,7 +298,7 @@ object KmlExtractors extends Extractors {
 
   import Extractors._
 
-  implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData)
+  implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply)
   implicit val extractorKPP2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction)
   implicit val extractorGeometryData: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorKPP2GeometryData)
   implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
@@ -311,7 +321,8 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point]
   implicit val extractorFill: Extractor[Fill] = extractor10(Fill)
   implicit val extractorOutline: Extractor[Outline] = extractor10(Outline)
-  implicit val extractorScale: Extractor[Scale] = extractor10(Scale)
+  implicit val extractorKD2Scale: Extractor[KmlData => Scale] = extractorPartial10(Scale.apply)
+  implicit val extractorScale: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorKD2Scale)
   implicit val extractorHeading: Extractor[Heading] = extractor10(Heading)
   implicit val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption
   implicit val extractorListItemType: Extractor[ListItemType] = extractor10(ListItemType)
@@ -392,10 +403,10 @@ trait KmlRenderers extends Renderers {
 
   import Renderers._
 
-  implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData)
+  implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)
   implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)
   implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData)
-  implicit val rendererScale: Renderable[Scale] = renderer1(Scale)
+  implicit val rendererScale: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData)
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
   implicit val rendererBgColor: Renderable[BgColor] = renderer1(BgColor)
@@ -486,7 +497,7 @@ object KMLCompanion {
   }
 
   // TESTME
-  def loadKML(file: String): KML = {
+  private def loadKML(file: String): KML = {
     require(file != null)
     val xml: Elem = XML.loadFile(file)
     //    val kmls: collection.Seq[KML] = for (kml <- xml \\ "kml") yield KML.fromXML(kml)

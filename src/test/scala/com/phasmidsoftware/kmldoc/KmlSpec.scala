@@ -3,6 +3,7 @@ package com.phasmidsoftware.kmldoc
 import com.phasmidsoftware.core.Text
 import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.render.{FormatXML, StateR}
+import com.phasmidsoftware.xml.Extractor
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -11,6 +12,16 @@ import scala.util.{Failure, Success, Try, Using}
 import scala.xml.{Elem, XML}
 
 class KmlSpec extends AnyFlatSpec with should.Matchers {
+
+  behavior of "KmlObject"
+
+  it should "parse Scale" in {
+    val xml: Elem = <scale id="Hello">2.0</scale>
+    import KmlExtractors._
+    val triedScale = implicitly[Extractor[Scale]].extract(xml)
+    println(triedScale)
+    triedScale.isSuccess shouldBe true
+  }
 
   behavior of "Coordinate"
 

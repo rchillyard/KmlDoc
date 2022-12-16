@@ -1,6 +1,6 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.kmldoc.Scale
+import com.phasmidsoftware.kmldoc.{KmlData, Scale}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import scala.util.{Success, Using}
@@ -140,12 +140,15 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     wy shouldBe Success("<Greeting>Hello</Greeting>")
   }
 
+  // TODO we should render empty id values invisibly.
   it should "renderer1A" in {
     object MyRenderers extends Renderers {
-      val renderer: Renderable[Scale] = renderer1(Scale)
+      implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)
+      implicit val renderer: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData)
     }
-    val wy = Using(StateR())(sr => MyRenderers.renderer.render(Scale(math.Pi), FormatXML(0), sr))
-    wy shouldBe Success("<Scale>3.141592653589793</Scale>")
+    import MyRenderers._
+    val wy = Using(StateR())(sr => implicitly[Renderable[Scale]].render(Scale.nemo(math.Pi), FormatXML(0), sr))
+    wy shouldBe Success("""<Scale id="">3.141592653589793</Scale>""")
   }
 
   it should "renderer0" in {
