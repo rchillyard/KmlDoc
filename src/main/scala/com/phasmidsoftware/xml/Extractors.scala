@@ -1,8 +1,8 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.Utilities.{sequence, show}
-import com.phasmidsoftware.core.{Reflection, Text, XmlException}
-import com.phasmidsoftware.flog.Flog
+import com.phasmidsoftware.core.{LoggableAny, Reflection, Text, XmlException}
+import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractor.none
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, extractSequence, fieldNamesMaybeDropLast}
 import org.slf4j.{Logger, LoggerFactory}
@@ -18,9 +18,14 @@ import scala.xml.{Node, NodeSeq}
  */
 trait Extractors {
 
-  private val flog = Flog[Extractors]
+  /**
+   * Preparing the way for when we provide better logging for when things go wrong.
+   */
+  private val flog: Flog = Flog[Extractors]
 
   import flog._
+
+  implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
 
   /**
    * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
@@ -110,13 +115,18 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
+   * NOTE: this specific extractor provides logging.
+   * CONSIDER adding logging to the other extractors.
+   *
    * @param construct a function (P0) => T, usually the apply method of a case class.
    * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
-  def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] =
-    (node: Node) => extractorPartial1[P0, Unit, T](extractField[P0], e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z())
+  def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = {
+    implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
+    (node: Node) => "extractor10: " !! (extractorPartial1[P0, Unit, T](extractField[P0], e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
+  }
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.

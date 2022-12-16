@@ -18,6 +18,10 @@ import scala.xml.{Elem, NamespaceBinding, Node, XML}
  */
 class KmlObject
 
+object KmlObject {
+//  implicit object loggableKmlObject extends LoggableAny[KmlObject]
+}
+
 /**
  * Properties of KMLObject
  *
@@ -29,6 +33,8 @@ case class KmlData(_id: String)
 
 object KmlData {
   def nemo: KmlData = KmlData("")
+
+//  implicit object loggableKmlData extends LoggableAny[KmlData]
 }
 
 /**
@@ -496,7 +502,6 @@ object KMLCompanion {
     loadKML(resource.getPath)
   }
 
-  // TESTME
   private def loadKML(file: String): KML = {
     require(file != null)
     val xml: Elem = XML.loadFile(file)
