@@ -25,14 +25,12 @@ object KmlObject {
 /**
  * Properties of KMLObject
  *
- * TODO make this identifier optional (i.e., with an extra underscore).
- *
- * @param _id an optional identifier.
+ * @param __id an optional identifier.
  */
-case class KmlData(_id: String)
+case class KmlData(__id: Option[String])
 
 object KmlData {
-  def nemo: KmlData = KmlData("")
+  def nemo: KmlData = KmlData(None)
 
 //  implicit object loggableKmlData extends LoggableAny[KmlData]
 }
@@ -409,6 +407,7 @@ trait KmlRenderers extends Renderers {
 
   import Renderers._
 
+  implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer
   implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)
   implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)
   implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData)

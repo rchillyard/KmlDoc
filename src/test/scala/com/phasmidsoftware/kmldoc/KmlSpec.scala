@@ -15,8 +15,16 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "KmlObject"
 
-  it should "parse Scale" in {
+  it should "parse Scale with id" in {
     val xml: Elem = <scale id="Hello">2.0</scale>
+    import KmlExtractors._
+    val triedScale = implicitly[Extractor[Scale]].extract(xml)
+    println(triedScale)
+    triedScale.isSuccess shouldBe true
+  }
+
+  it should "parse Scale without id" in {
+    val xml: Elem = <scale>2.0</scale>
     import KmlExtractors._
     val triedScale = implicitly[Extractor[Scale]].extract(xml)
     println(triedScale)

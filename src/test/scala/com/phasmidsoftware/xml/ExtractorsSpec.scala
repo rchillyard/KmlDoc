@@ -99,10 +99,22 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
   }
 
+  it should "extract absent normal attribute" in {
+    val xml: Elem = <kml></kml>
+    import Extractors.StringExtractor
+    extractField[String]("_id")(xml) should matchPattern { case Failure(_) => }
+  }
+
   it should "extract normal optional attribute" in {
     val xml: Elem = <kml id="2.2"></kml>
     import Extractors.StringExtractor
-    extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
+    extractField[String]("__id")(xml) should matchPattern { case Success("2.2") => }
+  }
+
+  it should "extract absent optional attribute" in {
+    val xml: Elem = <kml></kml>
+    import Extractors.StringExtractor
+    extractField[String]("__id")(xml) should matchPattern { case Success(None) => }
   }
 
   it should "not extract reserved attribute" in {
@@ -239,6 +251,15 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
     matcher.group(0) shouldBe "_id"
+    matcher.group(1) shouldBe "id"
+  }
+
+  it should "match optional attribute" in {
+    Extractors.attribute.matches("__id") shouldBe true
+    val matcher: Matcher = Extractors.optionalAttribute.pattern.matcher("__id")
+    matcher.matches() shouldBe true
+    matcher.groupCount() shouldBe 1
+    matcher.group(0) shouldBe "__id"
     matcher.group(1) shouldBe "id"
   }
 

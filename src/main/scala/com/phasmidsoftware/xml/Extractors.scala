@@ -1211,7 +1211,7 @@ object Extractors {
   val attribute: Regex = """_(\w+)""".r
 
   /**
-   * Regular expression to match an optional attribute name, viz. _.....
+   * Regular expression to match an optional attribute name, viz. __.....
    * With an optional attribute, it will have a default value that does not need to be overridden.
    */
   val optionalAttribute: Regex = """__(\w+)""".r

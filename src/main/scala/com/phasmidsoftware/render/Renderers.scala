@@ -429,28 +429,30 @@ trait Renderers {
    * @return a String.
    */
   private def doNestedRender[R <: Product : ClassTag](format: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String) = {
-    val attribute = attributeName match {
-      case Extractors.attribute(_) => true
-      case _ => false
+    // XXX: determine if attributeName corresponds to an optional attribute--Some(true), an attribute--Some(false), or a non-attribute: None.
+    val maybeAttribute = attributeName match {
+      case Extractors.optionalAttribute(x) => Some(true)
+      case Extractors.attribute(x) => Some(false)
+      case _ => None
     }
-    // XXX: if attribute is true, then isInternal will usually be true
+    // XXX: if maybeAttribute is defined, then isInternal will usually be true
     //      (the exception being for the last attribute of an all-attribute element).
-    if (attribute)
+    if (maybeAttribute.isDefined)
       stateR.addAttribute(wOuter)
     val sb = new mutable.StringBuilder()
     if (!stateR.isInternal) {
       sb.append(format.formatName(open = Some(true), stateR))
       sb.append(stateR.getAttributes)
-      if (!attribute) sb.append(format.formatName(open = None, stateR))
+      if (maybeAttribute.isEmpty) sb.append(format.formatName(open = None, stateR))
       else sb.append(" ")
     }
-    if (!attribute)
+    if (maybeAttribute.isEmpty)
       sb.append(wInner)
     // CONSIDER appending format.delimiter
-    if (!attribute)
+    if (maybeAttribute.isEmpty)
       sb.append(wOuter)
     if (!stateR.isInternal) {
-      if (attribute) sb.append(format.formatName(open = None, stateR))
+      if (maybeAttribute.isDefined) sb.append(format.formatName(open = None, stateR))
       sb.append(format.formatName(open = Some(false), stateR))
     }
     sb.toString()
@@ -508,6 +510,7 @@ object Renderers {
   def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
     r.productElementName(index) match {
       case "$" => None
+      case Extractors.optionalAttribute(x) => Some(x)
       case Extractors.attribute(x) => Some(x)
       case x => if (useName) Some(x) else None
     }

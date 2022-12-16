@@ -143,12 +143,13 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   // TODO we should render empty id values invisibly.
   it should "renderer1A" in {
     object MyRenderers extends Renderers {
+      implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer
       implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)
       implicit val renderer: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData)
     }
     import MyRenderers._
     val wy = Using(StateR())(sr => implicitly[Renderable[Scale]].render(Scale.nemo(math.Pi), FormatXML(0), sr))
-    wy shouldBe Success("""<Scale id="">3.141592653589793</Scale>""")
+    wy shouldBe Success("""<Scale >3.141592653589793</Scale>""")
   }
 
   it should "renderer0" in {
