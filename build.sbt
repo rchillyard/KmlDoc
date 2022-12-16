@@ -19,7 +19,7 @@ libraryDependencies += "com.phasmidsoftware" % "flog_2.13" % "1.0.8"
 
 libraryDependencies ++= Seq(
   "com.phasmidsoftware" %% "flog" % "1.0.8",
-  "ch.qos.logback" % "logback-classic" % "1.2.11" % "runtime",
+  "ch.qos.logback" % "logback-classic" % "1.4.5" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "org.scalatest" %% "scalatest" % "3.2.12" % Test
+  "org.scalatest" %% "scalatest" % "3.2.14" % Test
 )
