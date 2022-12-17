@@ -83,7 +83,7 @@ trait Extractors {
    * @tparam T the underlying type of the resulting extractor.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
-  def extractorPartial[B <: Product : Extractor, T <: Product : ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
+  def extractorPartial[B <: Product : Extractor, T: ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
     (node: Node) =>
       for {q <- extractorBtoT.extract(node)
            b <- implicitly[Extractor[B]].extract(node)
@@ -97,7 +97,7 @@ trait Extractors {
    * @tparam T the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will construct a T while ignoring the input Node.
    */
-  def extractor0[T <: Product : ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
+  def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with zero members and one auxiliary (non-member) parameter.
@@ -1211,7 +1211,7 @@ object Extractors {
   val attribute: Regex = """_(\w+)""".r
 
   /**
-   * Regular expression to match an optional attribute name, viz. __.....
+   * Regular expression to match an optional attribute name, viz. &#95;&#95;.....
    * With an optional attribute, it will have a default value that does not need to be overridden.
    */
   val optionalAttribute: Regex = """__(\w+)""".r

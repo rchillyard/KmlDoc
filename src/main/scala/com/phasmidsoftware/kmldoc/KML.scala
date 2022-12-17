@@ -48,9 +48,33 @@ object Scale {
 
 class Feature extends KmlObject
 
-case class FeatureData(name: Text, description: Text, styleUrl: String, maybeOpen: Option[Int], Styles: Seq[StyleSelector])(val kmlData: KmlData)
+case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[String], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
+
+class Container() extends Feature
+
+object Container {
+  val applyFunction: Unit => Container = _ => new Container()
+}
+
+case class ContainerData(featureData: FeatureData)
+
+object ContainerData {
+  val applyFunction: FeatureData => ContainerData = new ContainerData(_)
+}
+
+case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container
+
+/**
+ * Document.
+ *
+ * TODO add Schemas to this case class
+ *
+ * @param features      a sequence of Features.
+ * @param containerData ContainerData.
+ */
+case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container
 
 class Geometry extends KmlObject
 
@@ -242,18 +266,6 @@ case class KML(Documents: Seq[Document])
 case class KML_Binding(kml: KML, binding: NamespaceBinding)
 
 /**
- * Case class to represent a Document.
- *
- * CONSIDER what is the difference between name: Text and, for example, Scale($: String).
- *
- * @param name        an XML element of the form: <name>the name</name>.
- * @param description an XML element of the form: <description>the description</description>.
- * @param Styles      a sequence of Style or StyleMap elements.
- * @param Folders     a sequence of Folder elements.
- */
-case class Document(name: Text, maybeOpen: Option[Int], description: Text, Styles: Seq[StyleSelector], Folders: Seq[Folder])
-
-/**
  * Style element.
  * It seems there are two completely different types of Style element, but they are not distinguished.
  * Type A has IconStyle, LabelStyle, BalloonStyle;
@@ -270,7 +282,7 @@ case class Pair(key: String, styleUrl: String)
 
 case class StyleMap(Pairs: Seq[Pair])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
-case class Folder(name: Text, Placemarks: Seq[Placemark])
+//case class Folder(name: Text, Placemarks: Seq[Placemark])
 
 case class Tessellate($: String)
 
@@ -371,20 +383,28 @@ object KmlExtractors extends Extractors {
   implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorKPP2StyleSelectorData)
   implicit val extractorBT1: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply)
   implicit val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(StyleMap.apply)
+  implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
+  implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
+  implicit val extractorFD2ContainerData: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](ContainerData.applyFunction)
+  implicit val extractorContainerData: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorFD2ContainerData)
+  implicit val extractorMultiFeature: MultiExtractor[Seq[Feature]] = multiExtractor[Feature]
+  implicit val extractorCD2Folder: Extractor[ContainerData => Folder] = extractorPartial01(Folder.apply)
+  implicit val extractorContainer: Extractor[Container] = extractor0(Container.applyFunction)
+  implicit val extractorFolder: Extractor[Folder] = extractorPartial(extractorCD2Folder)
+  implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
+  implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
+  implicit val extractorCD2Document: Extractor[ContainerData => Document] = extractorPartial01(Document.apply)
+  implicit val extractorDocument: Extractor[Document] = extractorPartial(extractorCD2Document)
+  implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
+  implicit val extractorKml: Extractor[KML] = extractor01(KML)
+  implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
+
+  implicit def extractorFeature: Extractor[Feature] = none[Feature].orElse[Container]()
+
 
   implicit def extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorBT1)
 
   implicit def extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
-
-  implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
-  implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
-  implicit val extractorFolder: Extractor[Folder] = extractor11(Folder)
-  implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
-  implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
-  implicit val extractorDocument: Extractor[Document] = extractor32(Document)
-  implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
-  implicit val extractorKml: Extractor[KML] = extractor01(KML)
-  implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
 }
 
 trait KmlRenderers extends Renderers {
@@ -467,15 +487,19 @@ trait KmlRenderers extends Renderers {
   implicit val rendererGeometrys: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry]
   implicit val rendererPlacemark: Renderable[Placemark] = renderer1Super(Placemark.apply)(_.featureData)
   implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
-  implicit val rendererFolder: Renderable[Folder] = renderer2(Folder)
+  implicit val rendererContainerData: Renderable[ContainerData] = renderer0Super(ContainerData.applyFunction)(_.featureData)
+  implicit val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document]
+  implicit val rendererFeature: Renderable[Feature] = rendererSuper1[Feature, Container]
+  implicit val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature]
+  implicit val rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData)
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
+  implicit val rendererDocument: Renderable[Document] = renderer1Super(Document.apply)(_.containerData)
+  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
   implicit val rendererStyleType: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap]
   implicit val rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector]
   implicit val renderOptionOpen: Renderable[Option[Int]] = optionRenderer
-  implicit val rendererDocument: Renderable[Document] = renderer5(Document)
-  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
   implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>
     doRenderKML_Binding(t, format, stateR)

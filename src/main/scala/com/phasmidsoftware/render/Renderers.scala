@@ -295,6 +295,18 @@ trait Renderers {
    *
    * @tparam T  the super-type and the underlying type of the result.
    * @tparam R0 one sub-type of T.
+   * @return a Renderable[T].
+   */
+  def rendererSuper1[T, R0 <: T : Renderable : ClassTag]: Renderable[T] = (t: T, format: Format, stateR: StateR) => t match {
+    case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
+    case _ => throw XmlException(s"rendererSuper1: parameter of type ${t.getClass} is not supported")
+  }
+
+  /**
+   * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for two sub-types of T.
+   *
+   * @tparam T  the super-type and the underlying type of the result.
+   * @tparam R0 one sub-type of T.
    * @tparam R1 another sub-type of T.
    * @return a Renderable[T].
    */
