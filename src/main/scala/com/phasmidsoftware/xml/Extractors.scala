@@ -1,15 +1,12 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{sequence, show}
+import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{LoggableAny, Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
-import com.phasmidsoftware.xml.Extractor.none
-import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractChildren, extractField, extractSequence, fieldNamesMaybeDropLast}
-import org.slf4j.{Logger, LoggerFactory}
+import com.phasmidsoftware.xml.Extractor.{extractChildren, extractField, none}
+import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
-import scala.collection.mutable
 import scala.reflect.ClassTag
-import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
@@ -1173,95 +1170,6 @@ object Extractors {
   def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
     sequence(for (node <- nodeSeq) yield implicitly[Extractor[P]].extract(node))
 
-  /**
-   * Method to yield a Try[P] for a particular child or attribute of the given node.
-   *
-   * NOTE: Plural members should use extractChildren and not extractField.
-   *
-   * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
-   *
-   * @param field the name of a member field:
-   *              if the (text) content of the node, then the field should be "$";
-   *              if a singleton child, then field is as is;
-   *              if an attribute, then field should begin with "_";
-   *              if an optional child, then field should begin with "maybe".
-   * @param node  a Node whence field is to be extracted.
-   * @tparam P the type to which Node should be converted [must be Extractor].
-   * @return a Try[P].
-   */
-  def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
-    case _ -> Success(p) => Success(p)
-    case m -> Failure(x) =>
-      x match {
-        case _: NoSuchFieldException => Success(None.asInstanceOf[P])
-        case _ =>
-          val message = s"extractField ($m): field '$field' from node:\n    {${show(node)}}"
-          logger.warn(s"$message caused by $x")
-          Failure(XmlException(message, x))
-      }
-  }
-  /**
-   * Regular expression to match a plural name, viz. .....s
-   */
-  val plural: Regex = """(\w+)s""".r
-
-  /**
-   * Regular expression to match an attribute name, viz. _.....
-   */
-  val attribute: Regex = """_(\w+)""".r
-
-  /**
-   * Regular expression to match an optional attribute name, viz. &#95;&#95;.....
-   * With an optional attribute, it will have a default value that does not need to be overridden.
-   */
-  val optionalAttribute: Regex = """__(\w+)""".r
-
-  /**
-   * Regular expression to match an optional name, viz. maybe....
-   */
-  val optional: Regex = """maybe(\w+)""".r
-
-  val logger: Logger = LoggerFactory.getLogger(Extractors.getClass)
-
-  val translations: mutable.HashMap[String, String] = new mutable.HashMap[String, String]()
-
-  def translateMemberName(member: String): String =
-    translations.getOrElse(member,
-      member match {
-        case Extractors.plural(x) => x
-        case _ => translations.getOrElse(member, member)
-      })
-
-  private def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-    val w = translateMemberName(member)
-    val nodeSeq = node \ w
-    if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children found for child $w (for member $member) in ${show(node)}")
-    implicitly[MultiExtractor[P]].extract(nodeSeq)
-  }
-
-  private def doExtractField[P: Extractor](field: String, node: Node) = field match {
-    // NOTE special name for the (text) content of a node.
-    case "$" => "$" -> extractText[P](node)
-    // NOTE attributes must match names where the case class member name starts with "_"
-    case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
-    case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
-    case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-    // NOTE child nodes are extracted using extractChildren, not here.
-    case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
-    // NOTE optional members such that the name begins with "maybe"
-    case optional(x) => s"optional: $x" -> extractOptional[P](node \ x)
-    // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
-    case x => s"singleton: $x" -> extractSingleton[P](node \ x)
-  }
-
-  private def extractText[P: Extractor](node: Node): Try[P] = implicitly[Extractor[P]].extract(node)
-
-  private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
-    (for (ns <- node.attribute(x)) yield for (n <- ns) yield implicitly[Extractor[P]].extract(n)) match {
-      case Some(py :: Nil) => py
-      case _ if optional => Failure(new NoSuchFieldException)
-      case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
-    }
 
   /**
    * Return the field names as Seq[String], from either the fields parameter or by reflection into T.

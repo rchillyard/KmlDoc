@@ -1,7 +1,7 @@
 package com.phasmidsoftware.render
 
 import com.phasmidsoftware.core.{Text, XmlException}
-import com.phasmidsoftware.xml.Extractors
+import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
 import scala.collection.mutable
@@ -282,7 +282,7 @@ trait Renderers {
   def optionRenderer[R: Renderable]: Renderable[Option[R]] = (ro: Option[R], format: Format, stateR: StateR) => ro match {
     case Some(r) =>
       val wo = stateR.maybeName match {
-        case Some(Extractors.optional(x)) => Some(x)
+        case Some(Extractor.optional(x)) => Some(x)
         case Some(x) => Some(x)
         case None => None
       }
@@ -443,8 +443,8 @@ trait Renderers {
   private def doNestedRender[R <: Product : ClassTag](format: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String) = {
     // XXX: determine if attributeName corresponds to an optional attribute--Some(true), an attribute--Some(false), or a non-attribute: None.
     val maybeAttribute = attributeName match {
-      case Extractors.optionalAttribute(x) => Some(true)
-      case Extractors.attribute(x) => Some(false)
+      case Extractor.optionalAttribute(x) => Some(true)
+      case Extractor.attribute(x) => Some(false)
       case _ => None
     }
     // XXX: if maybeAttribute is defined, then isInternal will usually be true
@@ -522,8 +522,8 @@ object Renderers {
   def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
     r.productElementName(index) match {
       case "$" => None
-      case Extractors.optionalAttribute(x) => Some(x)
-      case Extractors.attribute(x) => Some(x)
+      case Extractor.optionalAttribute(x) => Some(x)
+      case Extractor.attribute(x) => Some(x)
       case x => if (useName) Some(x) else None
     }
 

@@ -1,5 +1,6 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.xml.Extractor._
 import java.util.regex.Matcher
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
@@ -77,7 +78,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   object MyExtractors extends Extractors {
 
     // XXX this is to demonstrate the usage of the translations feature.
-    Extractors.translations += "empties" -> "empty"
+    Extractor.translations += "empties" -> "empty"
 
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
     implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractor[Empty.type]
@@ -246,8 +247,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "match attribute" in {
-    Extractors.attribute.matches("_id") shouldBe true
-    val matcher: Matcher = Extractors.attribute.pattern.matcher("_id")
+    attribute.matches("_id") shouldBe true
+    val matcher: Matcher = attribute.pattern.matcher("_id")
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
     matcher.group(0) shouldBe "_id"
@@ -255,8 +256,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "match optional attribute" in {
-    Extractors.attribute.matches("__id") shouldBe true
-    val matcher: Matcher = Extractors.optionalAttribute.pattern.matcher("__id")
+    attribute.matches("__id") shouldBe true
+    val matcher: Matcher = optionalAttribute.pattern.matcher("__id")
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
     matcher.group(0) shouldBe "__id"
@@ -264,8 +265,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "match plural" in {
-    Extractors.plural.matches("xs") shouldBe true
-    val matcher: Matcher = Extractors.plural.pattern.matcher("xs")
+    plural.matches("xs") shouldBe true
+    val matcher: Matcher = plural.pattern.matcher("xs")
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
     matcher.group(0) shouldBe "xs"
@@ -273,8 +274,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "match optional" in {
-    Extractors.optional.matches("xs") shouldBe false
-    val matcher: Matcher = Extractors.optional.pattern.matcher("maybexs")
+    optional.matches("xs") shouldBe false
+    val matcher: Matcher = optional.pattern.matcher("maybexs")
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
     matcher.group(0) shouldBe "maybexs"
@@ -282,27 +283,27 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "extractField String" in {
-    val we: Node => Try[String] = Extractors.extractField[String]("_id")
+    val we: Node => Try[String] = extractField[String]("_id")
     we(<xml id="xyz"></xml>) shouldBe Success("xyz")
   }
 
   it should "extractField Int" in {
-    val ie: Node => Try[Int] = Extractors.extractField[Int]("_id")
+    val ie: Node => Try[Int] = extractField[Int]("_id")
     ie(<xml id="1"></xml>) shouldBe Success(1)
   }
 
   it should "extractField Boolean" in {
-    val be: Node => Try[Boolean] = Extractors.extractField[Boolean]("_ok")
+    val be: Node => Try[Boolean] = extractField[Boolean]("_ok")
     be(<xml ok="true"></xml>) shouldBe Success(true)
   }
 
   it should "extractField Double" in {
-    val de: Node => Try[Double] = Extractors.extractField[Double]("_weight")
+    val de: Node => Try[Double] = extractField[Double]("_weight")
     de(<xml weight="42.0"></xml>) shouldBe Success(42)
   }
 
   it should "extractField Long" in {
-    val le: Node => Try[Long] = Extractors.extractField[Long]("_id")
+    val le: Node => Try[Long] = extractField[Long]("_id")
     le(<xml id="42"></xml>) shouldBe Success(42)
   }
 

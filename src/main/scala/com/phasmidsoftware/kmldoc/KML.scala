@@ -310,7 +310,7 @@ object Coordinate {
 
 object KmlExtractors extends Extractors {
 
-  Extractors.translations += "coordinates" -> "coordinates"
+  Extractor.translations += "coordinates" -> "coordinates"
 
   import Extractors._
 

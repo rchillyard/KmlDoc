@@ -28,7 +28,7 @@ object Utilities {
         (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
     }
 
-    def showBrief(node: Node): String = node.label
+    private def showBrief(node: Node): String = node.label
 
     def show(node: Node): String = {
         val result = new mutable.StringBuilder("node: ")
@@ -40,6 +40,22 @@ object Utilities {
         result.append(s"children=${children.mkString("{", ",", "}")}")
         result.toString()
     }
+
+    /**
+     * Method (if needed) to uncurry a 6-level curried function.
+     * Not used currently.
+     *
+     * @param f the original function.
+     * @tparam T1 type of parameter 1.
+     * @tparam T2 type of parameter 2.
+     * @tparam T3 type of parameter 3.
+     * @tparam T4 type of parameter 4.
+     * @tparam T5 type of parameter 5.
+     * @tparam T6 type of parameter 6.
+     * @tparam R  the type of the result.
+     * @return a function of type (T1, T2, T3, T4, T5, T6) => R
+     */
+    def uncurry6[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = (t1, t2, t3, t4, t5, t6) => f(t1)(t2)(t3)(t4)(t5)(t6)
 }
 
 case class Text($: String)
