@@ -79,12 +79,12 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         implicit val extractorColorStyleData: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorSSP2ColorStyleData)
         implicit val extractorCSP2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(LineStyle.apply)
         implicit val extractorLineStyle: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSP2LineStyle)
-        implicit val extractorColorStyle: Extractor[ColorStyle] = Extractor.none[ColorStyle].orElse[LineStyle]()
+        implicit val extractorColorStyle: Extractor[ColorStyle] = Extractor.none[ColorStyle].|[LineStyle]()
         implicit val extractorMultiColorStyle: MultiExtractor[Seq[ColorStyle]] = multiExtractor[ColorStyle]
         implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractor10(StyleSelectorData.apply)
         implicit val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(StyleMap.apply)
         implicit val extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
-        implicit val extractorStyleSelector: Extractor[StyleSelector] = Extractor.none[StyleSelector].orElse[StyleMap]()
+        implicit val extractorStyleSelector: Extractor[StyleSelector] = Extractor.none[StyleSelector].|[StyleMap]()
         implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractor[StyleSelector]
     }
 

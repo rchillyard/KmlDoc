@@ -15,7 +15,16 @@ import scala.xml.{Node, NodeSeq}
  */
 trait Extractors {
 
-  def extractor[T: Extractor](f: Node => Try[T]): Extractor[T] = (node: Node) => f(node)
+  def extractor[T](f: Node => Try[T]): Extractor[T] = (node: Node) => f(node)
+
+  /**
+   * Method to create an Extractor[T] such that the result of the extraction is always the same, regardless of what's in the node provided.
+   *
+   * @param ty a Try[T].
+   * @tparam T the underlying type of the result.
+   * @return an Extractor[T] which always produces ty when extract is invoked on it.
+   */
+  def extractorConstant[T](ty: => Try[T]): Extractor[T] = _ => ty
 
   /**
    * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
@@ -34,7 +43,7 @@ trait Extractors {
    * @tparam P1 second extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlt[R, P0 <: R : Extractor, P1 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]()
+  def extractorAlt[R, P0 <: R : Extractor, P1 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]()
 
   /**
    * Method to yield an Extractor which can choose from three other extractors.
@@ -46,7 +55,7 @@ trait Extractors {
    * @tparam P2 third extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]()
+  def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]()
 
   /**
    * Method to yield an Extractor which can choose from four other extractors.
@@ -58,7 +67,7 @@ trait Extractors {
    * @tparam P3 fourth extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlia4[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]().orElse[P3]()
+  def extractorAlia4[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]()
 
   /**
    * Method to yield an Extractor which can choose from five other extractors.
@@ -71,7 +80,7 @@ trait Extractors {
    * @tparam P4 fifth extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlia5[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]().orElse[P3]().orElse[P4]()
+  def extractorAlia5[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]().|[P4]()
 
   /**
    * Method to yield an Extractor which can choose from six other extractors.
@@ -85,7 +94,7 @@ trait Extractors {
    * @tparam P5 sixth extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]().orElse[P3]().orElse[P4]().orElse[P5]()
+  def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]().|[P4]().|[P5]()
 
   /**
    * Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
@@ -133,7 +142,7 @@ trait Extractors {
    * @tparam T the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will construct a T while ignoring the input Node.
    */
-  def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = (_: Node) => Success(construct())
+  def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = extractorConstant(Success(construct()))
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with zero members and one auxiliary (non-member) parameter.
@@ -146,7 +155,7 @@ trait Extractors {
    * @tparam T the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
-  def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = (_: Node) => Success(construct)
+  def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = extractorConstant(Success(construct))
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
@@ -1085,13 +1094,12 @@ object Extractors {
 
   implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
 
+  private val extractors: Extractors = new Extractors {}
+
   /**
-   * String extractor.
-   * TESTME
+   * Unit extractor.
    */
-  implicit object UnitExtractor extends Extractor[Unit] {
-    def extract(node: Node): Try[Unit] = Success(())
-  }
+  implicit val unitExtractor: Extractor[Unit] = extractors.extractorConstant(Success())
 
   /**
    * String extractor.
@@ -1103,33 +1111,25 @@ object Extractors {
   /**
    * Int extractor.
    */
-  implicit object IntExtractor extends Extractor[Int] {
-    def extract(node: Node): Try[Int] = Try(node.text.toInt)
-  }
+  implicit val intExtractor: Extractor[Int] = StringExtractor map (_.toInt)
 
   /**
    * Boolean extractor.
    */
-  implicit object BooleanExtractor extends Extractor[Boolean] {
-    def extract(node: Node): Try[Boolean] = node.text match {
-      case "true" | "yes" | "T" | "Y" => Success(true)
-      case _ => Success(false)
-    }
+  implicit val booleanExtractor: Extractor[Boolean] = StringExtractor map {
+    case "true" | "yes" | "T" | "Y" => true
+    case _ => false
   }
 
   /**
    * Double extractor.
    */
-  implicit object DoubleExtractor extends Extractor[Double] {
-    def extract(node: Node): Try[Double] = Try(node.text.toDouble)
-  }
+  implicit val doubleExtractor: Extractor[Double] = StringExtractor map (_.toDouble)
 
   /**
    * Long extractor.
    */
-  implicit object LongExtractor extends Extractor[Long] {
-    def extract(node: Node): Try[Long] = Try(node.text.toLong)
-  }
+  implicit val longExtractor: Extractor[Long] = StringExtractor map (_.toLong)
 
   class MultiExtractorBase[P: Extractor] extends MultiExtractor[Seq[P]] {
     def extract(nodeSeq: NodeSeq): Try[Seq[P]] = sequence(nodeSeq map Extractor.extract[P])
@@ -1137,8 +1137,6 @@ object Extractors {
 
   /**
    * String multi extractor.
-   *
-   * TESTME
    */
   implicit object StringMultiExtractor extends MultiExtractorBase[String]
 
@@ -1173,22 +1171,22 @@ object Extractors {
   /**
    * Text extractor.
    */
-  implicit val extractorText: Extractor[Text] = new Extractors {}.extractor10(Text)
+  implicit val extractorText: Extractor[Text] = extractors.extractor10(Text)
 
   /**
    * Optional text extractor.
    */
-  implicit val extractorOptionalText: Extractor[Option[Text]] = new Extractors {}.extractorOption[Text]
+  implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text]
 
   /**
    * Optional string extractor.
    */
-  implicit val extractorOptionalString: Extractor[Option[String]] = new Extractors {}.extractorOption[String]
+  implicit val extractorOptionalString: Extractor[Option[String]] = extractors.extractorOption[String]
 
   /**
    * Method to extract an optional value from a NodeSeq.
    *
-   * NOTE: this code looks very wrong. But, as Galileo said, "epur se muove."
+   * NOTE: this code looks very wrong. But, as Galileo said, "eppur si muove."
    */
   def extractOptional[P: Extractor](nodeSeq: NodeSeq): Try[P] =
     nodeSeq.headOption map Extractor.extract[P] match {

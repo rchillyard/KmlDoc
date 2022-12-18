@@ -400,7 +400,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorKml: Extractor[KML] = extractor01(KML)
   implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
 
-  implicit def extractorFeature: Extractor[Feature] = none[Feature].orElse[Container]()
+  implicit def extractorFeature: Extractor[Feature] = none[Feature].|[Container]()
 
 
   implicit def extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorBT1)

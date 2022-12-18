@@ -40,7 +40,7 @@ trait Extractor[T] {
      * @tparam P the type of the alternative Extractor. P must provide implicit evidence of Extractor[P] and P must be a sub-class of T.
      * @return an Extractor[T].
      */
-    def orElse[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
+    def |[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
 
     /**
      * Method to create an Extractor[P] which instantiates a Try[T] but treats it as a Try[P] where P is a super-class of T.
@@ -115,7 +115,6 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = (_: Node) => Failure(new NoSuchElementException)
-
 
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
