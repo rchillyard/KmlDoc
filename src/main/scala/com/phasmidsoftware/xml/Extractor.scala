@@ -26,6 +26,15 @@ trait Extractor[T] {
     def extract(node: Node): Try[T]
 
     /**
+     * Method to transform this Extractor[T] into an Extractor[U].
+     *
+     * @param f a T => U.
+     * @tparam U the underlying type of the result.
+     * @return an Extractor[U].
+     */
+    def map[U](f: T => U): Extractor[U] = (node: Node) => self.extract(node) map f
+
+    /**
      * Method to create an Extractor[T] such that, if this Extractor[T] fails, then we invoke the (implicit) Extractor[P] instead.
      *
      * @tparam P the type of the alternative Extractor. P must provide implicit evidence of Extractor[P] and P must be a sub-class of T.

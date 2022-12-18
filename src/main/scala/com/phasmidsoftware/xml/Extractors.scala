@@ -15,14 +15,7 @@ import scala.xml.{Node, NodeSeq}
  */
 trait Extractors {
 
-  /**
-   * Preparing the way for when we provide better logging for when things go wrong.
-   */
-  private val flog: Flog = Flog[Extractors]
-
-  import flog._
-
-  implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
+  def extractor[T: Extractor](f: Node => Try[T]): Extractor[T] = (node: Node) => f(node)
 
   /**
    * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
@@ -31,15 +24,10 @@ trait Extractors {
    * @tparam P the underlying type of the result.
    * @return an Extractor of Option[P].
    */
-  def extractorOption[P: Extractor]: Extractor[Option[P]] =
-    (node: Node) =>
-      Extractor.extract[P](node) match {
-        case Success(p) => Success(Some(p))
-        case Failure(x) => Failure(x) // TESTME
-      }
+  def extractorOption[P: Extractor]: Extractor[Option[P]] = implicitly[Extractor[P]] map (p => Option(p))
 
   /**
-   * Method to yield an Extractor which can choose from alternate extractors.
+   * Method to yield an Extractor which can choose from (two) alternative extractors.
    *
    * @tparam R  result type.
    * @tparam P0 first extractor type.
@@ -47,6 +35,57 @@ trait Extractors {
    * @return an Extractor[R].
    */
   def extractorAlt[R, P0 <: R : Extractor, P1 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]()
+
+  /**
+   * Method to yield an Extractor which can choose from three other extractors.
+   * Why is this method not called extractorAlt3? Because I know my Latin ;)
+   *
+   * @tparam R  result type.
+   * @tparam P0 first extractor type.
+   * @tparam P1 second extractor type.
+   * @tparam P2 third extractor type.
+   * @return an Extractor[R].
+   */
+  def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]()
+
+  /**
+   * Method to yield an Extractor which can choose from four other extractors.
+   *
+   * @tparam R  result type.
+   * @tparam P0 first extractor type.
+   * @tparam P1 second extractor type.
+   * @tparam P2 third extractor type.
+   * @tparam P3 fourth extractor type.
+   * @return an Extractor[R].
+   */
+  def extractorAlia4[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]().orElse[P3]()
+
+  /**
+   * Method to yield an Extractor which can choose from five other extractors.
+   *
+   * @tparam R  result type.
+   * @tparam P0 first extractor type.
+   * @tparam P1 second extractor type.
+   * @tparam P2 third extractor type.
+   * @tparam P3 fourth extractor type.
+   * @tparam P4 fifth extractor type.
+   * @return an Extractor[R].
+   */
+  def extractorAlia5[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]().orElse[P3]().orElse[P4]()
+
+  /**
+   * Method to yield an Extractor which can choose from six other extractors.
+   *
+   * @tparam R  result type.
+   * @tparam P0 first extractor type.
+   * @tparam P1 second extractor type.
+   * @tparam P2 third extractor type.
+   * @tparam P3 fourth extractor type.
+   * @tparam P4 fifth extractor type.
+   * @tparam P5 sixth extractor type.
+   * @return an Extractor[R].
+   */
+  def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].orElse[P0]().orElse[P1]().orElse[P2]().orElse[P3]().orElse[P4]().orElse[P5]()
 
   /**
    * Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
@@ -121,6 +160,8 @@ trait Extractors {
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
   def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = {
+    import Extractors.flog._
+    import Extractors.tryLoggable
     implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
     (node: Node) => "extractor10: " !! (extractorPartial1[P0, Unit, T](extractField[P0], e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
   }
@@ -1037,6 +1078,12 @@ trait Extractors {
  * Companion object to Extractors.
  */
 object Extractors {
+  /**
+   * Preparing the way for when we provide better logging for when things go wrong.
+   */
+  val flog: Flog = Flog[Extractors]
+
+  implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
 
   /**
    * String extractor.
