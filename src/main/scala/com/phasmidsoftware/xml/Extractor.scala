@@ -55,6 +55,26 @@ trait Extractor[T] {
  * Companion object to Extractor.
  */
 object Extractor {
+
+    /**
+     * Method to create an Extractor[T] from a Node => Try[T] function.
+     * Note that this isn't strictly necessary because of the SAM conversion mechanism which turns a Node => Try[T] function into an Extractor[T].
+     *
+     * @param f a Node => Try[T] function.
+     * @tparam T the underlying type of the resulting Extractor.
+     * @return an Extractor[T].
+     */
+    def apply[T](f: Node => Try[T]): Extractor[T] = (node: Node) => f(node)
+
+    /**
+     * Method to create an Extractor[T] such that the result of the extraction is always a constant, regardless of what's in the node provided.
+     *
+     * @param ty a Try[T].
+     * @tparam T the underlying type of the result.
+     * @return an Extractor[T] which always produces ty when extract is invoked on it.
+     */
+    def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty)
+
     /**
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
      *
@@ -114,7 +134,7 @@ object Extractor {
      * @tparam T the underlying type of the result.
      * @return a failing Extractor[T].
      */
-    def none[T]: Extractor[T] = (_: Node) => Failure(new NoSuchElementException)
+    def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
 
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
@@ -186,4 +206,9 @@ trait MultiExtractor[T] {
      * @return a Try[T].
      */
     def extract(nodeSeq: NodeSeq): Try[T]
+}
+
+trait ElementExtractor[T] extends (String => Extractor[T]) {
+
+    def apply(tag: String): Extractor[T]
 }
