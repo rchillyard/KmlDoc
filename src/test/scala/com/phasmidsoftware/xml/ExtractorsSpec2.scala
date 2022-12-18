@@ -103,7 +103,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
     it should "extract simple" in {
         import MyExtractors._
         val xml: Elem = <simple id="2">Robin</simple>
-        val extracted: Try[Simple] = implicitly[Extractor[Simple]].extract(xml)
+        val extracted: Try[Simple] = Extractor.extract[Simple](xml)
         extracted.isSuccess shouldBe true
         extracted.get.$ shouldBe "Robin"
         extracted.get.superObject._id shouldBe 2
@@ -114,7 +114,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val xml: Elem = <linestyle id="2">
             <width>1.0</width> <color>42</color>
         </linestyle>
-        val ly: Try[LineStyle] = implicitly[Extractor[LineStyle]].extract(xml)
+        val ly: Try[LineStyle] = Extractor.extract[LineStyle](xml)
         println(ly)
         ly.isSuccess shouldBe true
         val l = ly.get

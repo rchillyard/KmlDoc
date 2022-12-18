@@ -35,7 +35,6 @@ trait Extractor[T] {
 
     /**
      * Method to create an Extractor[P] which instantiates a Try[T] but treats it as a Try[P] where P is a super-class of T.
-     * CONSIDER why does this work when Extractor[T] is not defined with T as covariant?
      *
      * @tparam P the type of the Extractor we wish to return.
      * @return an Extractor[P].
@@ -47,6 +46,14 @@ trait Extractor[T] {
  * Companion object to Extractor.
  */
 object Extractor {
+    /**
+     * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
+     *
+     * @param node the node on which the extractor will work.
+     * @tparam T the underlying result type and which provides (implicit) evidence of an Extractor[T].
+     * @return a Try[T].
+     */
+    def extract[T: Extractor](node: Node): Try[T] = implicitly[Extractor[T]].extract(node)
 
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
@@ -126,7 +133,7 @@ object Extractor {
     }
 
     private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
-        (for (ns <- node.attribute(x)) yield for (n <- ns) yield implicitly[Extractor[P]].extract(n)) match {
+        (for (ns <- node.attribute(x)) yield for (n <- ns) yield Extractor.extract[P](n)) match {
             case Some(py :: Nil) => py
             case _ if optional => Failure(new NoSuchFieldException)
             case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${show(node)}"))
@@ -153,7 +160,7 @@ object Extractor {
      */
     val optional: Regex = """maybe(\w+)""".r
 
-    private def extractText[P: Extractor](node: Node): Try[P] = implicitly[Extractor[P]].extract(node)
+    private def extractText[P: Extractor](node: Node): Try[P] = Extractor.extract[P](node)
 
     val logger: Logger = LoggerFactory.getLogger(Extractor.getClass)
 }

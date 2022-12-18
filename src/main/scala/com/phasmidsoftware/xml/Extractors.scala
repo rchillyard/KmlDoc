@@ -33,7 +33,7 @@ trait Extractors {
    */
   def extractorOption[P: Extractor]: Extractor[Option[P]] =
     (node: Node) =>
-      implicitly[Extractor[P]].extract(node) match {
+      Extractor.extract[P](node) match {
         case Success(p) => Success(Some(p))
         case Failure(x) => Failure(x) // TESTME
       }
@@ -83,7 +83,7 @@ trait Extractors {
   def extractorPartial[B <: Product : Extractor, T: ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
     (node: Node) =>
       for {q <- extractorBtoT.extract(node)
-           b <- implicitly[Extractor[B]].extract(node)
+           b <- Extractor.extract[B](node)
            } yield q(b)
 
   /**
@@ -1085,7 +1085,7 @@ object Extractors {
   }
 
   class MultiExtractorBase[P: Extractor] extends MultiExtractor[Seq[P]] {
-    def extract(nodeSeq: NodeSeq): Try[Seq[P]] = sequence(nodeSeq map implicitly[Extractor[P]].extract)
+    def extract(nodeSeq: NodeSeq): Try[Seq[P]] = sequence(nodeSeq map Extractor.extract[P])
   }
 
   /**
@@ -1144,7 +1144,7 @@ object Extractors {
    * NOTE: this code looks very wrong. But, as Galileo said, "epur se muove."
    */
   def extractOptional[P: Extractor](nodeSeq: NodeSeq): Try[P] =
-    nodeSeq.headOption map implicitly[Extractor[P]].extract match {
+    nodeSeq.headOption map Extractor.extract[P] match {
       case Some(value) => value
       case None => Success(None.asInstanceOf[P])
     }
@@ -1168,7 +1168,7 @@ object Extractors {
    * @return a Try of Seq[P].
    */
   def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
-    sequence(for (node <- nodeSeq) yield implicitly[Extractor[P]].extract(node))
+    sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
 
 
   /**
