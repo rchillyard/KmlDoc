@@ -78,7 +78,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   object MyExtractors extends Extractors {
 
     // XXX this is to demonstrate the usage of the translations feature.
-    Extractor.translations += "empties" -> "empty"
+    Extractor.translations += "empties" -> Seq("empty")
 
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
     implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractor[Empty.type]

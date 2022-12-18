@@ -78,6 +78,7 @@ object Extractor {
 
     /**
      * Method to extract child elements from a node.
+     * It is acceptable
      *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
@@ -85,9 +86,9 @@ object Extractor {
      * @return a Try[P].
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-        val w = translateMemberName(member)
-        val nodeSeq = node \ w
-        if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children found for child $w (for member $member) in ${show(node)}")
+        val ts = translateMemberNames(member)
+        if (ts.isEmpty) logger.info(s"extractChildren: logic error: no suitable tags found for children of member $member in ${show(node)}")
+        val nodeSeq: Seq[Node] = for (t <- ts; w <- node \ t) yield w
         implicitly[MultiExtractor[P]].extract(nodeSeq)
     }
 
@@ -100,13 +101,13 @@ object Extractor {
     def none[T]: Extractor[T] = (_: Node) => Failure(new NoSuchElementException)
 
 
-    val translations: mutable.HashMap[String, String] = new mutable.HashMap[String, String]()
+    val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
-    private def translateMemberName(member: String): String =
+    private def translateMemberNames(member: String): Seq[String] =
         translations.getOrElse(member,
             member match {
-                case plural(x) => x
-                case _ => translations.getOrElse(member, member)
+                case plural(x) => Seq(x)
+                case _ => translations.getOrElse(member, Seq(member))
             })
 
     private def doExtractField[P: Extractor](field: String, node: Node) = field match {
