@@ -16,7 +16,10 @@ import scala.xml.{Elem, NamespaceBinding, Node, XML}
  * Super-type of all KML entities.
  * See https://developers.google.com/kml/documentation/kmlreference
  */
-class KmlObject
+class KmlObject extends HasSubElements {
+  val elementTag: String = "object" // XXX ?
+  val subClasses: Seq[Class[_]] = Seq(classOf[Feature], classOf[Geometry], classOf[StyleSelector], classOf[SubStyle], classOf[Scale])
+}
 
 object KmlObject {
 //  implicit object loggableKmlObject extends LoggableAny[KmlObject]
@@ -46,13 +49,19 @@ object Scale {
   def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
 }
 
-class Feature extends KmlObject
+class Feature extends KmlObject with HasSubElements {
+  override val elementTag: String = "feature"
+  override val subClasses: Seq[Class[_]] = Seq(classOf[Placemark], classOf[Container])
+}
 
 case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[String], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
 
-class Container() extends Feature
+class Container() extends Feature with HasSubElements {
+  override val elementTag: String = "container"
+  override val subClasses: Seq[Class[_]] = Seq(classOf[Folder], classOf[Document])
+}
 
 object Container {
   val applyFunction: Unit => Container = _ => new Container()
@@ -76,7 +85,10 @@ case class Folder(features: Seq[Feature])(val containerData: ContainerData) exte
  */
 case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container
 
-class Geometry extends KmlObject
+class Geometry extends KmlObject with HasSubElements {
+  override val elementTag: String = "geometry"
+  override val subClasses: Seq[Class[_]] = Seq(classOf[Point], classOf[LineString])
+}
 
 case class GeometryData(kmlData: KmlData)
 
@@ -89,7 +101,10 @@ case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) 
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class StyleSelector() extends KmlObject
+class StyleSelector() extends KmlObject with HasSubElements {
+  override val elementTag: String = "styleSelector"
+  override val subClasses: Seq[Class[_]] = Seq(classOf[Style], classOf[StyleMap])
+}
 
 case class StyleSelectorData(kmlData: KmlData)
 
@@ -100,7 +115,10 @@ object StyleSelectorData {
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class SubStyle() extends KmlObject
+class SubStyle() extends KmlObject with HasSubElements {
+  override val elementTag: String = "subStyle"
+  override val subClasses: Seq[Class[_]] = Seq(classOf[ColorStyle])
+}
 
 case class SubStyleData(kmlData: KmlData)
 
@@ -108,7 +126,10 @@ object SubStyleData {
   val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
 }
 
-class ColorStyle() extends SubStyle
+class ColorStyle() extends SubStyle with HasSubElements {
+  override val elementTag: String = "colorStyle"
+  override val subClasses: Seq[Class[_]] = Seq(classOf[BalloonStyle], classOf[ListStyle], classOf[LineStyle], classOf[PolyStyle], classOf[IconStyle], classOf[LabelStyle])
+}
 
 case class ColorStyleData(color: Color, maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
 
@@ -309,6 +330,8 @@ object Coordinate {
 }
 
 object KmlExtractors extends Extractors {
+
+  // TODO use the HasSubElements trait to do this.
 
   Extractor.translations += "coordinates" -> Seq("coordinates")
   Extractor.translations += "features" -> Seq("Placemark")
@@ -539,4 +562,8 @@ object Test extends App {
   // TESTME
   val kml: KML = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
   println(s"KML: $kml")
+}
+
+trait HasSubElements {
+  val subClasses: Seq[Class[_]]
 }

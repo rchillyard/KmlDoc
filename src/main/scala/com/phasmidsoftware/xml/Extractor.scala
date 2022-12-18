@@ -136,6 +136,7 @@ object Extractor {
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
 
+    // TODO make this immutable.
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
     private def translateMemberNames(member: String): Seq[String] =
