@@ -96,20 +96,45 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </coordinates>
       </LineString>
     </xml>
-    extractMulti[Seq[Geometry]](xml \ "LineString") match {
+    extractMulti[Seq[Geometry]](xml \ "_") match {
       case Success(gs) =>
         gs.size shouldBe 1
         val lsHead = gs.head
         lsHead match {
-          case ls@LineString(tessellate, coordinates) =>
+          case LineString(tessellate, cs) =>
             tessellate shouldBe Tessellate("1")
-            val cs: Seq[Coordinates] = ls.coordinates
             cs.size shouldBe 1
             cs.head.coordinates.size shouldBe 18
         }
         val wy = Using(StateR())(sr => new KmlRenderers {}.rendererGeometrys.render(gs, FormatXML(0), sr))
         wy.isSuccess shouldBe true
         wy.get shouldBe "\n<LineString><tessellate>1</tessellate>\n  <coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n    </coordinates>\n  \n  </LineString>\n\n".stripMargin
+      case Failure(x) => fail(x)
+    }
+  }
+  it should "extract Point as geometry" in {
+    import KmlExtractors._
+    val xml: Elem = <xml>
+      <Point id="my point">
+        <coordinates>
+          -71.097293,42.478238,0
+        </coordinates>
+      </Point>
+    </xml>
+    extractMulti[Seq[Geometry]](xml \ "_") match {
+      case Success(gs) =>
+        gs.size shouldBe 1
+        val lsHead = gs.head
+        lsHead match {
+          case Point(cs) =>
+            cs.size shouldBe 1
+            cs.head.coordinates.size shouldBe 1
+        }
+        val wy = Using(StateR())(sr => new KmlRenderers {}.rendererGeometrys.render(gs, FormatXML(0), sr))
+        wy.isSuccess shouldBe true
+        println(wy.get)
+// TODO fix the rendering of Point.
+//        wy.get shouldBe "<Point>\n  <coordinates>\n    -71.097293, 42.478238, 0\n    </coordinates>\n  \n  </Point>"
       case Failure(x) => fail(x)
     }
   }

@@ -2,9 +2,20 @@ package com.phasmidsoftware.core
 
 import scala.collection.mutable
 import scala.util.Try
-import scala.xml.{Elem, Node}
+import scala.xml.{Elem, Node, NodeSeq}
 
 object Utilities {
+
+    /**
+     * Method to filter a sequence of object according to a value and a lens function.
+     *
+     * TODO generalize this method.
+     *
+     * @param nodeSeq the sequence to be filtered.
+     * @param label   the value that must be matched.
+     * @return the filtered version of the sequence.
+     */
+    def lensFilter(nodeSeq: NodeSeq, label: String): NodeSeq = nodeSeq filter (node => node.label == label)
 
     /**
      * The purpose of this method is to allow a String to be parsed as an XML entity, WITHOUT replace " by &quot;
@@ -28,17 +39,21 @@ object Utilities {
         (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
     }
 
-    private def showBrief(node: Node): String = node.label
+    private def renderNodeBrief(node: Node): String = node.label
 
-    def show(node: Node): String = {
+    def renderNode(node: Node): String = {
         val result = new mutable.StringBuilder("node: ")
         result.append(s"label=${node.label}, ")
         result.append(s"length=${node.length}, ")
         result.append(s"descendants=${node.descendant.size}, ")
         result.append(s"attributes=${node.attributes.mkString}, ")
-        val children = node.child map showBrief
+        val children = node.child map renderNodeBrief
         result.append(s"children=${children.mkString("{", ",", "}")}")
         result.toString()
+    }
+
+    def show(node: Node): Unit = {
+        println(renderNode(node))
     }
 
     /**

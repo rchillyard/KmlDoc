@@ -16,9 +16,8 @@ import scala.xml.{Elem, NamespaceBinding, Node, XML}
  * Super-type of all KML entities.
  * See https://developers.google.com/kml/documentation/kmlreference
  */
-class KmlObject extends HasSubElements {
-  val elementTag: String = "object" // XXX ?
-  val subClasses: Seq[Class[_]] = Seq(classOf[Feature], classOf[Geometry], classOf[StyleSelector], classOf[SubStyle], classOf[Scale])
+class KmlObject {
+//  val subClasses: Seq[Class[_]] = Seq(classOf[Feature], classOf[Geometry], classOf[StyleSelector], classOf[SubStyle], classOf[Scale])
 }
 
 object KmlObject {
@@ -49,19 +48,13 @@ object Scale {
   def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
 }
 
-class Feature extends KmlObject with HasSubElements {
-  override val elementTag: String = "feature"
-  override val subClasses: Seq[Class[_]] = Seq(classOf[Placemark], classOf[Container])
-}
+class Feature extends KmlObject
 
 case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[String], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
 
-class Container() extends Feature with HasSubElements {
-  override val elementTag: String = "container"
-  override val subClasses: Seq[Class[_]] = Seq(classOf[Folder], classOf[Document])
-}
+class Container() extends Feature
 
 object Container {
   val applyFunction: Unit => Container = _ => new Container()
@@ -85,10 +78,7 @@ case class Folder(features: Seq[Feature])(val containerData: ContainerData) exte
  */
 case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container
 
-class Geometry extends KmlObject with HasSubElements {
-  override val elementTag: String = "geometry"
-  override val subClasses: Seq[Class[_]] = Seq(classOf[Point], classOf[LineString])
-}
+class Geometry extends KmlObject
 
 case class GeometryData(kmlData: KmlData)
 
@@ -101,9 +91,13 @@ case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) 
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class StyleSelector() extends KmlObject with HasSubElements {
-  override val elementTag: String = "styleSelector"
-  override val subClasses: Seq[Class[_]] = Seq(classOf[Style], classOf[StyleMap])
+class StyleSelector() extends KmlObject
+
+object StyleSelector {
+  implicit object SuperTypeStyleSelector extends SuperType[StyleSelector] {
+    val subClasses: Seq[Class[_]] = Seq(classOf[Style], classOf[StyleMap])
+  }
+
 }
 
 case class StyleSelectorData(kmlData: KmlData)
@@ -115,10 +109,7 @@ object StyleSelectorData {
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class SubStyle() extends KmlObject with HasSubElements {
-  override val elementTag: String = "subStyle"
-  override val subClasses: Seq[Class[_]] = Seq(classOf[ColorStyle])
-}
+class SubStyle() extends KmlObject
 
 case class SubStyleData(kmlData: KmlData)
 
@@ -126,9 +117,12 @@ object SubStyleData {
   val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
 }
 
-class ColorStyle() extends SubStyle with HasSubElements {
-  override val elementTag: String = "colorStyle"
-  override val subClasses: Seq[Class[_]] = Seq(classOf[BalloonStyle], classOf[ListStyle], classOf[LineStyle], classOf[PolyStyle], classOf[IconStyle], classOf[LabelStyle])
+class ColorStyle() extends SubStyle
+
+object ColorStyle {
+  implicit object SuperTypeColorStyle extends SuperType[ColorStyle] {
+    val subClasses: Seq[Class[_]] = Seq(classOf[BalloonStyle], classOf[ListStyle], classOf[LineStyle], classOf[PolyStyle], classOf[IconStyle], classOf[LabelStyle])
+  }
 }
 
 case class ColorStyleData(color: Color, maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
@@ -331,12 +325,20 @@ object Coordinate {
 
 object KmlExtractors extends Extractors {
 
-  // TODO use the HasSubElements trait to do this.
-
   Extractor.translations += "coordinates" -> Seq("coordinates")
   Extractor.translations += "features" -> Seq("Placemark")
 
   import Extractors._
+
+  implicit def extractorGeometryMulti: MultiExtractor[Seq[Geometry]] = multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point"))
+
+  implicit def extractorFeatureMulti: MultiExtractor[Seq[Feature]] = multiExtractor2[Feature, (Placemark, Container), Placemark, Container]((p, c) => (p, c), Seq("Placemark", "Container"))
+
+  implicit def extractorContainerMulti: MultiExtractor[Seq[Container]] = multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document"))
+
+  implicit def extractorStyleSelectorMulti: MultiExtractor[Seq[StyleSelector]] = multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap"))
+
+  implicit def extractorStyleSubStyleMulti: MultiExtractor[Seq[SubStyle]] = multiExtractor1[SubStyle, Tuple1[ColorStyle], ColorStyle](c => Tuple1(c), Seq("ColorStyle"))
 
   implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply)
   implicit val extractorKPP2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction)
@@ -347,14 +349,12 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
   implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
   implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
-  implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractor[StyleSelector]
   implicit val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply)
   implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
   implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply)
   implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point)
   implicit val extractorGeometry: Extractor[Geometry] = extractorAlt[Geometry, LineString, Point]
-  implicit val extractorMultiGeometry: MultiExtractor[Seq[Geometry]] = multiExtractor[Geometry]
   implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorKD2FD)
   implicit val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply)
   implicit val extractorPlacemark: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorFD2Placemark)
@@ -411,7 +411,6 @@ object KmlExtractors extends Extractors {
   implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
   implicit val extractorFD2ContainerData: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](ContainerData.applyFunction)
   implicit val extractorContainerData: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorFD2ContainerData)
-  implicit val extractorMultiFeature: MultiExtractor[Seq[Feature]] = multiExtractor[Feature]
   implicit val extractorCD2Folder: Extractor[ContainerData => Folder] = extractorPartial01(Folder.apply)
   implicit val extractorContainer: Extractor[Container] = extractor0(Container.applyFunction)
   implicit val extractorFolder: Extractor[Folder] = extractorPartial(extractorCD2Folder)
@@ -562,8 +561,4 @@ object Test extends App {
   // TESTME
   val kml: KML = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
   println(s"KML: $kml")
-}
-
-trait HasSubElements {
-  val subClasses: Seq[Class[_]]
 }

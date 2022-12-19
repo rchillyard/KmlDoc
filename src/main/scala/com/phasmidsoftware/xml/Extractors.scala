@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.sequence
+import com.phasmidsoftware.core.Utilities.{lensFilter, sequence}
 import com.phasmidsoftware.core.{LoggableAny, Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractor.{extractChildren, extractField, none}
@@ -107,9 +107,57 @@ trait Extractors {
    */
   def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
-  def fieldExtractor[P: Extractor]: ElementExtractor[P] = (tag: String) => extractField[P](tag)
+  /**
+   * Method to yield an ElementExtractor[T] which in turns invokes extractField with the given tag.
+   *
+   * @tparam T the underlying (Extractor) type of the result.
+   * @return an ElementExtractor[T] based on extractField.
+   */
+  def fieldExtractor[T: Extractor]: ElementExtractor[T] = (tag: String) => extractField[T](tag)
 
-  def childrenExtractor[P: MultiExtractor]: ElementExtractor[P] = (tag: String) => extractChildren[P](tag)
+
+  /**
+   * Method to yield an ElementExtractor[T] which in turns invokes extractChildren with the given tag.
+   *
+   * @tparam T the underlying (MultiExtractor) type of the result.
+   * @return an ElementExtractor[T] based on extractField.
+   */
+  def childrenExtractor[T: MultiExtractor]: ElementExtractor[T] = (tag: String) => extractChildren[T](tag)
+
+  /**
+   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
+   *
+   * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+   * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.
+   * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+   * @tparam U  a tuple whose only purpose is type inference.
+   * @tparam P0 the first (Extractor) sub-type of T.
+   * @return MultiExtractor of Seq[T].
+   */
+  def multiExtractor1[T, U <: Product, P0 <: T : Extractor](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    labels match {
+      case label :: Nil => sequence(for (node <- lensFilter(nodeSeq, label)) yield implicitly[Extractor[P0]].extract(node))
+      case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
+    }
+
+
+  /**
+   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of two P-types.
+   *
+   * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+   * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
+   * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+   * @tparam U  a tuple whose only purpose is type inference.
+   * @tparam P0 the first (Extractor) sub-type of T.
+   * @return MultiExtractor of Seq[T].
+   */
+  def multiExtractor2[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    labels match {
+      case label :: fs =>
+        val p0sy = sequence(for (node <- lensFilter(nodeSeq, label)) yield implicitly[Extractor[P0]].extract(node))
+        val tsy = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs).extract(nodeSeq)
+        for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+    }
 
   /**
    * Method to yield an Extractor[T] where we have an Extractor[B => T].
