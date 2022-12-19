@@ -1,9 +1,9 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, sequence}
+import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{LoggableAny, Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
-import com.phasmidsoftware.xml.Extractor.{extractChildren, extractField, none}
+import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, extractField, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
@@ -135,118 +135,204 @@ trait Extractors {
    * @return MultiExtractor of Seq[T].
    */
   def multiExtractor1[T, U <: Product, P0 <: T : Extractor](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-    labels match {
-      case label :: Nil => sequence(for (node <- lensFilter(nodeSeq, label)) yield implicitly[Extractor[P0]].extract(node))
-      case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
+      labels match {
+          case label :: Nil => sequence(extractElementsByLabel[P0](nodeSeq, label))
+          case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
+      }
+
+    /**
+     * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of two P-types.
+     *
+     * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+     * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
+     * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+     * @tparam U  a tuple whose only purpose is type inference.
+     * @tparam P0 the first (Extractor) sub-type of T.
+     * @tparam P1 the second (Extractor) sub-type of T.
+     * @return MultiExtractor of Seq[T].
+     */
+    def multiExtractor2[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+        labels match {
+            case label :: fs =>
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
+                val tsy = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs).extract(nodeSeq)
+                for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+        }
+
+    /**
+     * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of three P-types.
+     *
+     * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+     * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
+     * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+     * @tparam U  a tuple whose only purpose is type inference.
+     * @tparam P0 the first (Extractor) sub-type of T.
+     * @tparam P1 the second (Extractor) sub-type of T.
+     * @tparam P2 the third (Extractor) sub-type of T.
+     * @return MultiExtractor of Seq[T].
+     */
+    def multiExtractor3[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+        labels match {
+            case label :: fs =>
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
+                val tsy = multiExtractor2[T, (P1, P2), P1, P2]((p1, p2) => (p1, p2), fs).extract(nodeSeq)
+                for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+        }
+
+    /**
+     * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of four P-types.
+     *
+     * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+     * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
+     * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+     * @tparam U  a tuple whose only purpose is type inference.
+     * @tparam P0 the first (Extractor) sub-type of T.
+     * @tparam P1 the second (Extractor) sub-type of T.
+     * @tparam P2 the third (Extractor) sub-type of T.
+     * @tparam P3 the fourth (Extractor) sub-type of T.
+     * @return MultiExtractor of Seq[T].
+     */
+    def multiExtractor4[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor, P3 <: T : Extractor](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+        labels match {
+            case label :: fs =>
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
+                val tsy = multiExtractor3[T, (P1, P2, P3), P1, P2, P3]((p1, p2, p3) => (p1, p2, p3), fs).extract(nodeSeq)
+                for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+        }
+
+    /**
+     * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of five P-types.
+     *
+     * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+     * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
+     * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+     * @tparam U  a tuple whose only purpose is type inference.
+     * @tparam P0 the first (Extractor) sub-type of T.
+     * @tparam P1 the second (Extractor) sub-type of T.
+     * @tparam P2 the third (Extractor) sub-type of T.
+     * @tparam P3 the fourth (Extractor) sub-type of T.
+     * @tparam P4 the fifth (Extractor) sub-type of T.
+     * @return MultiExtractor of Seq[T].
+     */
+    def multiExtractor5[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor, P3 <: T : Extractor, P4 <: T : Extractor](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+        labels match {
+            case label :: fs =>
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
+                val tsy = multiExtractor4[T, (P1, P2, P3, P4), P1, P2, P3, P4]((p1, p2, p3, p4) => (p1, p2, p3, p4), fs).extract(nodeSeq)
+                for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+        }
+
+    /**
+     * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of six P-types.
+     *
+     * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
+     * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
+     * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+     * @tparam U  a tuple whose only purpose is type inference.
+     * @tparam P0 the first (Extractor) sub-type of T.
+     * @tparam P1 the second (Extractor) sub-type of T.
+     * @tparam P2 the third (Extractor) sub-type of T.
+     * @tparam P3 the fourth (Extractor) sub-type of T.
+     * @tparam P4 the fifth (Extractor) sub-type of T.
+     * @tparam P5 the sixth (Extractor) sub-type of T.
+     * @return MultiExtractor of Seq[T].
+     */
+    def multiExtractor6[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor, P3 <: T : Extractor, P4 <: T : Extractor, P5 <: T : Extractor](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+        labels match {
+            case label :: fs =>
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
+                val tsy = multiExtractor5[T, (P1, P2, P3, P4, P5), P1, P2, P3, P4, P5]((p1, p2, p3, p4, p5) => (p1, p2, p3, p4, p5), fs).extract(nodeSeq)
+                for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+        }
+
+    /**
+     * Method to yield an Extractor[T] where we have an Extractor[B => T].
+     * This will occur when we have a case class with an additional parameter set
+     * including one parameter of type B.
+     *
+     * CONSIDER rename this (compose? or extractorCompose?) and couldn't it go inside Extractor?
+     *
+     * @param extractorBtoT an extractor for the type B => T.
+     * @tparam B the type of the value in the additional parameter set of T.
+     * @tparam T the underlying type of the resulting extractor.
+     * @return an Extractor[T] whose method extract will convert a Node into a T.
+     */
+    def extractorPartial[B <: Product : Extractor, T: ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
+        (node: Node) =>
+            for {q <- extractorBtoT.extract(node)
+                 b <- Extractor.extract[B](node)
+                 } yield q(b)
+
+    /**
+     * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
+     * NOTE that you will have to specify a lambda for the construct function.
+     *
+     * @param construct a function () => T, usually the apply method of a case object or zero-member case class.
+     * @tparam T the underlying type of the result, a Product.
+     * @return an Extractor[T] whose method extract will construct a T while ignoring the input Node.
+     */
+    def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = Extractor(Success(construct()))
+
+    /**
+     * Extractor which will convert an Xml Node into an instance of a case class with zero members and one auxiliary (non-member) parameter.
+     *
+     * NOTE: the construct function will have to be an explicitly declared function of the form: B => T.
+     * This is because the compiler gets a little confused, otherwise.
+     *
+     * @param construct a function B => T, an explicitly declared function.
+     * @tparam B the type of the non-member parameter of T.
+     * @tparam T the underlying type of the result, a Product.
+     * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
+     */
+    def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = Extractor(Success(construct))
+
+    /**
+     * Extractor which will convert an Xml Node into an instance of a case class with one member.
+     *
+     * NOTE: this specific extractor provides logging.
+     * CONSIDER adding logging to the other extractors.
+     *
+     * @param construct a function (P0) => T, usually the apply method of a case class.
+     * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
+     * @tparam T  the underlying type of the result, a Product.
+     * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
+     */
+    def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = {
+        import Extractors.flog._
+        import Extractors.tryLoggable
+        implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
+        (node: Node) => "extractor10: " !! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
     }
 
+    /**
+     * Extractor which will convert an Xml Node into an instance of a case class with one member.
+     *
+     * @param construct a function (P0) => T, usually the apply method of a case class.
+     * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
+     * @tparam T  the underlying type of the result, a Product.
+     * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
+     */
+    def extractor01[P0: MultiExtractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] =
+        (node: Node) => extractorPartial1[P0, Unit, T](childrenExtractor[P0], m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
 
-  /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of two P-types.
-   *
-   * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
-   * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
-   * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
-   * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
-   */
-  def multiExtractor2[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-    labels match {
-      case label :: fs =>
-        val p0sy = sequence(for (node <- lensFilter(nodeSeq, label)) yield implicitly[Extractor[P0]].extract(node))
-        val tsy = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs).extract(nodeSeq)
-        for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
-    }
+    /**
+     * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
+     *
+     * @param construct a function (P0) => B => T, usually the apply method of a case class.
+     * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
+     * @tparam B  the type of the non-member parameter of T.
+     * @tparam T  the underlying type of the result, a Product.
+     * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
+     */
+    def extractorPartial10[P0: Extractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
+        (node: Node) => extractorPartial1[P0, B, T](fieldExtractor, e0 => b => construct(e0)(b), dropLast = true, fields).extract(node)
 
-  /**
-   * Method to yield an Extractor[T] where we have an Extractor[B => T].
-   * This will occur when we have a case class with an additional parameter set
-   * including one parameter of type B.
-   *
-   * CONSIDER rename this (compose? or extractorCompose?) and couldn't it go inside Extractor?
-   *
-   * @param extractorBtoT an extractor for the type B => T.
-   * @tparam B the type of the value in the additional parameter set of T.
-   * @tparam T the underlying type of the resulting extractor.
-   * @return an Extractor[T] whose method extract will convert a Node into a T.
-   */
-  def extractorPartial[B <: Product : Extractor, T: ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
-    (node: Node) =>
-      for {q <- extractorBtoT.extract(node)
-           b <- Extractor.extract[B](node)
-           } yield q(b)
-
-  /**
-   * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
-   * NOTE that you will have to specify a lambda for the construct function.
-   *
-   * @param construct a function () => T, usually the apply method of a case object or zero-member case class.
-   * @tparam T the underlying type of the result, a Product.
-   * @return an Extractor[T] whose method extract will construct a T while ignoring the input Node.
-   */
-  def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = Extractor(Success(construct()))
-
-  /**
-   * Extractor which will convert an Xml Node into an instance of a case class with zero members and one auxiliary (non-member) parameter.
-   *
-   * NOTE: the construct function will have to be an explicitly declared function of the form: B => T.
-   * This is because the compiler gets a little confused, otherwise.
-   *
-   * @param construct a function B => T, an explicitly declared function.
-   * @tparam B the type of the non-member parameter of T.
-   * @tparam T the underlying type of the result, a Product.
-   * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
-   */
-  def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = Extractor(Success(construct))
-
-  /**
-   * Extractor which will convert an Xml Node into an instance of a case class with one member.
-   *
-   * NOTE: this specific extractor provides logging.
-   * CONSIDER adding logging to the other extractors.
-   *
-   * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
-   * @tparam T  the underlying type of the result, a Product.
-   * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
-   */
-  def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = {
-    import Extractors.flog._
-    import Extractors.tryLoggable
-    implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
-    (node: Node) => "extractor10: " !! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
-  }
-
-  /**
-   * Extractor which will convert an Xml Node into an instance of a case class with one member.
-   *
-   * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
-   * @tparam T  the underlying type of the result, a Product.
-   * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
-   */
-  def extractor01[P0: MultiExtractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] =
-    (node: Node) => extractorPartial1[P0, Unit, T](childrenExtractor[P0], m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
-
-  /**
-   * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
-   *
-   * @param construct a function (P0) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
-   * @tparam T  the underlying type of the result, a Product.
-   * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
-   */
-  def extractorPartial10[P0: Extractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-    (node: Node) => extractorPartial1[P0, B, T](fieldExtractor, e0 => b => construct(e0)(b), dropLast = true, fields).extract(node)
-
-  /**
-   * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
-   *
-   * @param construct a function (P0) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+    /**
+     * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
+     *
+     * @param construct a function (P0) => B => T, usually the apply method of a case class.
+     * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
+     * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */

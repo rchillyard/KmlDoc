@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.renderNode
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import org.slf4j.{Logger, LoggerFactory}
@@ -136,6 +136,17 @@ object Extractor {
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node \ t) yield w
         implicitly[MultiExtractor[P]].extract(nodeSeq)
     }
+
+    /**
+     * Method to extract a Seq or Try[P] from a NodeSeq, by filtering on the given label.
+     *
+     * @param nodeSeq the nodes whence to extract.
+     * @param label   the label to match.
+     * @tparam P the underlying (Extractor) type of the result.
+     * @return a Seq of Try[P].
+     */
+    def extractElementsByLabel[P: Extractor](nodeSeq: NodeSeq, label: String): Seq[Try[P]] =
+        for (node <- lensFilter[Node, String](_.label)(label)(nodeSeq)) yield implicitly[Extractor[P]].extract(node)
 
     /**
      * Method to create an Extractor[T] which always fails.

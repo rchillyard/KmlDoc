@@ -2,20 +2,23 @@ package com.phasmidsoftware.core
 
 import scala.collection.mutable
 import scala.util.Try
-import scala.xml.{Elem, Node, NodeSeq}
+import scala.xml.{Elem, Node}
 
 object Utilities {
 
     /**
      * Method to filter a sequence of object according to a value and a lens function.
      *
-     * TODO generalize this method.
+     * CONSIDER is there a method in the standard library which does this?
      *
-     * @param nodeSeq the sequence to be filtered.
-     * @param label   the value that must be matched.
+     * @param lens the function which will extract an A from a T.
+     * @param a    the value that must be matched.
+     * @param ts   the sequence to be filtered.
+     * @tparam T the underlying type of the input and output sequences.
+     * @tparam A the type of the value to be matched.
      * @return the filtered version of the sequence.
      */
-    def lensFilter(nodeSeq: NodeSeq, label: String): NodeSeq = nodeSeq filter (node => node.label == label)
+    def lensFilter[T, A](lens: T => A)(a: A)(ts: Seq[T]): Seq[T] = ts filter (t => lens(t) == a)
 
     /**
      * The purpose of this method is to allow a String to be parsed as an XML entity, WITHOUT replace " by &quot;

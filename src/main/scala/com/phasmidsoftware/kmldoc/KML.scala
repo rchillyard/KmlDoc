@@ -119,12 +119,6 @@ object SubStyleData {
 
 class ColorStyle() extends SubStyle
 
-object ColorStyle {
-  implicit object SuperTypeColorStyle extends SuperType[ColorStyle] {
-    val subClasses: Seq[Class[_]] = Seq(classOf[BalloonStyle], classOf[ListStyle], classOf[LineStyle], classOf[PolyStyle], classOf[IconStyle], classOf[LabelStyle])
-  }
-}
-
 case class ColorStyleData(color: Color, maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
 
 /**
@@ -340,6 +334,8 @@ object KmlExtractors extends Extractors {
 
   implicit def extractorStyleSubStyleMulti: MultiExtractor[Seq[SubStyle]] = multiExtractor1[SubStyle, Tuple1[ColorStyle], ColorStyle](c => Tuple1(c), Seq("ColorStyle"))
 
+  implicit def extractorStyleColorStyleMulti: MultiExtractor[Seq[ColorStyle]] = multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle]((p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle"))
+
   implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply)
   implicit val extractorKPP2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction)
   implicit val extractorGeometryData: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorKPP2GeometryData)
@@ -402,7 +398,6 @@ object KmlExtractors extends Extractors {
   implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption
   implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption
   implicit val extractorColorStyle: Extractor[ColorStyle] = extractorAlia6[ColorStyle, BalloonStyle, LineStyle, IconStyle, ListStyle, PolyStyle, LabelStyle]
-  implicit val extractorMultiColorStyle: MultiExtractor[Seq[ColorStyle]] = multiExtractor[ColorStyle]
   implicit val extractorKPP2StyleSelectorData: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](StyleSelectorData.applyFunction)
   implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorKPP2StyleSelectorData)
   implicit val extractorBT1: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply)
