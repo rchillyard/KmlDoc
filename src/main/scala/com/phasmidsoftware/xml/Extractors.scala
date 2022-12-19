@@ -27,6 +27,8 @@ trait Extractors {
   /**
    * Method to yield an Extractor which can choose from (two) alternative extractors.
    *
+   * FIXME this doesn't work properly: the order of P0 and P1 is significant: it shouldn't be.
+   *
    * @tparam R  result type.
    * @tparam P0 first extractor type.
    * @tparam P1 second extractor type.

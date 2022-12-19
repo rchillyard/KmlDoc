@@ -353,7 +353,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
   implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply)
   implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point)
-  implicit val extractorGeometry: Extractor[Geometry] = extractorAlt[Geometry, Point, LineString]
+  implicit val extractorGeometry: Extractor[Geometry] = extractorAlt[Geometry, LineString, Point]
   implicit val extractorMultiGeometry: MultiExtractor[Seq[Geometry]] = multiExtractor[Geometry]
   implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorKD2FD)
   implicit val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply)

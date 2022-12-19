@@ -85,6 +85,15 @@ object Extractor {
     def extract[T: Extractor](node: Node): Try[T] = implicitly[Extractor[T]].extract(node)
 
     /**
+     * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
+     *
+     * @param nodeSeq the nodes on which the extractor will work.
+     * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T]. Useually, T is an Iterable type.
+     * @return a Try[T].
+     */
+    def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] = implicitly[MultiExtractor[T]].extract(nodeSeq)
+
+    /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
      *
      * NOTE: Plural members should use extractChildren and not extractField.
