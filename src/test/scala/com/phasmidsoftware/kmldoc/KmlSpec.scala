@@ -4,10 +4,12 @@ import com.phasmidsoftware.core.Text
 import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.render.{FormatXML, StateR}
 import com.phasmidsoftware.xml.Extractor.extractMulti
-import com.phasmidsoftware.xml.{Extractor, MultiExtractor}
+import com.phasmidsoftware.xml.{Extractor, Extractors, MultiExtractor}
+
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
 import scala.util.{Failure, Success, Try, Using}
 import scala.xml.{Elem, XML}
 
@@ -19,16 +21,16 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml: Elem = <scale id="Hello">2.0</scale>
     import KmlExtractors._
     val triedScale = Extractor.extract[Scale](xml)
-    println(triedScale)
     triedScale.isSuccess shouldBe true
+    triedScale.get.$ shouldBe 2.0
   }
 
   it should "parse Scale without id" in {
     val xml: Elem = <scale>2.0</scale>
     import KmlExtractors._
     val triedScale = Extractor.extract[Scale](xml)
-    println(triedScale)
     triedScale.isSuccess shouldBe true
+    triedScale.get.$ shouldBe 2.0
   }
 
   behavior of "Coordinate"
@@ -166,7 +168,26 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val result: Try[Option[Text]] = Extractor.extractField[Option[Text]]("description")(xml)
     result shouldBe Success(Some(Text("Hello")))
   }
-  // TODO test the removal of the maybe prefix
+  case class Element(maybeDescription: Option[Text])
+  it should "extract using maybe Some" in {
+    val xml: Elem = <element>
+      <description>Hello</description>
+    </element>
+    import com.phasmidsoftware.xml.Extractors._
+    implicit val extractorMyElement: Extractor[Element] = new Extractors {}.extractor10(Element.apply)
+    val ey: Try[Element] = Extractor.extract[Element](xml)
+    ey.isSuccess shouldBe true
+    ey.get.maybeDescription shouldBe Some(Text("Hello"))
+  }
+  it should "extract using maybe None" in {
+    val xml: Elem = <element>
+    </element>
+    import com.phasmidsoftware.xml.Extractors._
+    implicit val extractorMyElement: Extractor[Element] = new Extractors {}.extractor10(Element.apply)
+    val ey: Try[Element] = Extractor.extract[Element](xml)
+    ey.isSuccess shouldBe true
+    ey.get.maybeDescription shouldBe None
+  }
 
   behavior of "Feature"
 

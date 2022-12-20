@@ -300,7 +300,7 @@ trait Extractors {
         import Extractors.flog._
         import Extractors.tryLoggable
         implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
-        (node: Node) => "extractor10: " !! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
+        (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
     }
 
     /**
