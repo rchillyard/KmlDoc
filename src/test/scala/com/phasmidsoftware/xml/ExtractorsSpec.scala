@@ -135,18 +135,18 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
       <empty></empty> <empty></empty>
     </xml>
     import MyExtractors._
-    val extractedSeq: Try[Seq[Empty.type]] = extractSequence[Empty.type](xml \ "empty")
+      val extractedSeq: Try[Seq[Empty.type]] = extractSequence[Empty.type](xml / "empty")
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
   }
 
   it should "extractSingleton" in {
     val xml: Elem = <xml id="1"></xml>
-    val extracted = extractSingleton[Int](xml \ "@id")
+    val extracted = extractSingleton[Int](xml / "@id")
     extracted shouldBe Success(1)
   }
   it should "extractSingleton2" in {
     val xml: Elem = <xml id="A"></xml>
-    val extracted = extractSingleton[String](xml \ "@id")
+    val extracted = extractSingleton[String](xml / "@id")
     extracted shouldBe Success("A")
   }
 
@@ -155,7 +155,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
       <empty></empty>
     </xml>
     import MyExtractors.extractEmpty
-    val extracted = extractOptional[Empty.type](xml \ "empty")
+    val extracted = extractOptional[Empty.type](xml / "empty")
     extracted shouldBe Success(Empty)
   }
 
@@ -163,7 +163,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     val xml: Elem = <xml>
     </xml>
     import MyExtractors.extractEmpty
-    val extracted = extractOptional[Empty.type](xml \ "empty")
+    val extracted = extractOptional[Empty.type](xml / "empty")
     extracted shouldBe Success(None)
   }
 
@@ -209,7 +209,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
       </document1>
     </xml>
     import MyExtractors._
-    val extracted: Try[Seq[Document1]] = extractMultiDocument1.extract(xml \ "document1")
+    val extracted: Try[Seq[Document1]] = extractMultiDocument1.extract(xml / "document1")
     extracted shouldBe Success(List(Document1(List(Empty, Empty))))
   }
 

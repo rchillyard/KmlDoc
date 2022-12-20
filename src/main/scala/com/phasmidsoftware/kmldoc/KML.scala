@@ -332,7 +332,7 @@ object KmlExtractors extends Extractors {
         multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^ "multiExtractorGeometry"
 
     implicit def multiExtractorFeature: MultiExtractor[Seq[Feature]] =
-        multiExtractor2[Feature, (Placemark, Container), Placemark, Container]((p, c) => (p, c), Seq("Placemark", "Container")) ^^ "multiExtractorFeature"
+        multiExtractor3[Feature, (Placemark, Folder, Document), Placemark, Folder, Document]((p, f, d) => (p, f, d), Seq("Placemark", "Folder", "Document")) ^^ "multiExtractorFeature"
 
     implicit def multiExtractorContainer: MultiExtractor[Seq[Container]] =
         multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"

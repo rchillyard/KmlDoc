@@ -129,7 +129,7 @@ class ExtractorsSpec2 extends AnyFlatSpec with should.Matchers with PrivateMetho
                 <x>1.0</x> <y>2.0</y>
             </Point>
         </xml>
-        val py: Try[Seq[Point]] = implicitly[MultiExtractor[Seq[Point]]].extract(xml \ "Point")
+        val py: Try[Seq[Point]] = implicitly[MultiExtractor[Seq[Point]]].extract(xml / "Point")
         py.isSuccess shouldBe true
         val p = py.get.head
         println(p)

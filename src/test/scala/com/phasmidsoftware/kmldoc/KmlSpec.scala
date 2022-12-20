@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.Text
 import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.render.{FormatXML, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
-import com.phasmidsoftware.xml.{Extractor, Extractors}
+import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -121,7 +121,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </coordinates>
       </Point>
     </xml>
-    extractMulti[Seq[Geometry]](xml \ "_") match {
+    extractMulti[Seq[Geometry]](xml / "_") match {
       case Success(gs) =>
         gs.size shouldBe 1
         val lsHead = gs.head
@@ -325,7 +325,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml = <xml>
       <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
     </xml>
-    val nodeSeq = xml \ "hotSpot"
+    val nodeSeq = xml / "hotSpot"
     nodeSeq.size shouldBe 1
     extractorHotspot.extract(nodeSeq.head) match {
       case Success(hotSpot) =>
@@ -355,7 +355,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
       </IconStyle>
     </xml>
-    val nodeSeq = xml \ "IconStyle"
+    val nodeSeq = xml / "IconStyle"
     nodeSeq.size shouldBe 1
     val iconStyle = nodeSeq.head
     extract[IconStyle](iconStyle) match {
@@ -550,7 +550,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </Pair>
       </StyleMap>
     </xml>
-    extractMulti[Seq[StyleMap]](xml \ "StyleMap") match {
+    extractMulti[Seq[StyleMap]](xml / "StyleMap") match {
 //    extractorMultiStyleMap.extract(xml \ "StyleMap") match {
       case Success(ss) =>
         ss.size shouldBe 1
@@ -567,7 +567,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "Document"
 
   // TESTME
-  ignore should "extract Document" in {
+  it should "extract Document" in {
     val xml = <xml>
       <Document>
         <name>MA - Boston NE: Historic New England Railroads</name>

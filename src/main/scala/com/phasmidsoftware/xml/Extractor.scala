@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
@@ -61,6 +61,8 @@ object Extractor {
 
     val flog: Flog = Flog[Extractors]
 
+    import flog._
+
     implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
 
     /**
@@ -71,7 +73,9 @@ object Extractor {
      * @tparam T the underlying type of the resulting Extractor.
      * @return an Extractor[T].
      */
-    def apply[T](f: Node => Try[T]): Extractor[T] = (node: Node) => f(node)
+    def apply[T](f: Node => Try[T]): Extractor[T] = new Extractor[T] {
+        def extract(node: Node): Try[T] = "Extractor.apply(f)" !? f(node)
+    } ^^ "Extractor.apply(f)"
 
     /**
      * Method to create an Extractor[T] such that the result of the extraction is always a constant, regardless of what's in the node provided.
@@ -80,7 +84,7 @@ object Extractor {
      * @tparam T the underlying type of the result.
      * @return an Extractor[T] which always produces ty when extract is invoked on it.
      */
-    def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty)
+    def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty) ^^ s"Extractor.apply($ty)"
 
     /**
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
@@ -89,7 +93,8 @@ object Extractor {
      * @tparam T the underlying result type and which provides (implicit) evidence of an Extractor[T].
      * @return a Try[T].
      */
-    def extract[T: Extractor](node: Node): Try[T] = implicitly[Extractor[T]].extract(node)
+    def extract[T: Extractor](node: Node): Try[T] =
+        s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
 
     /**
      * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -99,7 +104,8 @@ object Extractor {
      * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T].
      * @return a Try[T].
      */
-    def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] = implicitly[MultiExtractor[T]].extract(nodeSeq)
+    def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
+        s"multi-extract: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !? implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
      * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -109,7 +115,7 @@ object Extractor {
      * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T].
      * @return a Try[T].
      */
-    def extractAll[T: MultiExtractor](node: Node): Try[T] = extractMulti(node \ "_")
+    def extractAll[T: MultiExtractor](node: Node): Try[T] = extractMulti(node / "_")
 
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
@@ -128,9 +134,7 @@ object Extractor {
      * @return a Try[P].
      */
     def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
-        case _ -> Success(p) =>
-            import flog._
-            s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !? Success(p)
+        case _ -> Success(p) => s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !? Success(p)
         case m -> Failure(x) =>
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])
@@ -152,13 +156,11 @@ object Extractor {
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
         val ts = translateMemberNames(member)
-        logger.debug(s"extractChildren($member)(${renderNode(node)}(${name[MultiExtractor[P]]})): get $ts")
+        logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
         if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-        val nodeSeq: Seq[Node] = for (t <- ts; w <- node \ t) yield w
+        val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
         if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-        else logger.debug(s"extractChildren: ${nodeSeq.size} children matched with head=${renderNode(nodeSeq.head)}")
-        import flog._
-        s"flog: extractChildren($member)(${renderNode(node)})(${name[MultiExtractor[P]]})" !? implicitly[MultiExtractor[P]].extract(nodeSeq)
+        s"extractChildren($member)(${renderNode(node)})(${name[MultiExtractor[P]]})" !? implicitly[MultiExtractor[P]].extract(nodeSeq)
     }
 
     /**
@@ -183,6 +185,8 @@ object Extractor {
     // TODO make this immutable.
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
+    def expandTranslations(labels: Seq[String]): Seq[String] = for (label <- labels; z <- translateMemberNames(label)) yield z
+
     private def translateMemberNames(member: String): Seq[String] =
         translations.getOrElse(member,
             member match {
@@ -203,9 +207,9 @@ object Extractor {
             // NOTE optional members such that the name begins with "maybe"
             case optional(x) =>
                 val y = x.head.toLower + x.tail
-                s"optional: $y" -> extractOptional[P](node \ y)
+                s"optional: $y" -> extractOptional[P](node / y)
             // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
-            case x => s"singleton: $x" -> extractSingleton[P](node \ x)
+            case x => s"singleton: $x" -> extractSingleton[P](node / x)
         }
 
     private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
@@ -318,13 +322,6 @@ object Named {
 
     def combineNames6[T0, T1, T2, T3, T4, T5](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4], t5n: Named[T5]): String =
         combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + t5n
-
-
-//    def combineNames2[T0: Named, T1](tn: Named[T1]): String = combineNames2(name[T0], tn)
-
-    def combineNames[T0: Named](w: String): String =
-        name[T0] + "+" + w
-
 }
 
 /**
