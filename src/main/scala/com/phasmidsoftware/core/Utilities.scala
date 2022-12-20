@@ -2,7 +2,7 @@ package com.phasmidsoftware.core
 
 import scala.collection.mutable
 import scala.util.Try
-import scala.xml.{Elem, Node}
+import scala.xml.{Elem, Node, NodeSeq}
 
 object Utilities {
 
@@ -54,6 +54,8 @@ object Utilities {
         result.append(s"children=${children.mkString("{", ",", "}")}")
         result.toString()
     }
+
+    def renderNodes(nodes: NodeSeq): String = (for (node <- nodes) yield renderNode(node)).mkString("{", ",", "}")
 
     def show(node: Node): Unit = {
         println(renderNode(node))

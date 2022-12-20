@@ -321,6 +321,7 @@ object KmlExtractors extends Extractors {
 
   Extractor.translations += "coordinates" -> Seq("coordinates")
   Extractor.translations += "features" -> Seq("Placemark")
+  Extractor.translations += "Geometry" -> Seq("_")
 
   import Extractors._
 
@@ -425,7 +426,7 @@ object KmlExtractors extends Extractors {
   implicit def extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
 }
 
-trait KmlRenderers extends Renderers {
+object KmlRenderers extends Renderers {
 
   case class FormatCoordinate(indents: Int) extends BaseFormat(indents) {
     val name: String = "formatCoordinate"
@@ -509,18 +510,27 @@ trait KmlRenderers extends Renderers {
   implicit val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document]
   implicit val rendererFeature: Renderable[Feature] = rendererSuper1[Feature, Container]
   implicit val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature]
-  implicit val rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData)
+
+  implicit def rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData)
+
   implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
-  implicit val rendererDocument: Renderable[Document] = renderer1Super(Document.apply)(_.containerData)
+
+  implicit def rendererDocument: Renderable[Document] = renderer1Super(Document.apply)(_.containerData)
+
   implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
   implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
   implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
   implicit val rendererStyleType: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap]
-  implicit val rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector]
-  implicit val renderOptionOpen: Renderable[Option[Int]] = optionRenderer
+
+  implicit def rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector]
+
+  implicit def renderOptionOpen: Renderable[Option[Int]] = optionRenderer
+
   implicit val rendererKml: Renderable[KML] = renderer1(KML)
   implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>
     doRenderKML_Binding(t, format, stateR)
+
+  def render[T: Renderable](t: T, format: Format, stateR: StateR): String = implicitly[Renderable[T]].render(t, format, stateR)
 
   private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR): String = {
     val renderer: Renderable[KML] = renderer1(KML)

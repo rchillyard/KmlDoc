@@ -443,8 +443,8 @@ trait Renderers {
   private def doNestedRender[R <: Product : ClassTag](format: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String) = {
     // XXX: determine if attributeName corresponds to an optional attribute--Some(true), an attribute--Some(false), or a non-attribute: None.
     val maybeAttribute = attributeName match {
-      case Extractor.optionalAttribute(x) => Some(true)
-      case Extractor.attribute(x) => Some(false)
+      case Extractor.optionalAttribute(_) => Some(true)
+      case Extractor.attribute(_) => Some(false)
       case _ => None
     }
     // XXX: if maybeAttribute is defined, then isInternal will usually be true
@@ -542,12 +542,16 @@ trait Renderable[T] {
   /**
    * This is the method which renders an object t of type T as a String, given three other parameters.
    *
-   * @param t         the object to be rendered.
-   * @param format    the format to render the object in.
-   * @param stateR    the state of rendering.
+   * @param t      the object to be rendered.
+   * @param format the format to render the object in.
+   * @param stateR the state of rendering.
    * @return a String representation of t.
    */
   def render(t: T, format: Format, stateR: StateR): String
+}
+
+object Renderable {
+  def render[T: Renderable](t: T, format: Format, stateR: StateR): String = implicitly[Renderable[T]].render(t, format, stateR)
 }
 
 trait Format {
