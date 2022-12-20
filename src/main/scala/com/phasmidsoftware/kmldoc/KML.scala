@@ -123,7 +123,7 @@ object SubStyleData {
 
 class ColorStyle() extends SubStyle
 
-case class ColorStyleData(color: Color, maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
+case class ColorStyleData(maybeColor: Option[Color], maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
 
 /**
  * BalloonStyle
@@ -382,6 +382,7 @@ object KmlExtractors extends Extractors {
   implicit val extractorBgColor: Extractor[BgColor] = extractor10(BgColor)
   implicit val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption
   implicit val extractorColor: Extractor[Color] = extractor10(Color)
+  implicit val extractMaybeColor: Extractor[Option[Color]] = extractorOption
   implicit val extractorWidth: Extractor[Width] = extractor10(Width)
   implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot)
   implicit val extractorDisplayMode: Extractor[DisplayMode] = extractor10(DisplayMode)
@@ -462,6 +463,7 @@ object KmlRenderers extends Renderers {
   implicit val rendererScale: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData)
   implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
   implicit val rendererColor: Renderable[Color] = renderer1(Color)
+  implicit val rendererOptionColor: Renderable[Option[Color]] = optionRenderer
   implicit val rendererBgColor: Renderable[BgColor] = renderer1(BgColor)
   implicit val rendererOptionBgColor: Renderable[Option[BgColor]] = optionRenderer
   implicit val rendererTextColor: Renderable[TextColor] = renderer1(TextColor)
