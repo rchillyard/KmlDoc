@@ -3,7 +3,7 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{LoggableAny, Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
-import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, extractField, none}
+import com.phasmidsoftware.xml.Extractor.{combineNames, extractChildren, extractElementsByLabel, extractField, name, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
@@ -257,10 +257,11 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a T.
      */
     def extractorPartial[B <: Product : Extractor, T: ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
-        (node: Node) =>
+        Extractor { (node: Node) =>
             for {q <- extractorBtoT.extract(node)
                  b <- Extractor.extract[B](node)
                  } yield q(b)
+        } ^^ combineNames[Extractor[B], Extractor[B => T]](extractorBtoT)
 
     /**
      * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
@@ -270,7 +271,7 @@ trait Extractors {
      * @tparam T the underlying type of the result, a Product.
      * @return an Extractor[T] whose method extract will construct a T while ignoring the input Node.
      */
-    def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = Extractor(Success(construct()))
+    def extractor0[T: ClassTag](construct: Unit => T): Extractor[T] = Extractor(Success(construct())) ^^ "extractor0"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with zero members and one auxiliary (non-member) parameter.
@@ -283,7 +284,7 @@ trait Extractors {
      * @tparam T the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = Extractor(Success(construct))
+    def extractorPartial0[B, T <: Product : ClassTag](construct: B => T): Extractor[B => T] = Extractor(Success(construct)) ^^ "extractorPartial0"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member.
@@ -296,12 +297,11 @@ trait Extractors {
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
-    def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = {
+    def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
         import Extractors.flog._
-        import Extractors.tryLoggable
         implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
         (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
-    }
+    } ^^ s"extractor10(${name[Extractor[P0]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member.

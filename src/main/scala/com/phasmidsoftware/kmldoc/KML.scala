@@ -97,13 +97,6 @@ case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) 
  */
 class StyleSelector() extends KmlObject
 
-object StyleSelector {
-  implicit object SuperTypeStyleSelector extends SuperType[StyleSelector] {
-    val subClasses: Seq[Class[_]] = Seq(classOf[Style], classOf[StyleMap])
-  }
-
-}
-
 case class StyleSelectorData(kmlData: KmlData)
 
 object StyleSelectorData {
@@ -323,117 +316,127 @@ object Coordinate {
 
 object KmlExtractors extends Extractors {
 
-  Extractor.translations += "coordinates" -> Seq("coordinates")
-  Extractor.translations += "features" -> Seq("Placemark")
-  Extractor.translations += "Geometry" -> Seq("_")
-  Extractor.translations += "Feature" -> Seq("_")
-  Extractor.translations += "Container" -> Seq("_")
-  Extractor.translations += "StyleSelector" -> Seq("_")
-  Extractor.translations += "SubStyle" -> Seq("_")
-  Extractor.translations += "ColorStyle" -> Seq("_")
+    Extractor.translations += "coordinates" -> Seq("coordinates")
+    // TODO add Overlay, NetworkLink,
+    Extractor.translations += "features" -> Seq("Placemark", "Folder", "Document")
+    Extractor.translations += "Geometry" -> Seq("_")
+    Extractor.translations += "Feature" -> Seq("_")
+    Extractor.translations += "Container" -> Seq("_")
+    Extractor.translations += "StyleSelector" -> Seq("_")
+    Extractor.translations += "SubStyle" -> Seq("_")
+    Extractor.translations += "ColorStyle" -> Seq("_")
 
-  import Extractors._
+    import Extractors._
 
-  implicit def extractorGeometryMulti: MultiExtractor[Seq[Geometry]] = multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point"))
+    implicit def multiExtractorGeometry: MultiExtractor[Seq[Geometry]] =
+        multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^ "multiExtractorGeometry"
 
-  implicit def extractorFeatureMulti: MultiExtractor[Seq[Feature]] = multiExtractor2[Feature, (Placemark, Container), Placemark, Container]((p, c) => (p, c), Seq("Placemark", "Container"))
+    implicit def multiExtractorFeature: MultiExtractor[Seq[Feature]] =
+        multiExtractor2[Feature, (Placemark, Container), Placemark, Container]((p, c) => (p, c), Seq("Placemark", "Container")) ^^ "multiExtractorFeature"
 
-  implicit def extractorContainerMulti: MultiExtractor[Seq[Container]] = multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document"))
+    implicit def multiExtractorContainer: MultiExtractor[Seq[Container]] =
+        multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"
 
-  implicit def extractorStyleSelectorMulti: MultiExtractor[Seq[StyleSelector]] = multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap"))
+    implicit def multiExtractorStyleSelector: MultiExtractor[Seq[StyleSelector]] =
+        multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap")) ^^ "multiExtractorStyleSelector"
 
-  implicit def extractorSubStyleMulti: MultiExtractor[Seq[SubStyle]] = multiExtractor1[SubStyle, Tuple1[ColorStyle], ColorStyle](c => Tuple1(c), Seq("ColorStyle"))
+    implicit def multiExtractorSubStyle: MultiExtractor[Seq[SubStyle]] =
+        multiExtractor1[SubStyle, Tuple1[ColorStyle], ColorStyle](c => Tuple1(c), Seq("ColorStyle")) ^^ "multiExtractorSubStyle"
 
-  implicit def extractorColorStyleMulti: MultiExtractor[Seq[ColorStyle]] = multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle]((p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle"))
+    implicit def multiExtractorColorStyle: MultiExtractor[Seq[ColorStyle]] =
+        multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle]((p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")) ^^ "multiExtractorColorStyle"
 
-  implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply)
-  implicit val extractorKPP2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction)
-  implicit val extractorGeometryData: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorKPP2GeometryData)
-  implicit val extractorPair: Extractor[Pair] = extractor20(Pair)
-  implicit val extractorMultiPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair]
-  implicit val extractorCoordinates: Extractor[Coordinates] = (node: Node) => Success(Coordinates.parse(node.text))
-  implicit val extractorMultiCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates]
-  implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption
-  implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
-  implicit val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply)
-  implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate)
-  implicit val extractorLineString: Extractor[LineString] = extractor11(LineString)
-  implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply)
-  implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point)
-  implicit val extractorGeometry: Extractor[Geometry] = extractorAlt[Geometry, LineString, Point]
-  implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorKD2FD)
-  implicit val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply)
-  implicit val extractorPlacemark: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorFD2Placemark)
-  implicit val extractorMultiPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point]
-  implicit val extractorFill: Extractor[Fill] = extractor10(Fill)
-  implicit val extractorOutline: Extractor[Outline] = extractor10(Outline)
-  implicit val extractorKD2Scale: Extractor[KmlData => Scale] = extractorPartial10(Scale.apply)
-  implicit val extractorScale: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorKD2Scale)
-  implicit val extractorHeading: Extractor[Heading] = extractor10(Heading)
-  implicit val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption
-  implicit val extractorListItemType: Extractor[ListItemType] = extractor10(ListItemType)
-  implicit val extractMaybeListItemType: Extractor[Option[ListItemType]] = extractorOption
-  implicit val extractorState: Extractor[State] = extractor10(State)
-  implicit val extractorTextColor: Extractor[TextColor] = extractor10(TextColor)
-  implicit val extractMaybeTextColor: Extractor[Option[TextColor]] = extractorOption
-  implicit val extractorItemIcon: Extractor[ItemIcon] = extractor20(ItemIcon)
-  implicit val extractMaybeItemIcon: Extractor[Option[ItemIcon]] = extractorOption
-  implicit val extractorIcon: Extractor[Icon] = extractor10(Icon)
-  implicit val extractorBgColor: Extractor[BgColor] = extractor10(BgColor)
-  implicit val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption
-  implicit val extractorColor: Extractor[Color] = extractor10(Color)
-  implicit val extractMaybeColor: Extractor[Option[Color]] = extractorOption
-  implicit val extractorWidth: Extractor[Width] = extractor10(Width)
-  implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot)
-  implicit val extractorDisplayMode: Extractor[DisplayMode] = extractor10(DisplayMode)
-  implicit val extractorColorMode: Extractor[ColorMode] = extractor10(ColorMode)
-  implicit val extractMaybeColorMode: Extractor[Option[ColorMode]] = extractorOption
-  implicit val extractorKPP2SubStyleData: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](SubStyleData.applyFunction)
-  implicit val extractorSubStyleData: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorKPP2SubStyleData)
-  implicit val extractorSSP2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(ColorStyleData.apply)
-  implicit val extractorColorStyleData: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorSSP2ColorStyleData)
-  implicit val extractorCSP2PolyStyle: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(PolyStyle.apply)
-  implicit val extractorPolyStyle: Extractor[PolyStyle] = extractorPartial[ColorStyleData, PolyStyle](extractorCSP2PolyStyle)
-  implicit val extractorCSP2ListStyle: Extractor[ColorStyleData => ListStyle] = extractorPartial30(ListStyle.apply)
-  implicit val extractorListStyle: Extractor[ListStyle] = extractorPartial[ColorStyleData, ListStyle](extractorCSP2ListStyle)
-  implicit val extractorCSP2IconStyle: Extractor[ColorStyleData => IconStyle] = extractorPartial40(IconStyle.apply)
-  implicit val extractorIconStyle: Extractor[IconStyle] = extractorPartial[ColorStyleData, IconStyle](extractorCSP2IconStyle)
-  implicit val extractorCSP2BalloonStyle: Extractor[ColorStyleData => BalloonStyle] = extractorPartial40(BalloonStyle.apply)
-  implicit val extractorBalloonStyle: Extractor[BalloonStyle] = extractorPartial[ColorStyleData, BalloonStyle](extractorCSP2BalloonStyle)
-  implicit val extractorCSP2LabelStyle: Extractor[ColorStyleData => LabelStyle] = extractorPartial10(LabelStyle.apply)
-  implicit val extractorLabelStyle: Extractor[LabelStyle] = extractorPartial[ColorStyleData, LabelStyle](extractorCSP2LabelStyle)
-  implicit val extractorCSP2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(LineStyle.apply)
-  implicit val extractorLineStyle: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSP2LineStyle)
-  implicit val extractMaybeIconStyle: Extractor[Option[IconStyle]] = extractorOption
-  implicit val extractMaybeLabelStyle: Extractor[Option[LabelStyle]] = extractorOption
-  implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption
-  implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption
-  implicit val extractorColorStyle: Extractor[ColorStyle] = extractorAlia6[ColorStyle, BalloonStyle, LineStyle, IconStyle, ListStyle, PolyStyle, LabelStyle]
-  implicit val extractorKPP2StyleSelectorData: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](StyleSelectorData.applyFunction)
-  implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorKPP2StyleSelectorData)
-  implicit val extractorBT1: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply)
-  implicit val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(StyleMap.apply)
-  implicit val extractorMultiLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString]
-  implicit val extractorMultiPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark]
-  implicit val extractorFD2ContainerData: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](ContainerData.applyFunction)
-  implicit val extractorContainerData: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorFD2ContainerData)
-  implicit val extractorCD2Folder: Extractor[ContainerData => Folder] = extractorPartial01(Folder.apply)
-  implicit val extractorContainer: Extractor[Container] = extractor0(Container.applyFunction)
-  implicit val extractorFolder: Extractor[Folder] = extractorPartial(extractorCD2Folder)
-  implicit val extractorMultiStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap]
-  implicit val extractorMultiFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder]
-  implicit val extractorCD2Document: Extractor[ContainerData => Document] = extractorPartial01(Document.apply)
-  implicit val extractorDocument: Extractor[Document] = extractorPartial(extractorCD2Document)
-  implicit val extractorMultiDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document]
-  implicit val extractorKml: Extractor[KML] = extractor01(KML)
-  implicit val extractorMultiKml: MultiExtractor[Seq[KML]] = multiExtractor[KML]
+    implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply) ^^ "extractorKmlData"
+    implicit val extractorKD2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction) ^^ "extractorKD2GeometryData"
+    implicit val extractorGeometryData: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorKD2GeometryData) ^^ "extractorPair"
+    implicit val extractorPair: Extractor[Pair] = extractor20(Pair) ^^ "multiExtractorPair"
+    implicit val multiExtractorPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair] ^^ "multiExtractorPair"
+    implicit val extractorCoordinates: Extractor[Coordinates] = Extractor((node: Node) => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
+    implicit val multiExtractorCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates] ^^ "multiExtractorCoordinates"
+    implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption[Int] ^^ "extractMaybeOpen"
+    implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap] ^^ "extractorStyleSelector"
+    implicit val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply) ^^ "extractorKD2FD"
+    implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate) ^^ "extractorTessellate"
+    implicit val extractorLineString: Extractor[LineString] = extractor11(LineString) ^^ "extractorLineString"
+    implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply) ^^ "extractorGD2Point"
+    implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point) ^^ "extractorPoint"
+    implicit val extractorGeometry: Extractor[Geometry] = extractorAlt[Geometry, LineString, Point] ^^ "extractorGeometry"
+    implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorKD2FD) ^^ "extractorFeatureData"
+    implicit val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply) ^^ "extractorFD2Placemark"
+    implicit val extractorPlacemark: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorFD2Placemark) ^^ "extractorPlacemark"
+    implicit val multiExtractorPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point] ^^ "multiExtractorPoint"
+    implicit val extractorFill: Extractor[Fill] = extractor10(Fill) ^^ "extractorFill"
+    implicit val extractorOutline: Extractor[Outline] = extractor10(Outline) ^^ "extractorOutline"
+    implicit val extractorKD2Scale: Extractor[KmlData => Scale] = extractorPartial10(Scale.apply) ^^ "extractorKD2Scale"
+    implicit val extractorScale: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorKD2Scale) ^^ "extractorScale"
+    implicit val extractorHeading: Extractor[Heading] = extractor10(Heading) ^^ "extractorHeading"
+    implicit val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption[Heading] ^^ "extractMaybeHeading"
+    implicit val extractorListItemType: Extractor[ListItemType] = extractor10(ListItemType) ^^ "extractorListItemType"
+    implicit val extractMaybeListItemType: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
+    implicit val extractorState: Extractor[State] = extractor10(State) ^^ "extractorState"
+    implicit val extractorTextColor: Extractor[TextColor] = extractor10(TextColor) ^^ "extractorTextColor"
+    implicit val extractMaybeTextColor: Extractor[Option[TextColor]] = extractorOption[TextColor] ^^ "extractMaybeTextColor"
+    implicit val extractorItemIcon: Extractor[ItemIcon] = extractor20(ItemIcon) ^^ "extractorItemIcon"
+    implicit val extractMaybeItemIcon: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
+    implicit val extractorIcon: Extractor[Icon] = extractor10(Icon) ^^ "extractorIcon"
+    implicit val extractorBgColor: Extractor[BgColor] = extractor10(BgColor) ^^ "extractorBgColor"
+    implicit val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
+    implicit val extractorColor: Extractor[Color] = extractor10(Color) ^^ "extractorColor"
+    implicit val extractMaybeColor: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
+    implicit val extractorWidth: Extractor[Width] = extractor10(Width) ^^ "extractorWidth"
+    implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot) ^^ "extractorHotspot"
+    implicit val extractorDisplayMode: Extractor[DisplayMode] = extractor10(DisplayMode) ^^ "extractorDisplayMode"
+    implicit val extractorColorMode: Extractor[ColorMode] = extractor10(ColorMode) ^^ "extractorColorMode"
+    implicit val extractMaybeColorMode: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
+    implicit val extractorKD2SubStyleData: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](SubStyleData.applyFunction) ^^ "extractorKD2SubStyleData"
+    implicit val extractorSubStyleData: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorKD2SubStyleData) ^^ "extractorSubStyleData"
+    implicit val extractorSSD2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(ColorStyleData.apply) ^^ "extractorSSD2ColorStyleData"
+    implicit val extractorColorStyleData: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorSSD2ColorStyleData) ^^ "extractorColorStyleData"
+    implicit val extractorCSD2PolyStyle: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(PolyStyle.apply) ^^ "extractorCSD2PolyStyle"
+    implicit val extractorPolyStyle: Extractor[PolyStyle] = extractorPartial[ColorStyleData, PolyStyle](extractorCSD2PolyStyle) ^^ "extractorPolyStyle"
+    implicit val extractorCSD2ListStyle: Extractor[ColorStyleData => ListStyle] = extractorPartial30(ListStyle.apply) ^^ "extractorCSD2ListStyle"
+    implicit val extractorListStyle: Extractor[ListStyle] = extractorPartial[ColorStyleData, ListStyle](extractorCSD2ListStyle) ^^ "extractorListStyle"
+    implicit val extractorCSP2IconStyle: Extractor[ColorStyleData => IconStyle] = extractorPartial40(IconStyle.apply) ^^ "extractorCSP2IconStyle"
+    implicit val extractorIconStyle: Extractor[IconStyle] = extractorPartial[ColorStyleData, IconStyle](extractorCSP2IconStyle) ^^ "extractorIconStyle"
+    implicit val extractorCSD2BalloonStyle: Extractor[ColorStyleData => BalloonStyle] = extractorPartial40(BalloonStyle.apply) ^^ "extractorCSD2BalloonStyle"
+    implicit val extractorBalloonStyle: Extractor[BalloonStyle] = extractorPartial[ColorStyleData, BalloonStyle](extractorCSD2BalloonStyle) ^^ "extractorBalloonStyle"
+    implicit val extractorCSD2LabelStyle: Extractor[ColorStyleData => LabelStyle] = extractorPartial10(LabelStyle.apply) ^^ "extractorCSD2LabelStyle"
+    implicit val extractorLabelStyle: Extractor[LabelStyle] = extractorPartial[ColorStyleData, LabelStyle](extractorCSD2LabelStyle) ^^ "extractorLabelStyle"
+    implicit val extractorCSD2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(LineStyle.apply) ^^ "extractorCSD2LineStyle"
+    implicit val extractorLineStyle: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSD2LineStyle) ^^ "extractorLineStyle"
+    implicit val extractMaybeIconStyle: Extractor[Option[IconStyle]] = extractorOption[IconStyle] ^^ "extractMaybeIconStyle"
+    implicit val extractMaybeLabelStyle: Extractor[Option[LabelStyle]] = extractorOption[LabelStyle] ^^ "extractMaybeLabelStyle"
+    implicit val extractMaybeBalloonStyle: Extractor[Option[BalloonStyle]] = extractorOption[BalloonStyle] ^^ "extractMaybeBalloonStyle"
+    implicit val extractMaybeLineStyle: Extractor[Option[LineStyle]] = extractorOption[LineStyle] ^^ "extractMaybeLineStyle"
+    implicit val extractorColorStyle: Extractor[ColorStyle] = extractorAlia6[ColorStyle, BalloonStyle, LineStyle, IconStyle, ListStyle, PolyStyle, LabelStyle] ^^ "extractorColorStyle"
+    implicit val extractorKD2StyleSelectorData: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](StyleSelectorData.applyFunction) ^^ "extractorKD2StyleSelectorData"
+    implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorKD2StyleSelectorData) ^^ "extractorStyleSelectorData"
 
-  implicit def extractorFeature: Extractor[Feature] = none[Feature].|[Container]()
+    implicit def extractorSSD2Style: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply) ^^ "extractorSSD2Style"
+
+    implicit def extractorSSD2StyleMap: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(StyleMap.apply) ^^ "extractorSSD2StyleMap"
+
+    implicit val multiExtractorLineString: MultiExtractor[Seq[LineString]] = multiExtractor[LineString] ^^ "multiExtractorLineString"
+    implicit val multiExtractorPlacemark: MultiExtractor[Seq[Placemark]] = multiExtractor[Placemark] ^^ "multiExtractorPlacemark"
+    implicit val extractorFD2ContainerData: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](ContainerData.applyFunction) ^^ "extractorFD2ContainerData"
+    implicit val extractorContainerData: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorFD2ContainerData) ^^ "extractorContainerData"
+    implicit val extractorCD2Folder: Extractor[ContainerData => Folder] = extractorPartial01(Folder.apply) ^^ "extractorCD2Folder"
+    implicit val extractorContainer: Extractor[Container] = extractor0(Container.applyFunction) ^^ "extractorContainer"
+    implicit val extractorFolder: Extractor[Folder] = extractorPartial(extractorCD2Folder) ^^ "extractorFolder"
+    implicit val multiExtractorStyleMap: MultiExtractor[Seq[StyleMap]] = multiExtractor[StyleMap] ^^ "multiExtractorStyleMap"
+    implicit val multiExtractorFolder: MultiExtractor[Seq[Folder]] = multiExtractor[Folder] ^^ "multiExtractorFolder"
+    implicit val extractorCD2Document: Extractor[ContainerData => Document] = extractorPartial01(Document.apply) ^^ "extractorCD2Document"
+    implicit val extractorDocument: Extractor[Document] = extractorPartial(extractorCD2Document) ^^ "extractorDocument"
+    implicit val multiExtractorDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document] ^^ "multiExtractorDocument"
+    implicit val extractorKml: Extractor[KML] = extractor01(KML) ^^ "extractorKml"
+    implicit val multiExtractorKml: MultiExtractor[Seq[KML]] = multiExtractor[KML] ^^ "multiExtractorKml"
+
+    implicit def extractorFeature: Extractor[Feature] = none[Feature].|[Container]()
 
 
-  implicit def extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorBT1)
+    implicit def extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorSSD2Style)
 
-  implicit def extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
+    implicit def extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorSSD2StyleMap)
 }
 
 object KmlRenderers extends Renderers {

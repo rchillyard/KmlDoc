@@ -50,7 +50,7 @@ object Utilities {
         result.append(s"length=${node.length}, ")
         result.append(s"descendants=${node.descendant.size}, ")
         result.append(s"attributes=${node.attributes.mkString}, ")
-        val children = node.child map (if (deep) renderNode(_, deep = true) else renderNodeBrief)
+        val children = node.child map (if (deep) renderNode(_, deep) else renderNodeBrief)
         result.append(s"children=${children.mkString("{", ",", "}")}")
         result.toString()
     }

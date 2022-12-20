@@ -6,6 +6,7 @@ import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
+import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
@@ -15,7 +16,7 @@ import scala.xml.{Node, NodeSeq}
  *
  * @tparam T the type to be constructed.
  */
-trait Extractor[T] {
+trait Extractor[T] extends Named[Extractor[T]] {
     self =>
 
     /**
@@ -91,12 +92,23 @@ object Extractor {
 
     /**
      * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
+     * Usually, T is itself an Iterable type.
      *
      * @param nodeSeq the nodes on which the extractor will work.
-     * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T]. Usually, T is an Iterable type.
+     * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T].
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] = implicitly[MultiExtractor[T]].extract(nodeSeq)
+
+    /**
+     * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
+     * Usually, T is itself an Iterable type.
+     *
+     * @param node the node on which the extractor will work--it will extract from all the node's children.
+     * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T].
+     * @return a Try[T].
+     */
+    def extractAll[T: MultiExtractor](node: Node): Try[T] = extractMulti(node \ "_")
 
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
@@ -115,12 +127,14 @@ object Extractor {
      * @return a Try[P].
      */
     def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
-        case _ -> Success(p) => Success(p)
+        case _ -> Success(p) =>
+            logger.debug(s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})")
+            Success(p)
         case m -> Failure(x) =>
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])
                 case _ =>
-                    val message = s"extractField ($m): field '$field' from node:\n    {${renderNode(node)}}"
+                    val message = s"extractField($field)(${renderNode(node)})(${implicitly[Extractor[P]].name}): ($m)"
                     logger.warn(s"$message caused by $x")
                     Failure(XmlException(message, x))
             }
@@ -137,9 +151,11 @@ object Extractor {
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
         val ts = translateMemberNames(member)
+        logger.debug(s"extractChildren($member)(${renderNode(node)}(${name[MultiExtractor[P]]})): get $ts")
         if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node \ t) yield w
         if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+        else logger.debug(s"extractChildren: ${nodeSeq.size} children matched with head=${renderNode(nodeSeq.head)}")
         implicitly[MultiExtractor[P]].extract(nodeSeq)
     }
 
@@ -152,7 +168,7 @@ object Extractor {
      * @return a Seq of Try[P].
      */
     def extractElementsByLabel[P: Extractor](nodeSeq: NodeSeq, label: String): Seq[Try[P]] =
-        for (node <- lensFilter[Node, String](_.label)(label)(nodeSeq)) yield implicitly[Extractor[P]].extract(node)
+        for (node <- lensFilter[Node, String](_.label)(label)(nodeSeq)) yield extract[P](node)
 
     /**
      * Method to create an Extractor[T] which always fails.
@@ -161,6 +177,15 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
+
+    // CONSIDER moving the following name-related methods to Named object.
+    def combineNamed[T0: Named, T1: Named]: String = name[T0] + "+" + name[T1]
+
+    def combineNames[T0: Named, T1](tn: Named[T1]): String =
+        name[T0] + "+" + tn.name
+
+    def combineNames[T0: Named](w: String): String =
+        name[T0] + "+" + w
 
     // TODO make this immutable.
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
@@ -197,6 +222,7 @@ object Extractor {
             case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${renderNode(node)}"))
         }
 
+    def name[P: Named]: String = Option(implicitly[Named[P]]) map (_.name) getOrElse "uninitialized"
 
     /**
      * Regular expression to match a plural name, viz. .....s
@@ -229,7 +255,7 @@ object Extractor {
  *
  * @tparam T the (iterable) type to be constructed.
  */
-trait MultiExtractor[T] {
+trait MultiExtractor[T] extends Named[MultiExtractor[T]] {
     /**
      * Method to convert a NodeSeq into a Try[T], usually an iterable type.
      * This method will typically be used on the result of: <code>node \ tag</code> where tag is particular tag String.
@@ -240,9 +266,13 @@ trait MultiExtractor[T] {
     def extract(nodeSeq: NodeSeq): Try[T]
 }
 
-// TODO remove this trait as it serves no purpose
-trait SuperType[T] {
-    val subClasses: Seq[Class[_]]
+trait Named[E] {
+    def ^^(w: String): E = {
+        name = w
+        this.asInstanceOf[E]
+    }
+
+    var name: String = "unnamed"
 }
 
 /**
