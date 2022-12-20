@@ -3,8 +3,9 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{LoggableAny, Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
-import com.phasmidsoftware.xml.Extractor.{combineNames, extractChildren, extractElementsByLabel, extractField, name, none}
+import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, extractField, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
+import com.phasmidsoftware.xml.Named.{combineNameds2, name}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -261,7 +262,7 @@ trait Extractors {
             for {q <- extractorBtoT.extract(node)
                  b <- Extractor.extract[B](node)
                  } yield q(b)
-        } ^^ combineNames[Extractor[B], Extractor[B => T]](extractorBtoT)
+        } ^^ combineNameds2[Extractor[B], Extractor[B => T]](extractorBtoT)
 
     /**
      * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
@@ -299,7 +300,6 @@ trait Extractors {
      */
     def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
         import Extractors.flog._
-        implicit val loggableAny: LoggableAny[T] = new LoggableAny[T] {}
         (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
     } ^^ s"extractor10(${name[Extractor[P0]]})"
 

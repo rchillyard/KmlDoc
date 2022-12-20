@@ -4,6 +4,7 @@ import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
+import com.phasmidsoftware.xml.Named.name
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -128,8 +129,8 @@ object Extractor {
      */
     def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
         case _ -> Success(p) =>
-            logger.debug(s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})")
-            Success(p)
+            import flog._
+            s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !? Success(p)
         case m -> Failure(x) =>
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])
@@ -156,7 +157,8 @@ object Extractor {
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node \ t) yield w
         if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
         else logger.debug(s"extractChildren: ${nodeSeq.size} children matched with head=${renderNode(nodeSeq.head)}")
-        implicitly[MultiExtractor[P]].extract(nodeSeq)
+        import flog._
+        s"flog: extractChildren($member)(${renderNode(node)})(${name[MultiExtractor[P]]})" !? implicitly[MultiExtractor[P]].extract(nodeSeq)
     }
 
     /**
@@ -177,15 +179,6 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
-
-    // CONSIDER moving the following name-related methods to Named object.
-    def combineNamed[T0: Named, T1: Named]: String = name[T0] + "+" + name[T1]
-
-    def combineNames[T0: Named, T1](tn: Named[T1]): String =
-        name[T0] + "+" + tn.name
-
-    def combineNames[T0: Named](w: String): String =
-        name[T0] + "+" + w
 
     // TODO make this immutable.
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
@@ -221,8 +214,6 @@ object Extractor {
             case _ if optional => Failure(new NoSuchFieldException)
             case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${renderNode(node)}"))
         }
-
-    def name[P: Named]: String = Option(implicitly[Named[P]]) map (_.name) getOrElse "uninitialized"
 
     /**
      * Regular expression to match a plural name, viz. .....s
@@ -273,6 +264,67 @@ trait Named[E] {
     }
 
     var name: String = "unnamed"
+
+    override def toString: String = name
+}
+
+object Named {
+    def named[P: Named]: Named[P] = implicitly[Named[P]]
+
+    def name[P: Named]: String = Option(named[P]) map (_.name) getOrElse "uninitialized"
+
+    def combineNamed2[T0: Named, T1: Named]: String =
+        combineNames2(named[T0], named[T1])
+
+    def combineNamed3[T0: Named, T1: Named, T2: Named]: String =
+        combineNames3(named[T0], named[T1], named[T2])
+
+    def combineNamed4[T0: Named, T1: Named, T2: Named, T3: Named]: String =
+        combineNames4(named[T0], named[T1], named[T2], named[T3])
+
+    def combineNamed5[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named]: String =
+        combineNames5(named[T0], named[T1], named[T2], named[T3], named[T4])
+
+    def combineNamed6[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named]: String =
+        combineNamed5[T0, T1, T2, T3, T4] + "+" + named[T5]
+
+
+    def combineNameds2[T0: Named, T1](t1n: Named[T1]): String =
+        combineNames2(named[T0], t1n)
+
+    def combineNameds3[T0: Named, T1: Named, T2](t2n: Named[T2]): String =
+        combineNames3(named[T0], named[T1], t2n)
+
+    def combineNameds4[T0: Named, T1: Named, T2: Named, T3](t3n: Named[T3]): String =
+        combineNames4(named[T0], named[T1], named[T2], t3n)
+
+    def combineNameds5[T0: Named, T1: Named, T2: Named, T3: Named, T4](t4n: Named[T4]): String =
+        combineNames5(named[T0], named[T1], named[T2], named[T3], t4n)
+
+    def combineNameds6[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5](t5n: Named[T5]): String =
+        combineNames6(named[T0], named[T1], named[T2], named[T3], named[T4], t5n)
+
+    def combineNames2[T0, T1](t0n: Named[T0], t1n: Named[T1]): String =
+        t0n + "+" + t1n
+
+    def combineNames3[T0, T1, T2](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2]): String =
+        combineNames2(t0n, t1n) + "+" + t2n
+
+    def combineNames4[T0, T1, T2, T3](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3]): String =
+        combineNames3(t0n, t1n, t2n) + "+" + t3n
+
+    def combineNames5[T0, T1, T2, T3, T4](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4]): String =
+        combineNames4(t0n, t1n, t2n, t3n) + "+" + t4n
+
+    def combineNames6[T0, T1, T2, T3, T4, T5](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4], t5n: Named[T5]): String =
+        combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + t5n
+
+
+//    def combineNames2[T0: Named, T1](tn: Named[T1]): String = combineNames2(name[T0], tn)
+
+    def combineNames[T0: Named](w: String): String =
+        name[T0] + "+" + w
+
 }
 
 /**
