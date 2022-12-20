@@ -18,7 +18,7 @@ libraryDependencies += scalaModules %% "scala-xml" % "2.1.0"
 libraryDependencies += "com.phasmidsoftware" % "flog_2.13" % "1.0.8"
 
 libraryDependencies ++= Seq(
-  "com.phasmidsoftware" %% "flog" % "1.0.9-SNAPSHOT",
+  "com.phasmidsoftware" %% "flog" % "1.0.9",
   "ch.qos.logback" % "logback-classic" % "1.4.5" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "org.scalatest" %% "scalatest" % "3.2.14" % Test
