@@ -81,6 +81,7 @@ object Utilities {
 case class Text($: String) {
     override def equals(obj: Any): Boolean = obj match {
         case text: Text => $ == text.$
+        case _ => false
     }
 }
 
