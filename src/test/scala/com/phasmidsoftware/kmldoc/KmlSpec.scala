@@ -3230,7 +3230,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "KML"
 
-  // TODO renew this test.
   it should "extract KML" in {
     val xml = <kml xmlns="http://www.opengis.net/kml/2.2">
       <Document>
@@ -3678,35 +3677,63 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  // TODO renew this test.
-//  ignore should "extract KmlFromFile" in {
-//    val url = KML.getClass.getResource("sample.kml")
-//    val xml = XML.loadFile(url.getFile)
-//    extractorMultiKml.extract(xml) match {
-//      case Success(ks) =>
-//        ks.size shouldBe 1
-//        val kml = ks.head
-//        val ds = kml.Documents
-//        val document: Document = ds.head
-//        val fs = document.Folders
-//        fs.size shouldBe 1
-//        val folder = fs.head
-//        val ps = folder.Placemarks
-//        ps.size shouldBe 34
-//        val placemark: Placemark = ps.head
-//        val ls: scala.Seq[Geometry] = placemark.Geometry
-//        ls.size shouldBe 1
-//        val geometry: Geometry = ls.head
-//        val coordinates: scala.Seq[Coordinates] = geometry match {
-//          case lineString: LineString => lineString.coordinates
-//          case _ => fail("first Geometry is not a LineString")
-//        }
-//        coordinates.size shouldBe 1
-//        val coordinate = coordinates.head
-//        coordinate.coordinates.size shouldBe 94
-//      case Failure(x) => fail(x)
-//    }
-//  }
+  it should "extract KmlFromFile" in {
+    val url = KML.getClass.getResource("sample.kml")
+    val xml = XML.loadFile(url.getFile)
+    extractAll[Seq[Container]](xml) match {
+      case Success(containers) =>
+        containers.size shouldBe 1
+        containers.head match {
+          case document@Document(features) =>
+            document.containerData.featureData match {
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, styleSelectors) =>
+                name shouldBe Text("MA - Boston NE: Historic New England Railroads")
+                maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW).  Full index: https://www.rubecula.com/RRMaps/"))
+                maybeStyleUrl shouldBe None
+                maybeOpen shouldBe None
+                styleSelectors.size shouldBe 0
+            }
+            features.size shouldBe 1
+            features.head match {
+              case folder@Folder(features) =>
+                folder.containerData.featureData.name shouldBe Text("Untitled layer")
+                println(features)
+                features.size shouldBe 34
+                features.head match {
+                  case placemark@Placemark(geometry) =>
+                    placemark.featureData.name shouldBe Text("Stoneham Branch")
+                    geometry.size shouldBe 1
+                    geometry.head match {
+                      case Point(cs) =>
+                        cs.size shouldBe 1
+                        cs.head.coordinates.size shouldBe 1
+                      case LineString(tessellate, coordinates) =>
+                        tessellate shouldBe Tessellate("1")
+                        coordinates.size shouldBe 1
+                        coordinates.head.coordinates.size shouldBe 94
+                    }
+                  case _ => fail("should be placemark")
+                }
+                features.last match {
+                  case placemark@Placemark(geometry) =>
+                    placemark.featureData.name shouldBe Text("Newburyport RR")
+                    geometry.size shouldBe 1
+                    geometry.head match {
+                      case Point(cs) =>
+                        cs.size shouldBe 1
+                        cs.head.coordinates.size shouldBe 1
+                      case LineString(tessellate, coordinates) =>
+                        tessellate shouldBe Tessellate("1")
+                        coordinates.size shouldBe 1
+                        coordinates.head.coordinates.size shouldBe 169
+                    }
+                  case _ => fail("should be placemark")
+                }
+            }
+        }
+      case Failure(x) => fail(x)
+    }
+  }
 
   // TODO renew this test.
   ignore should "extract and render sample Kml from file" in {
