@@ -2,6 +2,7 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
 import com.phasmidsoftware.core.XmlException
+import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
@@ -55,6 +56,10 @@ trait Extractor[T] {
  * Companion object to Extractor.
  */
 object Extractor {
+
+    val flog: Flog = Flog[Extractors]
+
+    implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
 
     /**
      * Method to create an Extractor[T] from a Node => Try[T] function.
@@ -132,8 +137,9 @@ object Extractor {
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
         val ts = translateMemberNames(member)
-        if (ts.isEmpty) logger.info(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+        if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node \ t) yield w
+        if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
         implicitly[MultiExtractor[P]].extract(nodeSeq)
     }
 
@@ -166,20 +172,23 @@ object Extractor {
                 case _ => translations.getOrElse(member, Seq(member))
             })
 
-    private def doExtractField[P: Extractor](field: String, node: Node) = field match {
-        // NOTE special name for the (text) content of a node.
-        case "$" => "$" -> extractText[P](node)
-        // NOTE attributes must match names where the case class member name starts with "_"
-        case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
-        case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
-        case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-        // NOTE child nodes are extracted using extractChildren, not here.
-        case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
-        // NOTE optional members such that the name begins with "maybe"
-        case optional(x) => s"optional: $x" -> extractOptional[P](node \ x)
-        // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
-        case x => s"singleton: $x" -> extractSingleton[P](node \ x)
-    }
+    private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
+        field match {
+            // NOTE special name for the (text) content of a node.
+            case "$" => "$" -> extractText[P](node)
+            // NOTE attributes must match names where the case class member name starts with "_"
+            case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
+            case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
+            case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
+            // NOTE child nodes are extracted using extractChildren, not here.
+            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
+            // NOTE optional members such that the name begins with "maybe"
+            case optional(x) =>
+                val y = x.head.toLower + x.tail
+                s"optional: $y" -> extractOptional[P](node \ y)
+            // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
+            case x => s"singleton: $x" -> extractSingleton[P](node \ x)
+        }
 
     private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
         (for (ns <- node.attribute(x)) yield for (n <- ns) yield Extractor.extract[P](n)) match {

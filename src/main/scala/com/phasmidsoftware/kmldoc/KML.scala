@@ -50,6 +50,10 @@ object Scale {
 
 class Feature extends KmlObject
 
+object Feature {
+  val applyFunction: Unit => Feature = _ => new Feature()
+}
+
 case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[String], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
@@ -322,6 +326,11 @@ object KmlExtractors extends Extractors {
   Extractor.translations += "coordinates" -> Seq("coordinates")
   Extractor.translations += "features" -> Seq("Placemark")
   Extractor.translations += "Geometry" -> Seq("_")
+  Extractor.translations += "Feature" -> Seq("_")
+  Extractor.translations += "Container" -> Seq("_")
+  Extractor.translations += "StyleSelector" -> Seq("_")
+  Extractor.translations += "SubStyle" -> Seq("_")
+  Extractor.translations += "ColorStyle" -> Seq("_")
 
   import Extractors._
 
@@ -333,9 +342,9 @@ object KmlExtractors extends Extractors {
 
   implicit def extractorStyleSelectorMulti: MultiExtractor[Seq[StyleSelector]] = multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap"))
 
-  implicit def extractorStyleSubStyleMulti: MultiExtractor[Seq[SubStyle]] = multiExtractor1[SubStyle, Tuple1[ColorStyle], ColorStyle](c => Tuple1(c), Seq("ColorStyle"))
+  implicit def extractorSubStyleMulti: MultiExtractor[Seq[SubStyle]] = multiExtractor1[SubStyle, Tuple1[ColorStyle], ColorStyle](c => Tuple1(c), Seq("ColorStyle"))
 
-  implicit def extractorStyleColorStyleMulti: MultiExtractor[Seq[ColorStyle]] = multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle]((p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle"))
+  implicit def extractorColorStyleMulti: MultiExtractor[Seq[ColorStyle]] = multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle]((p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle"))
 
   implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply)
   implicit val extractorKPP2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction)

@@ -115,7 +115,6 @@ trait Extractors {
    */
   def fieldExtractor[T: Extractor]: ElementExtractor[T] = (tag: String) => extractField[T](tag)
 
-
   /**
    * Method to yield an ElementExtractor[T] which in turns invokes extractChildren with the given tag.
    *

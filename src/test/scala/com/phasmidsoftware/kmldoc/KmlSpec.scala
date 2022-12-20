@@ -140,7 +140,35 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  behavior of "Placemark"
+  behavior of "FeatureData"
+
+  it should "extract as String" in {
+    val xml: Elem = <xml>
+      <description>Hello</description>
+    </xml>
+    import com.phasmidsoftware.xml.Extractors._
+    val result: Try[String] = Extractor.extractField[String]("description")(xml)
+    result shouldBe Success("Hello")
+  }
+  it should "extract as Text" in {
+    val xml: Elem = <xml>
+      <description>Hello</description>
+    </xml>
+    import com.phasmidsoftware.xml.Extractors._
+    val result: Try[Text] = Extractor.extractField[Text]("description")(xml)
+    result shouldBe Success(Text("Hello"))
+  }
+  it should "extract as Option[Text]" in {
+    val xml: Elem = <xml>
+      <description>Hello</description>
+    </xml>
+    import com.phasmidsoftware.xml.Extractors._
+    val result: Try[Option[Text]] = Extractor.extractField[Option[Text]]("description")(xml)
+    result shouldBe Success(Some(Text("Hello")))
+  }
+  // TODO test the removal of the maybe prefix
+
+  behavior of "Feature"
 
   it should "extract Placemark" in {
     val xml: Elem = <xml>
@@ -210,10 +238,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  behavior of "Folder"
+  behavior of "Container"
 
   // TESTME
-  ignore should "extract Folder" in {
+  it should "extract Folder" in {
     val xml: Elem = <xml>
       <Folder>
         <name>Untitled layer</name>
@@ -237,31 +265,38 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </Placemark>
       </Folder>
     </xml>
-    extractorMultiFolder.extract(xml \ "Folder") match {
-      case Success(fs) =>
-        fs.size shouldBe 1
-        val folder: Folder = fs.head
-        folder.containerData.featureData.name shouldBe Text("Untitled layer")
-        val features: scala.Seq[Feature] = folder.features
-        features.size shouldBe 1
-        val feature = features.head
-        feature match {
-          case placemark: Placemark =>
-            placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
-            placemark.featureData.maybeDescription shouldBe Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.")
-            val ls: scala.Seq[Geometry] = placemark.Geometry
-            ls.size shouldBe 1
-            val geometry: Geometry = ls.head
-            val coordinates: scala.Seq[Coordinates] = geometry match {
-              case lineString: LineString => lineString.coordinates
-              case _ => fail("first Geometry is not a LineString")
+    implicitly[MultiExtractor[Seq[Container]]].extract(xml \ "_") match {
+      case Success(cs) =>
+        cs.size shouldBe 1
+        val container: Container = cs.head
+        container match {
+          case f@Folder(features) =>
+            println(s"got Folder($features)(${f.containerData})")
+            val containerData: ContainerData = f.containerData
+            val featureData: FeatureData = containerData.featureData
+            val name = featureData.name
+            val untitledLayer = Text("Untitled layer")
+            name shouldBe untitledLayer
+            features.size shouldBe 1
+            val feature = features.head
+            feature match {
+              case placemark: Placemark =>
+                placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
+                placemark.featureData.maybeDescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
+                val ls: scala.Seq[Geometry] = placemark.Geometry
+                ls.size shouldBe 1
+                val geometry: Geometry = ls.head
+                val coordinates: scala.Seq[Coordinates] = geometry match {
+                  case lineString: LineString => lineString.coordinates
+                  case _ => fail("first Geometry is not a LineString")
+                }
+                coordinates.size shouldBe 1
+                val coordinate = coordinates.head
+                coordinate.coordinates.size shouldBe 8
+                val wy = Using(StateR())(sr => KmlRenderers.rendererFolder.render(f, FormatXML(0), sr))
+                wy.isSuccess shouldBe true
+//            wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>"
             }
-            coordinates.size shouldBe 1
-            val coordinate = coordinates.head
-            coordinate.coordinates.size shouldBe 8
-            val wy = Using(StateR())(sr => KmlRenderers.rendererFolder.render(folder, FormatXML(0), sr))
-            wy.isSuccess shouldBe true
-            wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>"
         }
       case Failure(x) => fail(x)
     }

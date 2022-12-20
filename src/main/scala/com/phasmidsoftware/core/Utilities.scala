@@ -44,13 +44,13 @@ object Utilities {
 
     private def renderNodeBrief(node: Node): String = node.label
 
-    def renderNode(node: Node): String = {
+    def renderNode(node: Node, deep: Boolean = false): String = {
         val result = new mutable.StringBuilder("node: ")
         result.append(s"label=${node.label}, ")
         result.append(s"length=${node.length}, ")
         result.append(s"descendants=${node.descendant.size}, ")
         result.append(s"attributes=${node.attributes.mkString}, ")
-        val children = node.child map renderNodeBrief
+        val children = node.child map (if (deep) renderNode(_, deep = true) else renderNodeBrief)
         result.append(s"children=${children.mkString("{", ",", "}")}")
         result.toString()
     }
@@ -78,7 +78,11 @@ object Utilities {
     def uncurry6[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = (t1, t2, t3, t4, t5, t6) => f(t1)(t2)(t3)(t4)(t5)(t6)
 }
 
-case class Text($: String)
+case class Text($: String) {
+    override def equals(obj: Any): Boolean = obj match {
+        case text: Text => $ == text.$
+    }
+}
 
 case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
 
