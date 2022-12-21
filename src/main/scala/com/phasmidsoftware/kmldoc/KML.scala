@@ -459,7 +459,6 @@ object KmlRenderers extends Renderers {
 
     import Renderers._
 
-    implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
     implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)// ^^ "rendererKmlData"
     implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)// ^^ "rendererGeometryData"
     implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData)// ^^ "rendererFeatureData"

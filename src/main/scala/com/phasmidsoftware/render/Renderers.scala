@@ -579,6 +579,8 @@ object Renderers {
                 }, stateR.maybeName)
     } ^^ "stringRenderer"
 
+    implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
+
     implicit val intRenderer: Renderable[Int] = Renderable {
         (t: Int, _: Format, stateR: StateR) =>
             renderAttribute(t.toString, stateR.maybeName)
