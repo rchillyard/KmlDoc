@@ -2,6 +2,8 @@ package com.phasmidsoftware.render
 
 import com.phasmidsoftware.core.{Text, XmlException}
 import com.phasmidsoftware.flog.Flog
+import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
+import com.phasmidsoftware.xml.Named.{assertNamedNotNull, assertNamedNotNullMember}
 import com.phasmidsoftware.xml.{Extractor, Named}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
@@ -42,10 +44,11 @@ trait Renderers {
      */
     def renderer0Super[B: Renderable, R <: Product : ClassTag](construct: B => R)(lens: R => B): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) =>
+            assertNamedNotNullMember[Renderable[B], R](s"auxiliary parameter")
             val b = lens(r)
             val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
             doNestedRender(format, stateR, wInner, "", r.productElementName(0))
-    } ^^ s"renderer0Super(${Named.named[Renderable[B]]})"
+    } ^^ s"renderer0Super(${Named.name[Renderable[B]]})"
 
     /**
      * Method to create a renderer fpr a Product (e.g., case class) with one member.
@@ -57,9 +60,11 @@ trait Renderers {
      */
     def renderer1[P0: Renderable, R <: Product : ClassTag](@unused ignored: P0 => R): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) =>
+            val member = r.productElementName(0)
+            assertNamedNotNullMember[Renderable[P0], R](member)
             val wOuter = renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format)
-            doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
-    } ^^ s"renderer1(${Named.named[Renderable[P0]]})"
+            doNestedRender(format, stateR, "", wOuter, member)
+    } ^^ s"renderer1(${Named.name[Renderable[P0]]})"
 
     /**
      * Alternative method to create a renderer fpr a Product (e.g., case class) with one member but also an auxiliary object in a second parameter set.
@@ -73,6 +78,7 @@ trait Renderers {
      */
     def renderer1Super[B: Renderable, P0: Renderable, R <: Product : ClassTag](construct: P0 => B => R)(lens: R => B): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) =>
+            assertNamedNotNullMember[Renderable[B], R](s"auxiliary parameter")
             val b = lens(r)
             val constructOuter: P0 => R = construct(_)(b)
             val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
@@ -91,12 +97,14 @@ trait Renderers {
      */
     def renderer2[P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => R): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) =>
+            val member = r.productElementName(1)
+            assertNamedNotNullMember[Renderable[P1], R](member)
             val objectOuter = r.productElement(1).asInstanceOf[P1]
             val constructorInner: P0 => R = construct(_, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0])
             val wInner = renderer1(constructorInner).render(objectInner, format.indent, stateR.recurse)
             val wOuter = renderOuter(r, objectOuter, 1, format)
-            doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
+            doNestedRender(format, stateR, wInner, wOuter, member)
     } ^^ s"renderer2(${Named.combineNamed2[Renderable[P0], Renderable[P1]]})"
 
     /**
@@ -111,6 +119,7 @@ trait Renderers {
      */
     def renderer2Super[B: Renderable, P0: Renderable, P1: Renderable, R <: Product : ClassTag](construct: (P0, P1) => B => R)(lens: R => B): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) => {
+            assertNamedNotNullMember[Renderable[B], R](s"auxiliary parameter")
             val b = lens(r)
             val constructOuter: (P0, P1) => R = construct(_, _)(b)
             val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
@@ -131,12 +140,14 @@ trait Renderers {
      */
     def renderer3[P0: Renderable, P1: Renderable, P2: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) => {
+            val member = r.productElementName(2)
+            assertNamedNotNullMember[Renderable[P2], R](member)
             val objectOuter = r.productElement(2).asInstanceOf[P2]
             val constructorInner: (P0, P1) => R = construct(_, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
             val wInner = renderer2(constructorInner).render(objectInner, format.indent, stateR.recurse)
             val wOuter = renderOuter(r, objectOuter, 2, format)
-            doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
+            doNestedRender(format, stateR, wInner, wOuter, member)
         }
     } ^^ s"renderer3(${Named.combineNamed3[Renderable[P0], Renderable[P1], Renderable[P2]]})"
 
@@ -153,6 +164,7 @@ trait Renderers {
      */
     def renderer3Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2) => B => R)(lens: R => B): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) => {
+            assertNamedNotNullMember[Renderable[B], R](s"auxiliary parameter")
             val b = lens(r)
             val constructOuter: (P0, P1, P2) => R = construct(_, _, _)(b)
             val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
@@ -174,12 +186,14 @@ trait Renderers {
      */
     def renderer4[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => R): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) => {
+            val member = r.productElementName(3)
+            assertNamedNotNullMember[Renderable[P3], R](member)
             val objectOuter = r.productElement(3).asInstanceOf[P3]
             val constructorInner: (P0, P1, P2) => R = construct(_, _, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
             val wInner = renderer3(constructorInner).render(objectInner, format.indent, stateR.recurse)
             val wOuter = renderOuter(r, objectOuter, 3, format)
-            doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
+            doNestedRender(format, stateR, wInner, wOuter, member)
         }
     } ^^ s"renderer4(${Named.combineNamed4[Renderable[P0], Renderable[P1], Renderable[P2], Renderable[P3]]})"
 
@@ -197,6 +211,7 @@ trait Renderers {
      */
     def renderer4Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => B => R)(lens: R => B): Renderable[R] = Renderable {
         (r: R, format: Format, stateR: StateR) => {
+            assertNamedNotNullMember[Renderable[B], R](s"auxiliary parameter")
             val b = lens(r)
             val constructOuter: (P0, P1, P2, P3) => R = construct(_, _, _, _)(b)
             val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
@@ -219,16 +234,18 @@ trait Renderers {
    */
   def renderer5[P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => R): Renderable[R] = Renderable {
       (r: R, format: Format, stateR: StateR) => {
+          val member = r.productElementName(4)
+          assertNamedNotNullMember[Renderable[P4], R](member)
           val objectOuter = r.productElement(4).asInstanceOf[P4]
           val constructorInner: (P0, P1, P2, P3) => R = construct(_, _, _, _, objectOuter)
           val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3])
           val wInner = renderer4(constructorInner).render(objectInner, format.indent, stateR.recurse)
           val wOuter = renderOuter(r, objectOuter, 4, format)
-          doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
+          doNestedRender(format, stateR, wInner, wOuter, member)
       }
   } ^^ s"renderer5(${Named.combineNamed5[Renderable[P0], Renderable[P1], Renderable[P2], Renderable[P3], Renderable[P4]]})"
 
-  /**
+    /**
    * Method to create a renderer fpr a Product (e.g., case class) with five members but also an auxiliary object in a second parameter set.
    *
    * @param construct a function (P0, P1, P2, P3, P4) => R (this is usually the apply method of a case class).
@@ -243,6 +260,7 @@ trait Renderers {
    */
   def renderer5Super[B: Renderable, P0: Renderable, P1: Renderable, P2: Renderable, P3: Renderable, P4: Renderable, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => R)(lens: R => B): Renderable[R] = Renderable {
       (r: R, format: Format, stateR: StateR) => {
+          assertNamedNotNullMember[Renderable[B], R](s"auxiliary parameter")
           val b = lens(r)
           val constructOuter: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _)(b)
           val wInner = implicitly[Renderable[B]].render(b, format.indent, stateR.recurse)
@@ -309,14 +327,14 @@ trait Renderers {
             ro match {
                 case Some(r) =>
                     val wo = stateR.maybeName match {
-                        case Some(Extractor.optional(x)) => Some(x)
+                        case Some(Extractor.optional(x)) => Some(x.head.toLower + x.tail)
                         case Some(x) => Some(x)
                         case None => None
                     }
                     implicitly[Renderable[R]].render(r, format, StateR(wo))
                 case None => ""
             }
-    } ^^ s"optionRenderer(${Named.named[Renderable[R]]})"
+    } ^^ s"optionRenderer(${Named.name[Renderable[R]]})"
 
     /**
      * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for two sub-types of T.
@@ -329,11 +347,12 @@ trait Renderers {
         (t: T, format: Format, stateR: StateR) =>
             t match {
                 case r: R0 =>
+                    assertNamedNotNullMember[Renderable[R0], R0]("R0")
                     implicitly[Renderable[R0]].render(r, format, stateR);
                 case _ =>
                     throw XmlException(s"rendererSuper1: parameter of type ${t.getClass} is not supported")
             }
-    } ^^ s"rendererSuper1(${Named.named[Renderable[R0]]})"
+    } ^^ s"rendererSuper1(${Named.name[Renderable[R0]]})"
 
     /**
      * Method to yield a Renderable[R] such that the rendering can be performed according to the renderables for two sub-types of T.
@@ -344,11 +363,14 @@ trait Renderers {
      * @return a Renderable[T].
      */
     def rendererSuper2[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag]: Renderable[T] = Renderable {
+        Named.named[Renderable[R0]]
+        Named.named[Renderable[R1]]
         (t: T, format: Format, stateR: StateR) =>
             t match {
-                case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
-                case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
-                case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+                case r: R0 =>
+                    assertNamedNotNullMember[Renderable[R0], R0]("R0")
+                    implicitly[Renderable[R0]].render(r, format, stateR)
+                case _ => rendererSuper1[T, R1].render(t, format, stateR)
             }
     } ^^ s"rendererSuper2(${Named.combineNamed2[Renderable[R0], Renderable[R1]]})"
 
@@ -364,10 +386,10 @@ trait Renderers {
     def rendererSuper3[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag]: Renderable[T] = Renderable {
         (t: T, format: Format, stateR: StateR) =>
             t match {
-                case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
-                case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
-                case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
-                case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+                case r: R0 =>
+                    assertNamedNotNullMember[Renderable[R0], R0]("R0")
+                    implicitly[Renderable[R0]].render(r, format, stateR)
+                case _ => rendererSuper2[T, R1, R2].render(t, format, stateR)
             }
     } ^^ s"rendererSuper3(${Named.combineNamed3[Renderable[R0], Renderable[R1], Renderable[R2]]})"
 
@@ -384,11 +406,10 @@ trait Renderers {
     def rendererSuper4[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag, R3 <: T : Renderable : ClassTag]: Renderable[T] = Renderable {
         (t: T, format: Format, stateR: StateR) =>
             t match {
-                case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
-                case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
-                case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
-                case r: R3 => implicitly[Renderable[R3]].render(r, format, stateR);
-                case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+                case r: R0 =>
+                    assertNamedNotNullMember[Renderable[R0], R0]("R0")
+                    implicitly[Renderable[R0]].render(r, format, stateR)
+                case _ => rendererSuper3[T, R1, R2, R3].render(t, format, stateR)
             }
     } ^^ s"rendererSuper4(${Named.combineNamed4[Renderable[R0], Renderable[R1], Renderable[R2], Renderable[R3]]})"
 
@@ -406,12 +427,10 @@ trait Renderers {
     def rendererSuper5[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag, R3 <: T : Renderable : ClassTag, R4 <: T : Renderable : ClassTag]: Renderable[T] = Renderable {
         (t: T, format: Format, stateR: StateR) =>
             t match {
-                case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
-                case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
-                case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
-                case r: R3 => implicitly[Renderable[R3]].render(r, format, stateR);
-                case r: R4 => implicitly[Renderable[R4]].render(r, format, stateR);
-                case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+                case r: R0 =>
+                    assertNamedNotNullMember[Renderable[R0], R0]("R0")
+                    implicitly[Renderable[R0]].render(r, format, stateR)
+                case _ => rendererSuper4[T, R1, R2, R3, R4].render(t, format, stateR)
             }
     } ^^ s"rendererSuper5(${Named.combineNamed5[Renderable[R0], Renderable[R1], Renderable[R2], Renderable[R3], Renderable[R4]]})"
 
@@ -429,13 +448,10 @@ trait Renderers {
      */
     def rendererSuper6[T, R0 <: T : Renderable : ClassTag, R1 <: T : Renderable : ClassTag, R2 <: T : Renderable : ClassTag, R3 <: T : Renderable : ClassTag, R4 <: T : Renderable : ClassTag, R5 <: T : Renderable : ClassTag]: Renderable[T] = Renderable { (t: T, format: Format, stateR: StateR) =>
         t match {
-            case r: R0 => implicitly[Renderable[R0]].render(r, format, stateR);
-            case r: R1 => implicitly[Renderable[R1]].render(r, format, stateR);
-            case r: R2 => implicitly[Renderable[R2]].render(r, format, stateR);
-            case r: R3 => implicitly[Renderable[R3]].render(r, format, stateR);
-            case r: R4 => implicitly[Renderable[R4]].render(r, format, stateR);
-            case r: R5 => implicitly[Renderable[R5]].render(r, format, stateR);
-            case _ => throw XmlException(s"rendererSuper2: parameter of type ${t.getClass} is not supported")
+            case r: R0 =>
+                assertNamedNotNullMember[Renderable[R0], R0]("R0")
+                implicitly[Renderable[R0]].render(r, format, stateR)
+            case _ => rendererSuper5[T, R1, R2, R3, R4, R5].render(t, format, stateR)
         }
     } ^^ s"rendererSuper6(${Named.combineNamed6[Renderable[R0], Renderable[R1], Renderable[R2], Renderable[R3], Renderable[R4], Renderable[R5]]})"
 
@@ -445,9 +461,12 @@ trait Renderers {
      * @tparam R the underlying element type.
      * @return a Renderable of Seq[R].
      */
-    def sequenceRenderer[R: Renderable]: Renderable[Seq[R]] = new Renderable[Seq[R]]() {
-        def render(rs: Seq[R], format: Format, stateR: StateR): String = doRenderSequence(rs, format, None)
-    } ^^ s"sequenceRenderer(${Named.named[Renderable[R]]})"
+    def sequenceRenderer[R: Renderable : ClassTag]: Renderable[Seq[R]] = Renderable {
+        (rs: Seq[R], format: Format, _: StateR) => {
+            assertNamedNotNull[Renderable[R], R]()
+            doRenderSequence(rs, format, None)
+        }
+    } ^^ s"sequenceRenderer(${Named.name[Renderable[R]]})"
 
     /**
      * Method to return a Renderable of Seq[R] with a pre-defined format.
@@ -458,10 +477,12 @@ trait Renderers {
      * @tparam R the underlying type to be rendered.
      * @return a Renderable of Seq[R].
      */
-    def sequenceRendererFormatted[R: Renderable](formatFunc: Int => Format): Renderable[Seq[R]] = Renderable {
-        (rs: Seq[R], format: Format, stateR: StateR) =>
+    def sequenceRendererFormatted[R: Renderable : ClassTag](formatFunc: Int => Format): Renderable[Seq[R]] = Renderable {
+        (rs: Seq[R], format: Format, stateR: StateR) => {
+            assertNamedNotNull[Renderable[R], R]()
             doRenderSequence(rs, formatFunc(format.indents), stateR.maybeName)
-    } ^^ s"sequenceRendererFormatted(${Named.named[Renderable[R]]})"
+        }
+    } ^^ s"sequenceRendererFormatted(${Named.name[Renderable[R]]})"
 
     private def renderOuter[R <: Product : ClassTag, P: Renderable](r: R, objectOuter: P, indexOuter: Int, format: Format): String = {
         Using(StateR().setName(r, indexOuter)) { sr =>
@@ -520,17 +541,20 @@ trait Renderers {
     }
 
     private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String]) = {
+        val rr = implicitly[Renderable[R]]
+        if (rr == null)
+            throw XmlException("implicit Renderable is null")
+
         val separator = format.sequencer(None)
         val sb = new mutable.StringBuilder()
         sb.append(format.sequencer(Some(true)))
         var first = true
         for (r <- rs) {
             if (!first) sb.append(if (separator == "\n") format.newline else separator)
-            val wy = Using(StateR(maybeName))(sr => implicitly[Renderable[R]].render(r, format, sr))
+            val wy = Using(StateR(maybeName))(sr => rr.render(r, format, sr))
             wy match {
                 case Success(w) => sb.append(w)
-                case Failure(x) =>
-                    Renderers.logger.warn("doRenderSequence: failure", x)
+                case Failure(x) => Renderers.logger.warn("doRenderSequence: failure", x)
             }
             first = false
         }
@@ -542,45 +566,59 @@ trait Renderers {
 
 object Renderers {
 
-  val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
+    val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
-  private val cdata: Regex = """.*([<&>]).*""".r
+    private val cdata: Regex = """.*([<&>]).*""".r
 
-  implicit val stringRenderer: Renderable[String] = (t: String, _: Format, stateR: StateR) =>
-    renderAttribute(
-      t match {
-        case cdata(_) => s"""<![CDATA[$t]]>"""
-        case _ => t
-      }, stateR.maybeName)
+    implicit val stringRenderer: Renderable[String] = Renderable {
+        (t: String, _: Format, stateR: StateR) =>
+            renderAttribute(
+                t match {
+                    case cdata(_) => s"""<![CDATA[$t]]>"""
+                    case _ => t
+                }, stateR.maybeName)
+    } ^^ "stringRenderer"
 
-  implicit val intRenderer: Renderable[Int] = (t: Int, _: Format, stateR: StateR) =>
-    renderAttribute(t.toString, stateR.maybeName)
+//    implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
 
-  implicit val booleanRenderer: Renderable[Boolean] = (t: Boolean, _: Format, stateR: StateR) =>
-    renderAttribute(t.toString, stateR.maybeName)
+    implicit val intRenderer: Renderable[Int] = Renderable {
+        (t: Int, _: Format, stateR: StateR) =>
+            renderAttribute(t.toString, stateR.maybeName)
+    } ^^ "intRenderer"
 
-  implicit val doubleRenderer: Renderable[Double] = (t: Double, _: Format, stateR: StateR) =>
-    renderAttribute(t.toString, stateR.maybeName)
+    implicit val rendererOptionInt: Renderable[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 
-  implicit val longRenderer: Renderable[Long] = (t: Long, _: Format, stateR: StateR) =>
-    renderAttribute(t.toString, stateR.maybeName)
+    implicit val booleanRenderer: Renderable[Boolean] = Renderable { (t: Boolean, _: Format, stateR: StateR) =>
+        renderAttribute(t.toString, stateR.maybeName)
+    } ^^ "booleanRenderer"
+    implicit val rendererOptionBoolean: Renderable[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
 
-  private val renderers = new Renderers {}
-  implicit val rendererText: Renderable[Text] = renderers.renderer1(Text)
-  implicit val rendererOptionText: Renderable[Option[Text]] = renderers.optionRenderer[Text]
+    implicit val doubleRenderer: Renderable[Double] = Renderable {
+        (t: Double, _: Format, stateR: StateR) =>
+            renderAttribute(t.toString, stateR.maybeName)
+    } ^^ "doubleRenderer"
 
-  def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
-    r.productElementName(index) match {
-      case "$" => None
-      case Extractor.optionalAttribute(x) => Some(x)
-      case Extractor.attribute(x) => Some(x)
-      case x => if (useName) Some(x) else None
+    implicit val longRenderer: Renderable[Long] = Renderable {
+        (t: Long, _: Format, stateR: StateR) =>
+            renderAttribute(t.toString, stateR.maybeName)
+    } ^^ "longRenderer"
+
+    private val renderers = new Renderers {}
+    implicit val rendererText: Renderable[Text] = renderers.renderer1(Text)
+    implicit val rendererOptionText: Renderable[Option[Text]] = renderers.optionRenderer[Text]
+
+    def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
+        r.productElementName(index) match {
+            case "$" => None
+            case Extractor.optionalAttribute(x) => Some(x)
+            case Extractor.attribute(x) => Some(x)
+            case x => if (useName) Some(x) else None
+        }
+
+    private def renderAttribute(w: String, maybeName: Option[String]): String = maybeName match {
+        case Some(name) => s"""$name="$w""""
+        case None => w
     }
-
-  private def renderAttribute(w: String, maybeName: Option[String]): String = maybeName match {
-    case Some(name) => s"""$name="$w""""
-    case None => w
-  }
 }
 
 /**
@@ -601,9 +639,26 @@ trait Renderable[T] extends Named[Renderable[T]] {
 }
 
 object Renderable {
+    val flog: Flog = Flog[Renderers]
+
+    import flog._
+
     def apply[T](function: (T, Format, StateR) => String): Renderable[T] = (t, f, s) => function(t, f, s)
 
-    def render[T: Renderable](t: T, format: Format, stateR: StateR): String = implicitly[Renderable[T]].render(t, format, stateR)
+    /**
+     * Render the T value using the implicitly found Renderable[T].
+     * Debug-log the renderer and its result.
+     *
+     * @param t      the value to be rendered.
+     * @param format the Format.
+     * @param stateR the StateR.
+     * @tparam T the type of t.
+     * @return a String.
+     */
+    def render[T: Renderable](t: T, format: Format, stateR: StateR): String = {
+        val renderer = implicitly[Renderable[T]]
+        s"Renderable.render[$renderer]($t,$format,$stateR)" !? renderer.render(t, format, stateR)
+    }
 }
 
 trait Format {

@@ -8,6 +8,7 @@ import com.phasmidsoftware.xml.Named.name
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
@@ -237,6 +238,8 @@ object Extractor {
 
     /**
      * Regular expression to match an optional name, viz. maybe....
+     *
+     * TODO set the first character that is matched to lower case here.
      */
     val optional: Regex = """maybe(\w+)""".r
 
@@ -261,6 +264,18 @@ trait MultiExtractor[T] extends Named[MultiExtractor[T]] {
     def extract(nodeSeq: NodeSeq): Try[T]
 }
 
+/**
+ * Trait to allow for functions to have names.
+ * A function, for example T=>R, can simply extend Named[T=>R] and toString will show the name.
+ *
+ * The name is held as a var. It is updated by the ^^ method.
+ *
+ * CONSIDER having a method which adds to the name but doesn't replace it.
+ *
+ * CONSIDER moving this class to its own module.
+ *
+ * @tparam E the type of the function to be named.
+ */
 trait Named[E] {
     def ^^(w: String): E = {
         name = w
@@ -273,6 +288,24 @@ trait Named[E] {
 }
 
 object Named {
+    def validate[T](tn: Named[T]): Named[T] =
+        Option(tn) match {
+            case Some(x) => x
+            case None =>
+                logger.warn("Named.validate: null Named[T]")
+                throw XmlException("can't validate tn")
+//                tn
+        }
+
+    def assertNamedNotNullMember[N: Named, T: ClassTag](member: String): Unit = {
+        Option(implicitly[Named[N]]) match {
+            case None => throw new AssertionError(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
+            case _ =>
+        }
+    }
+
+    def assertNamedNotNull[N: Named, T: ClassTag](): Unit = assertNamedNotNullMember("anonymous")
+
     def named[P: Named]: Named[P] = implicitly[Named[P]]
 
     def name[P: Named]: String = Option(named[P]) map (_.name) getOrElse "uninitialized"
@@ -290,10 +323,10 @@ object Named {
         combineNames5(named[T0], named[T1], named[T2], named[T3], named[T4])
 
     def combineNamed6[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named]: String =
-        combineNamed5[T0, T1, T2, T3, T4] + "+" + named[T5]
+        combineNamed5[T0, T1, T2, T3, T4] + "+" + name[T5]
 
     def combineNamed7[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named, T6: Named]: String =
-        combineNamed6[T0, T1, T2, T3, T4, T5] + "+" + named[T6]
+        combineNamed6[T0, T1, T2, T3, T4, T5] + "+" + name[T6]
 
     def combineNameds2[T0: Named, T1](t1n: Named[T1]): String =
         combineNames2(named[T0], t1n)
@@ -311,19 +344,19 @@ object Named {
         combineNames6(named[T0], named[T1], named[T2], named[T3], named[T4], t5n)
 
     def combineNames2[T0, T1](t0n: Named[T0], t1n: Named[T1]): String =
-        t0n + "+" + t1n
+        name(t0n) + "+" + name(t1n)
 
     def combineNames3[T0, T1, T2](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2]): String =
-        combineNames2(t0n, t1n) + "+" + t2n
+        combineNames2(t0n, t1n) + "+" + name(t2n)
 
     def combineNames4[T0, T1, T2, T3](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3]): String =
-        combineNames3(t0n, t1n, t2n) + "+" + t3n
+        combineNames3(t0n, t1n, t2n) + "+" + name(t3n)
 
     def combineNames5[T0, T1, T2, T3, T4](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4]): String =
-        combineNames4(t0n, t1n, t2n, t3n) + "+" + t4n
+        combineNames4(t0n, t1n, t2n, t3n) + "+" + name(t4n)
 
     def combineNames6[T0, T1, T2, T3, T4, T5](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4], t5n: Named[T5]): String =
-        combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + t5n
+        combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + name(t5n)
 }
 
 /**
