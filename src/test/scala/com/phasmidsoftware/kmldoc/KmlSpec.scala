@@ -35,7 +35,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val folder = Folder(Seq(placemark))(containerData)
     import KmlRenderers._
     val wy = Using(StateR())(sr => Renderable.render[Folder](folder, FormatXML(0), sr))
-    wy shouldBe Success("<Folder ><name>Goodbye</name>\n        \n        \n        \n    \n    \n    </Folder>".stripMargin)
+    wy shouldBe Success(("<Folder ><name>Goodbye</name>\n        \n        \n        \n" +
+            "    <Placemark ><name>Hello</name>\n          \n          \n          \n        <Point >\n            <coordinates>\n              -72, 0, 0\n              </coordinates>\n            \n            </Point>\n        \n        </Placemark>" +
+            "\n    \n    </Folder>").stripMargin)
   }
 
   behavior of "KmlObject"
@@ -3242,7 +3244,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 coordinate.coordinates.size shouldBe 94
                 val wy = Using(StateR())(sr => KmlRenderers.rendererDocument.render(document, FormatXML(0), sr))
                 wy.isSuccess shouldBe true
-//        println(wy.get)
                 wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
               case _: Folder =>
             }
@@ -3795,6 +3796,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = KML_Binding(ks.head, xml.scope)
+        // FIXME exception thrown here
         val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
         val filename = "miniSampleOutput.kml"
         val fw = new FileWriter(filename)
@@ -3817,6 +3819,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extractMulti[Seq[KML]](xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
+        // FIXME Exception thrown.
         val kml = KML_Binding(ks.head, xml.scope)
         val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
         val filename = "xmlOutput.kml"

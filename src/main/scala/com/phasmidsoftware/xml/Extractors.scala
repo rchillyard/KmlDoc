@@ -5,7 +5,7 @@ import com.phasmidsoftware.core.{Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildren, extractElementsByLabel, extractField, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
-import com.phasmidsoftware.xml.Named.{combineNamed2, combineNameds2, name}
+import com.phasmidsoftware.xml.NamedFunction.{combineNamed2, combineNameds2, name}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -440,7 +440,7 @@ trait Extractors {
    */
   def extractor30[P0: Extractor, P1: Extractor, P2: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
     (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fieldExtractor[P0], extractorPartial20[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
-//    (node: Node) => extractorPartial30[P0,P1,P2,Unit,T]((e0, e1, e2) => _ => construct(e0, e1, e2), fields).extract(node) map (z => z())
+//  XXX   (node: Node) => extractorPartial30[P0,P1,P2,Unit,T]((e0, e1, e2) => _ => construct(e0, e1, e2), fields).extract(node) map (z => z())
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with three members.

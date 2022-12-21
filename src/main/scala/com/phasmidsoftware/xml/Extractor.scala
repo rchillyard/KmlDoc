@@ -4,11 +4,10 @@ import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.flog.{Flog, Loggable}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
-import com.phasmidsoftware.xml.Named.name
+import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
@@ -18,7 +17,7 @@ import scala.xml.{Node, NodeSeq}
  *
  * @tparam T the type to be constructed.
  */
-trait Extractor[T] extends Named[Extractor[T]] {
+trait Extractor[T] extends NamedFunction[Extractor[T]] {
     self =>
 
     /**
@@ -253,7 +252,7 @@ object Extractor {
  *
  * @tparam T the (iterable) type to be constructed.
  */
-trait MultiExtractor[T] extends Named[MultiExtractor[T]] {
+trait MultiExtractor[T] extends NamedFunction[MultiExtractor[T]] {
     /**
      * Method to convert a NodeSeq into a Try[T], usually an iterable type.
      * This method will typically be used on the result of: <code>node \ tag</code> where tag is particular tag String.
@@ -262,101 +261,6 @@ trait MultiExtractor[T] extends Named[MultiExtractor[T]] {
      * @return a Try[T].
      */
     def extract(nodeSeq: NodeSeq): Try[T]
-}
-
-/**
- * Trait to allow for functions to have names.
- * A function, for example T=>R, can simply extend Named[T=>R] and toString will show the name.
- *
- * The name is held as a var. It is updated by the ^^ method.
- *
- * CONSIDER having a method which adds to the name but doesn't replace it.
- *
- * CONSIDER moving this class to its own module.
- *
- * @tparam E the type of the function to be named.
- */
-trait Named[E] {
-    def ^^(w: String): E = {
-        name = w
-        this.asInstanceOf[E]
-    }
-
-    var name: String = "unnamed"
-
-    override def toString: String = name
-}
-
-object Named {
-    def validate[T](tn: Named[T]): Named[T] =
-        Option(tn) match {
-            case Some(x) => x
-            case None =>
-                logger.warn("Named.validate: null Named[T]")
-                throw XmlException("can't validate tn")
-//                tn
-        }
-
-    def assertNamedNotNullMember[N: Named, T: ClassTag](member: String): Unit = {
-        Option(implicitly[Named[N]]) match {
-            case None => throw new AssertionError(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
-            case _ =>
-        }
-    }
-
-    def assertNamedNotNull[N: Named, T: ClassTag](): Unit = assertNamedNotNullMember("anonymous")
-
-    def named[P: Named]: Named[P] = implicitly[Named[P]]
-
-    def name[P: Named]: String = Option(named[P]) map (_.name) getOrElse "uninitialized"
-
-    def combineNamed2[T0: Named, T1: Named]: String =
-        combineNames2(named[T0], named[T1])
-
-    def combineNamed3[T0: Named, T1: Named, T2: Named]: String =
-        combineNames3(named[T0], named[T1], named[T2])
-
-    def combineNamed4[T0: Named, T1: Named, T2: Named, T3: Named]: String =
-        combineNames4(named[T0], named[T1], named[T2], named[T3])
-
-    def combineNamed5[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named]: String =
-        combineNames5(named[T0], named[T1], named[T2], named[T3], named[T4])
-
-    def combineNamed6[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named]: String =
-        combineNamed5[T0, T1, T2, T3, T4] + "+" + name[T5]
-
-    def combineNamed7[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named, T6: Named]: String =
-        combineNamed6[T0, T1, T2, T3, T4, T5] + "+" + name[T6]
-
-    def combineNameds2[T0: Named, T1](t1n: Named[T1]): String =
-        combineNames2(named[T0], t1n)
-
-    def combineNameds3[T0: Named, T1: Named, T2](t2n: Named[T2]): String =
-        combineNames3(named[T0], named[T1], t2n)
-
-    def combineNameds4[T0: Named, T1: Named, T2: Named, T3](t3n: Named[T3]): String =
-        combineNames4(named[T0], named[T1], named[T2], t3n)
-
-    def combineNameds5[T0: Named, T1: Named, T2: Named, T3: Named, T4](t4n: Named[T4]): String =
-        combineNames5(named[T0], named[T1], named[T2], named[T3], t4n)
-
-    def combineNameds6[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5](t5n: Named[T5]): String =
-        combineNames6(named[T0], named[T1], named[T2], named[T3], named[T4], t5n)
-
-    def combineNames2[T0, T1](t0n: Named[T0], t1n: Named[T1]): String =
-        name(t0n) + "+" + name(t1n)
-
-    def combineNames3[T0, T1, T2](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2]): String =
-        combineNames2(t0n, t1n) + "+" + name(t2n)
-
-    def combineNames4[T0, T1, T2, T3](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3]): String =
-        combineNames3(t0n, t1n, t2n) + "+" + name(t3n)
-
-    def combineNames5[T0, T1, T2, T3, T4](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4]): String =
-        combineNames4(t0n, t1n, t2n, t3n) + "+" + name(t4n)
-
-    def combineNames6[T0, T1, T2, T3, T4, T5](t0n: Named[T0], t1n: Named[T1], t2n: Named[T2], t3n: Named[T3], t4n: Named[T4], t5n: Named[T5]): String =
-        combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + name(t5n)
 }
 
 /**

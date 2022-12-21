@@ -459,7 +459,6 @@ object KmlRenderers extends Renderers {
 
     import Renderers._
 
-//    implicit val rendererOptionInt: Renderable[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
     implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
     implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)// ^^ "rendererKmlData"
     implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)// ^^ "rendererGeometryData"
@@ -523,7 +522,7 @@ object KmlRenderers extends Renderers {
     implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]// ^^ "rendererPlacemarks"
     implicit val rendererContainerData: Renderable[ContainerData] = renderer0Super(ContainerData.applyFunction)(_.featureData)// ^^ "rendererContainerData"
     implicit val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document]// ^^ "rendererContainer"
-    implicit val rendererFeature: Renderable[Feature] = rendererSuper1[Feature, Container]// ^^ "rendererFeature"
+    implicit val rendererFeature: Renderable[Feature] = rendererSuper2[Feature, Placemark, Container]// ^^ "rendererFeature"
     implicit val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature]// ^^ "rendererFeatures"
 
     implicit def rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData)// ^^ "rendererFolder"
@@ -539,8 +538,6 @@ object KmlRenderers extends Renderers {
     implicit def rendererStyleType: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap]// ^^ "rendererStyleType"
 
     implicit def rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector]// ^^ "rendererStyleTypes"
-
-//    implicit def rendererOptionOpen: Renderable[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionOpen"
 
     implicit val rendererKml: Renderable[KML] = renderer1(KML)// ^^ "rendererKml"
     implicit val rendererKml_Binding: Renderable[KML_Binding] = Renderable {
