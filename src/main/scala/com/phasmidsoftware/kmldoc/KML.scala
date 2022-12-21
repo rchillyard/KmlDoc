@@ -442,118 +442,120 @@ object KmlExtractors extends Extractors {
 object KmlRenderers extends Renderers {
 
   case class FormatCoordinate(indents: Int) extends BaseFormat(indents) {
-    val name: String = "formatCoordinate"
+      val name: String = "formatCoordinate"
 
-    def indent: Format = copy(indents = indents + 1)
+      def indent: Format = copy(indents = indents + 1)
 
-    def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = open match {
-      case Some(true) => newline
-      case _ => ""
-    }
+      def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = open match {
+          case Some(true) => newline
+          case _ => ""
+      }
 
-    def sequencer(open: Option[Boolean]): String = open match {
-      case Some(false) => ""
-      case _ => newline
-    }
+      def sequencer(open: Option[Boolean]): String = open match {
+          case Some(false) => ""
+          case _ => newline
+      }
   }
 
-  import Renderers._
+    import Renderers._
 
-  implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer
-  implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply)
-  implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData)
-  implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData)
-  implicit val rendererScale: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData)
-  implicit val rendererIcon: Renderable[Icon] = renderer1(Icon)
-  implicit val rendererColor: Renderable[Color] = renderer1(Color)
-  implicit val rendererOptionColor: Renderable[Option[Color]] = optionRenderer
-  implicit val rendererBgColor: Renderable[BgColor] = renderer1(BgColor)
-  implicit val rendererOptionBgColor: Renderable[Option[BgColor]] = optionRenderer
-  implicit val rendererTextColor: Renderable[TextColor] = renderer1(TextColor)
-  implicit val rendererOptionTextColor: Renderable[Option[TextColor]] = optionRenderer
-  implicit val rendererColorMode: Renderable[ColorMode] = renderer1(ColorMode)
-  implicit val rendererOptionColorMode: Renderable[Option[ColorMode]] = optionRenderer
-  implicit val rendererWidth: Renderable[Width] = renderer1(Width)
-  implicit val rendererHeading: Renderable[Heading] = renderer1(Heading)
-  implicit val rendererFill: Renderable[Fill] = renderer1(Fill)
-  implicit val rendererOutline: Renderable[Outline] = renderer1(Outline)
-  implicit val rendererOptionHeading: Renderable[Option[Heading]] = optionRenderer
-  implicit val rendererListItemType: Renderable[ListItemType] = renderer1(ListItemType)
-  implicit val rendererOptionListItemType: Renderable[Option[ListItemType]] = optionRenderer
-  implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot)
-  implicit val rendererState: Renderable[State] = renderer1(State)
-  implicit val rendererOptionState: Renderable[Option[State]] = optionRenderer
-  implicit val rendererItemIcon: Renderable[ItemIcon] = renderer2(ItemIcon)
-  implicit val rendererOptionItemIcon: Renderable[Option[ItemIcon]] = optionRenderer
-  private val fKP2SSP: KmlData => SubStyleData = k => new SubStyleData(k)
-  implicit val rendererSubStyleData: Renderable[SubStyleData] = renderer0Super(fKP2SSP)(x => x.kmlData)
-  implicit val rendererColorStyleData: Renderable[ColorStyleData] = renderer2Super(ColorStyleData.apply)(x => x.subStyleData)
-  implicit val rendererIconStyle: Renderable[IconStyle] = renderer4Super(IconStyle.apply)(x => x.colorStyleData)
-  implicit val rendererDisplayMode: Renderable[DisplayMode] = renderer1(DisplayMode)
-  implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer4Super(BalloonStyle.apply)(_.colorStyleData)
-  implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1Super(LabelStyle.apply)(_.colorStyleData)
-  implicit val rendererLineStyle: Renderable[LineStyle] = renderer1Super(LineStyle.apply)(_.colorStyleData)
-  implicit val rendererListStyle: Renderable[ListStyle] = renderer3Super(ListStyle.apply)(_.colorStyleData)
-  implicit val rendererPolyStyle: Renderable[PolyStyle] = renderer2Super(PolyStyle.apply)(_.colorStyleData)
-  implicit val rendererOptionLineStyle: Renderable[Option[LineStyle]] = optionRenderer
-  implicit val rendererOptionLabelStyle: Renderable[Option[LabelStyle]] = optionRenderer
-  implicit val rendererOptionBalloonStyle: Renderable[Option[BalloonStyle]] = optionRenderer
-  implicit val rendererOptionIconStyle: Renderable[Option[IconStyle]] = optionRenderer
-  implicit val rendererStyleSelectorData: Renderable[StyleSelectorData] = renderer1(StyleSelectorData.apply)
-  implicit val rendererColorStyle: Renderable[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle]
-  implicit val rendererColorStyles: Renderable[Seq[ColorStyle]] = sequenceRenderer[ColorStyle]
-  implicit val rendererStyle: Renderable[Style] = renderer1Super(Style.apply)(_.styleSelectorData)
-  implicit val rendererPair: Renderable[Pair] = renderer2(Pair)
-  implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair]
-  implicit val rendererStyleMap: Renderable[StyleMap] = renderer1Super(StyleMap.apply)(_.styleSelectorData)
-  implicit val rendererCoordinate: Renderable[Coordinate] = (t: Coordinate, _: Format, _: StateR) => s"${t.long}, ${t.lat}, ${t.alt}"
-  implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate)
-  implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply)
-  // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
-  implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML)
-  implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate)
-  implicit val rendererLineString: Renderable[LineString] = renderer2(LineString)
-  implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString]
-  implicit val rendererPoint: Renderable[Point] = renderer1Super(Point.apply)(_.geometryData)
-  implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point]
-  implicit val rendererGeometry: Renderable[Geometry] = rendererSuper2[Geometry, Point, LineString]
-  implicit val rendererGeometrys: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry]
-  implicit val rendererPlacemark: Renderable[Placemark] = renderer1Super(Placemark.apply)(_.featureData)
-  implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark]
-  implicit val rendererContainerData: Renderable[ContainerData] = renderer0Super(ContainerData.applyFunction)(_.featureData)
-  implicit val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document]
-  implicit val rendererFeature: Renderable[Feature] = rendererSuper1[Feature, Container]
-  implicit val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature]
+    implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+    implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply) ^^ "rendererKmlData"
+    implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData) ^^ "rendererGeometryData"
+    implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData) ^^ "rendererFeatureData"
+    implicit val rendererScale: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData) ^^ "rendererScale"
+    implicit val rendererIcon: Renderable[Icon] = renderer1(Icon) ^^ "rendererIcon"
+    implicit val rendererColor: Renderable[Color] = renderer1(Color) ^^ "rendererColor"
+    implicit val rendererOptionColor: Renderable[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
+    implicit val rendererBgColor: Renderable[BgColor] = renderer1(BgColor) ^^ "rendererBgColor"
+    implicit val rendererOptionBgColor: Renderable[Option[BgColor]] = optionRenderer[BgColor] ^^ "rendererOptionBgColor"
+    implicit val rendererTextColor: Renderable[TextColor] = renderer1(TextColor) ^^ "rendererTextColor"
+    implicit val rendererOptionTextColor: Renderable[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
+    implicit val rendererColorMode: Renderable[ColorMode] = renderer1(ColorMode) ^^ "rendererColorMode"
+    implicit val rendererOptionColorMode: Renderable[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
+    implicit val rendererWidth: Renderable[Width] = renderer1(Width) ^^ "rendererWidth"
+    implicit val rendererHeading: Renderable[Heading] = renderer1(Heading) ^^ "rendererHeading"
+    implicit val rendererFill: Renderable[Fill] = renderer1(Fill) ^^ "rendererFill"
+    implicit val rendererOutline: Renderable[Outline] = renderer1(Outline) ^^ "rendererOutline"
+    implicit val rendererOptionHeading: Renderable[Option[Heading]] = optionRenderer[Heading] ^^ "rendererOptionHeading"
+    implicit val rendererListItemType: Renderable[ListItemType] = renderer1(ListItemType) ^^ "rendererListItemType"
+    implicit val rendererOptionListItemType: Renderable[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
+    implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot) ^^ "rendererHotSpot"
+    implicit val rendererState: Renderable[State] = renderer1(State) ^^ "rendererState"
+    implicit val rendererOptionState: Renderable[Option[State]] = optionRenderer[State] ^^ "rendererOptionState"
+    implicit val rendererItemIcon: Renderable[ItemIcon] = renderer2(ItemIcon) ^^ "rendererItemIcon"
+    implicit val rendererOptionItemIcon: Renderable[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
+    private val fKP2SSP: KmlData => SubStyleData = k => new SubStyleData(k)
+    implicit val rendererSubStyleData: Renderable[SubStyleData] = renderer0Super(fKP2SSP)(x => x.kmlData) ^^ "rendererSubStyleData"
+    implicit val rendererColorStyleData: Renderable[ColorStyleData] = renderer2Super(ColorStyleData.apply)(x => x.subStyleData) ^^ "rendererColorStyleData"
+    implicit val rendererIconStyle: Renderable[IconStyle] = renderer4Super(IconStyle.apply)(x => x.colorStyleData) ^^ "rendererIconStyle"
+    implicit val rendererDisplayMode: Renderable[DisplayMode] = renderer1(DisplayMode) ^^ "rendererDisplayMode"
+    implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer4Super(BalloonStyle.apply)(_.colorStyleData) ^^ "rendererBalloonStyle"
+    implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1Super(LabelStyle.apply)(_.colorStyleData) ^^ "rendererLabelStyle"
+    implicit val rendererLineStyle: Renderable[LineStyle] = renderer1Super(LineStyle.apply)(_.colorStyleData) ^^ "rendererLineStyle"
+    implicit val rendererListStyle: Renderable[ListStyle] = renderer3Super(ListStyle.apply)(_.colorStyleData) ^^ "rendererListStyle"
+    implicit val rendererPolyStyle: Renderable[PolyStyle] = renderer2Super(PolyStyle.apply)(_.colorStyleData) ^^ "rendererPolyStyle"
+    implicit val rendererOptionLineStyle: Renderable[Option[LineStyle]] = optionRenderer[LineStyle] ^^ "rendererOptionLineStyle"
+    implicit val rendererOptionLabelStyle: Renderable[Option[LabelStyle]] = optionRenderer[LabelStyle] ^^ "rendererOptionLabelStyle"
+    implicit val rendererOptionBalloonStyle: Renderable[Option[BalloonStyle]] = optionRenderer[BalloonStyle] ^^ "rendererOptionBalloonStyle"
+    implicit val rendererOptionIconStyle: Renderable[Option[IconStyle]] = optionRenderer[IconStyle] ^^ "rendererOptionIconStyle"
+    implicit val rendererStyleSelectorData: Renderable[StyleSelectorData] = renderer1(StyleSelectorData.apply) ^^ "rendererStyleSelectorData"
+    implicit val rendererColorStyle: Renderable[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererColorStyle"
+    implicit val rendererColorStyles: Renderable[Seq[ColorStyle]] = sequenceRenderer[ColorStyle] ^^ "rendererColorStyles"
+    implicit val rendererStyle: Renderable[Style] = renderer1Super(Style.apply)(_.styleSelectorData) ^^ "rendererStyle"
+    implicit val rendererPair: Renderable[Pair] = renderer2(Pair) ^^ "rendererPair"
+    implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererSequencePair"
+    implicit val rendererStyleMap: Renderable[StyleMap] = renderer1Super(StyleMap.apply)(_.styleSelectorData) ^^ "rendererStyleMap"
+    implicit val rendererCoordinate: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => s"${t.long}, ${t.lat}, ${t.alt}" } ^^ "rendererCoordinate"
+    implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate) ^^ "rendererCoordinates1"
+    implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply) ^^ "rendererCoordinates"
+    // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
+    implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML) ^^ "rendererCoordinates_s"
+    implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate) ^^ "rendererTessellate"
+    implicit val rendererLineString: Renderable[LineString] = renderer2(LineString) ^^ "rendererLineString"
+    implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
+    implicit val rendererPoint: Renderable[Point] = renderer1Super(Point.apply)(_.geometryData) ^^ "rendererPoint"
+    implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
+    implicit val rendererGeometry: Renderable[Geometry] = rendererSuper2[Geometry, Point, LineString] ^^ "rendererGeometry"
+    implicit val rendererGeometrys: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry] ^^ "rendererGeometrys"
+    implicit val rendererPlacemark: Renderable[Placemark] = renderer1Super(Placemark.apply)(_.featureData) ^^ "rendererPlacemark"
+    implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
+    implicit val rendererContainerData: Renderable[ContainerData] = renderer0Super(ContainerData.applyFunction)(_.featureData) ^^ "rendererContainerData"
+    implicit val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^^ "rendererContainer"
+    implicit val rendererFeature: Renderable[Feature] = rendererSuper1[Feature, Container] ^^ "rendererFeature"
+    implicit val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
 
-  implicit def rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData)
+    implicit def rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData) ^^ "rendererFolder"
 
-  implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder]
+    implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder] ^^ "rendererFolders"
 
-  implicit def rendererDocument: Renderable[Document] = renderer1Super(Document.apply)(_.containerData)
+    implicit def rendererDocument: Renderable[Document] = renderer1Super(Document.apply)(_.containerData) ^^ "rendererDocument"
 
-  implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document]
-  implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style]
-  implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap]
-  implicit val rendererStyleType: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap]
+    implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document] ^^ "rendererDocuments"
+    implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style] ^^ "rendererStyles"
+    implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
+    implicit val rendererStyleType: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleType"
 
-  implicit def rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector]
+    implicit def rendererStyleTypes: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^^ "rendererStyleTypes"
 
-  implicit def renderOptionOpen: Renderable[Option[Int]] = optionRenderer
+    implicit def renderOptionOpen: Renderable[Option[Int]] = optionRenderer[Int] ^^ "renderOptionOpen"
 
-  implicit val rendererKml: Renderable[KML] = renderer1(KML)
-  implicit val rendererKml_Binding: Renderable[KML_Binding] = (t: KML_Binding, format: Format, stateR: StateR) =>
-    doRenderKML_Binding(t, format, stateR)
+    implicit val rendererKml: Renderable[KML] = renderer1(KML) ^^ "rendererKml"
+    implicit val rendererKml_Binding: Renderable[KML_Binding] = Renderable {
+        (t: KML_Binding, format: Format, stateR: StateR) =>
+            doRenderKML_Binding(t, format, stateR)
+    } ^^ "rendererKml_Binding"
 
-  def render[T: Renderable](t: T, format: Format, stateR: StateR): String = implicitly[Renderable[T]].render(t, format, stateR)
+    def render[T: Renderable](t: T, format: Format, stateR: StateR): String = implicitly[Renderable[T]].render(t, format, stateR)
 
-  private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR): String = {
-    val renderer: Renderable[KML] = renderer1(KML)
-    val wy = Using(stateR.addAttribute(s"""${t.binding}"""))(rs => renderer.render(t.kml, format, rs))
-    wy match {
-      case Success(w) => w
-      case Failure(x) => logger.warn("doRenderKML_Binding", x); ""
+    private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR): String = {
+        val renderer: Renderable[KML] = renderer1(KML)
+        val wy = Using(stateR.addAttribute(s"""${t.binding}"""))(rs => renderer.render(t.kml, format, rs))
+        wy match {
+            case Success(w) => w
+            case Failure(x) => logger.warn("doRenderKML_Binding", x); ""
+        }
     }
-  }
 }
 
 // CONSIDER Rename as KML

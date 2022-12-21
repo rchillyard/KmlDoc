@@ -2,7 +2,7 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.Text
 import com.phasmidsoftware.core.Utilities.parseUnparsed
-import com.phasmidsoftware.render.{FormatXML, StateR}
+import com.phasmidsoftware.render.{FormatXML, Renderable, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
 import java.io.FileWriter
@@ -12,6 +12,31 @@ import scala.util.{Failure, Success, Try, Using}
 import scala.xml.{Elem, XML}
 
 class KmlSpec extends AnyFlatSpec with should.Matchers {
+
+  behavior of "renderers"
+
+  it should "render Placemark" in {
+    val coordinates1 = Coordinates(Seq(Coordinate("0", "-72", "0")))
+    val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
+    val featureData: FeatureData = FeatureData(Text("Hello"), None, None, None, Nil)(KmlData.nemo)
+    val placemark = Placemark(Seq(point))(featureData)
+    import KmlRenderers._
+    val wy = Using(StateR())(sr => Renderable.render[Placemark](placemark, FormatXML(0), sr))
+    wy shouldBe Success("<Placemark ><name>Hello</name>\n      \n      \n      \n    <Point >\n        <coordinates>\n          -72, 0, 0\n          </coordinates>\n        \n        </Point>\n    \n    </Placemark>".stripMargin)
+  }
+
+  it should "render Folder" in {
+    val coordinates1 = Coordinates(Seq(Coordinate("0", "-72", "0")))
+    val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
+    val featureData1: FeatureData = FeatureData(Text("Hello"), None, None, None, Nil)(KmlData.nemo)
+    val featureData2: FeatureData = FeatureData(Text("Goodbye"), None, None, None, Nil)(KmlData.nemo)
+    val placemark = Placemark(Seq(point))(featureData1)
+    val containerData: ContainerData = ContainerData(featureData2)
+    val folder = Folder(Seq(placemark))(containerData)
+    import KmlRenderers._
+    val wy = Using(StateR())(sr => Renderable.render[Folder](folder, FormatXML(0), sr))
+    wy shouldBe Success("<Folder ><name>Goodbye</name>\n        \n        \n        \n    \n    \n    </Folder>".stripMargin)
+  }
 
   behavior of "KmlObject"
 
@@ -257,7 +282,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Container"
 
-  it should "extract Folder" in {
+  ignore should "extract Folder" in {
     val xml: Elem = <xml>
       <Folder>
         <name>Untitled layer</name>
@@ -309,9 +334,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 coordinates.size shouldBe 1
                 val coordinate = coordinates.head
                 coordinate.coordinates.size shouldBe 8
-                val wy = Using(StateR())(sr => KmlRenderers.rendererFolder.render(f, FormatXML(0), sr))
+                import KmlRenderers._
+                val wy = Using(StateR())(sr => Renderable.render[Folder](f, FormatXML(0), sr))
                 wy.isSuccess shouldBe true
-//            wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>"
+                wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>"
             }
         }
       case Failure(x) => fail(x)
@@ -550,7 +576,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </StyleMap>
     </xml>
     extractMulti[Seq[StyleMap]](xml / "StyleMap") match {
-//    extractorMultiStyleMap.extract(xml \ "StyleMap") match {
       case Success(ss) =>
         ss.size shouldBe 1
         val styleMap: StyleMap = ss.head
@@ -565,7 +590,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Document"
 
-  // TESTME
   it should "extract Document" in {
     val xml = <xml>
       <Document>
@@ -3735,25 +3759,22 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  // TODO renew this test.
-  ignore should "extract and render sample Kml from file" in {
+  it should "extract and render sample Kml from file" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
     import KmlExtractors._
     extractMulti[Seq[KML]](xml) match {
-//    multiExtractorKml.extract(xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml: KML = ks.head
         val w = kml.toString
         println(w)
-        w.length shouldBe 79644
+        w.length shouldBe 73525
       case Failure(x) => fail(x)
     }
   }
 
-  // TODO renew this test.
-  ignore should "extract and render mini sample Kml from file" in {
+  it should "extract and render mini sample Kml from file" in {
     val url = KML.getClass.getResource("minisample.kml")
     val xml = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -3762,13 +3783,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val kml: KML = ks.head
         val w = kml.toString
         println(w)
-        w.length shouldBe 4749
+        w.length shouldBe 3558
       case Failure(x) => fail(x)
     }
   }
 
-  // TODO renew this test.
-  ignore should "extract and render mini sample kml as XML from file" in {
+  it should "extract and render mini sample kml as XML from file" in {
     val renderer = KmlRenderers.rendererKml_Binding
     val url = KML.getClass.getResource("minisample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -3791,9 +3811,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-
-  // TODO renew this test.
-  ignore should "extract and render sample kml as XML from file" in {
+  it should "extract and render sample kml as XML from file" in {
     val renderer = KmlRenderers.rendererKml_Binding
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -3816,7 +3834,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  // TODO renew this test.
   ignore should "extract and render sample kml as XML from Google sample" in {
     val renderer = KmlRenderers.rendererKml_Binding
     val url = KML.getClass.getResource("/KML_Samples.kml")

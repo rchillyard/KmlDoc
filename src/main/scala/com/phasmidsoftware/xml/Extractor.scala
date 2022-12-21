@@ -292,6 +292,8 @@ object Named {
     def combineNamed6[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named]: String =
         combineNamed5[T0, T1, T2, T3, T4] + "+" + named[T5]
 
+    def combineNamed7[T0: Named, T1: Named, T2: Named, T3: Named, T4: Named, T5: Named, T6: Named]: String =
+        combineNamed6[T0, T1, T2, T3, T4, T5] + "+" + named[T6]
 
     def combineNameds2[T0: Named, T1](t1n: Named[T1]): String =
         combineNames2(named[T0], t1n)
