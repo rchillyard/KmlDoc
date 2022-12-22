@@ -1,5 +1,6 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.kmldoc.KmlRenderers
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -19,6 +20,11 @@ trait NamedFunction[E] {
         this.asInstanceOf[E]
     }
 
+    def ^+(w: String): E = {
+        name = s"$w: $name"
+        this.asInstanceOf[E]
+    }
+
     var name: String = "unnamed"
 
     override def toString: String = name
@@ -27,7 +33,10 @@ trait NamedFunction[E] {
 object NamedFunction {
     def assertNamedNotNullMember[N: NamedFunction, T: ClassTag](member: String): Unit = {
         Option(implicitly[NamedFunction[N]]) match {
-            case None => throw new AssertionError(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
+            case None =>
+                val kml: KmlRenderers.type = KmlRenderers
+                logger.warn(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
+                throw new AssertionError(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
             case _ =>
         }
     }
