@@ -86,7 +86,7 @@ class Feature extends KmlObject
  */
 object Feature {
     implicit lazy val rendererFeature: Renderable[Feature] = rendererSuper2[Feature, Placemark, Container] ^+ "rendererFeature"
-    val applyFunction: Unit => Feature = _ => new Feature()
+    val applyFunction: Unit => Feature = _ => new Feature() // CONSIDER do we need this?
 }
 
 /**
@@ -519,7 +519,6 @@ object Style {
 case class Pair(key: String, styleUrl: String)
 
 object Pair {
-    //    implicit val extractorPair: Extractor[Pair] = extractor20(Pair.apply) ^^ "multiExtractorPair"
     implicit val rendererPair: Renderable[Pair] = renderer2(Pair.apply) ^+ "rendererPair"
 }
 
@@ -529,19 +528,15 @@ object StyleMap {
     implicit val rendererStyleMap: Renderable[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^+ "rendererStyleMap"
 }
 
-//case class Folder(name: Text, Placemarks: Seq[Placemark])
-
 case class Tessellate($: String)
 
 object Tessellate {
-    //    implicit val extractorTessellate: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
     implicit val rendererTessellate: Renderable[Tessellate] = renderer1(apply) ^+ "rendererTessellate"
 }
 
 case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates]) extends Geometry
 
 object LineString {
-    //    implicit val extractorLineString: Extractor[LineString] = extractor11(apply) ^^ "extractorLineString"
     implicit val rendererLineString: Renderable[LineString] = renderer2(apply) ^+ "rendererLineString"
 }
 
