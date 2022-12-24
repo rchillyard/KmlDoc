@@ -20,6 +20,8 @@ trait Extractors {
    * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
    * This is generally used in conjunction with naming a case class member as "maybe"name.
    *
+   * CONSIDER re-writing this as it appear to force evaluation of the implicit evidence of Extractor[P].
+   *
    * @tparam P the underlying type of the result.
    * @return an Extractor of Option[P].
    */

@@ -1,6 +1,9 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.core.{Text, XmlException}
+import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
+import com.phasmidsoftware.kmldoc.KmlData.rendererKmlData
+import com.phasmidsoftware.kmldoc.KmlRenderers.{renderer0Super, renderer1, renderer1Super, renderer2, renderer2Super, renderer3Super, renderer4, renderer4Super, renderer5Super, rendererColorStyles, rendererCoordinates1, rendererCoordinates_s, rendererFeatures, rendererGeometrys, rendererOptionBgColor, rendererOptionColor, rendererOptionColorMode, rendererOptionHeading, rendererOptionItemIcon, rendererOptionListItemType, rendererOptionTextColor, rendererSequencePair, rendererSuper2, rendererSuper6, sequenceRenderer}
+import com.phasmidsoftware.render.Renderers.{doubleRenderer, intRenderer, rendererOptionInt, rendererOptionString, rendererOptionText, rendererText, stringRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor.none
 import com.phasmidsoftware.xml._
@@ -9,17 +12,25 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
-import scala.util.{Failure, Success, Using}
+import scala.util.{Success, Try}
 import scala.xml.{Elem, NamespaceBinding, Node, XML}
 
 /**
- * Super-type of all KML entities.
- * See https://developers.google.com/kml/documentation/kmlreference
+ * Abstract super-element of all KML elements. Known in the reference document as Object.
+ * See [[https://developers.google.com/kml/documentation/kmlreference KML Reference]]
+ *
+ * NOTE: abstract elements cannot be represented in Kml documents directly but are always super-elements (and therefore ordinary classes).
+ * Their usage is in the properties of other elements where more than one possible element type is allowed.
+ *
+ * Actual Kml elements (the leaf classes) are all represented here as case classes, which cannot be extended.
  */
 class KmlObject {
 //  val subClasses: Seq[Class[_]] = Seq(classOf[Feature], classOf[Geometry], classOf[StyleSelector], classOf[SubStyle], classOf[Scale])
 }
 
+/**
+ * Companion object to KmlObject.
+ */
 object KmlObject {
 //  implicit object loggableKmlObject extends LoggableAny[KmlObject]
 }
@@ -31,92 +42,225 @@ object KmlObject {
  */
 case class KmlData(__id: Option[String])
 
+/**
+ * Companion object to KmlData.
+ */
 object KmlData {
-  def nemo: KmlData = KmlData(None)
+
+    implicit lazy val rendererKmlData: Renderable[KmlData] = renderer1(apply) ^+ "rendererKmlData"
+
+    def nemo: KmlData = KmlData(None)
 
 //  implicit object loggableKmlData extends LoggableAny[KmlData]
 }
 
 /**
+ * Scale element: sub-element of Object in the Kml reference.
  * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
+ * See [[https://developers.google.com/kml/documentation/kmlreference#scale Scale]]
  *
  * @param $ the value of the scale (a Double).
  */
 case class Scale($: Double)(val kmlData: KmlData) extends KmlObject
 
+/**
+ * Companion object to Scale.
+ */
 object Scale {
-  def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
+    implicit val rendererScale: Renderable[Scale] = renderer1Super(apply)(_.kmlData) ^+ "rendererScale"
+
+    def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
 }
 
+/**
+ * Abstract Feature element.
+ * Feature is a sub-type of Object and a super-type of Placemark, Container.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#feature Feature]].
+ *
+ * TODO add Overlay, NetworkLink.
+ */
 class Feature extends KmlObject
 
+/**
+ * Companion object to Feature.
+ */
 object Feature {
-  val applyFunction: Unit => Feature = _ => new Feature()
+    implicit lazy val rendererFeature: Renderable[Feature] = rendererSuper2[Feature, Placemark, Container] ^+ "rendererFeature"
+    val applyFunction: Unit => Feature = _ => new Feature()
 }
 
+/**
+ * Properties of a Feature (and therefore all its sub-types).
+ *
+ * @param name             the name (a Text).
+ * @param maybeDescription an optional description: Option[Text].
+ * @param maybeStyleUrl    an optional style URL: Option[String].
+ * @param maybeOpen        an optional openness designation: Option[Int].
+ * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
+ * @param kmlData          (auxiliary) member: KmlData.
+ */
 case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[String], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
+/**
+ * Companion object to Feature.
+ */
+object FeatureData {
+    implicit val rendererStyleSelectors: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^+ "rendererStyleSelectors"
+    implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(apply)(_.kmlData) ^+ "rendererFeatureData"
+}
+
+/**
+ * Placemark: sub-type of Feature.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#placemark Placemark]].
+ *
+ * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
+ * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
+ */
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
 
-class Container() extends Feature
-
-object Container {
-  val applyFunction: Unit => Container = _ => new Container()
+/**
+ * Companion object to Placemark.
+ */
+object Placemark {
+    implicit lazy val rendererPlacemark: Renderable[Placemark] = renderer1Super(apply)(_.featureData) ^+ "rendererPlacemark"
 }
 
+/**
+ * Abstract Container element.
+ * Container is a sub-type of Feature and a super-type of Folder, Document.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#container Container]].
+ *
+ * A Container has no properties of its own.
+ */
+class Container extends Feature
+
+/**
+ * Companion object to Container.
+ */
+object Container {
+    implicit lazy val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^+ "rendererContainer"
+    val applyFunction: Unit => Container = _ => new Container()
+}
+
+/**
+ * Properties of a Container (and therefore all its sub-types).
+ *
+ * CONSIDER having an empty member set.
+ *
+ * @param featureData (auxiliary) member: FeatureData, shared by sub-elements.
+ */
 case class ContainerData(featureData: FeatureData)
 
+/**
+ * Companion object to ContainerData.
+ */
 object ContainerData {
-  val applyFunction: FeatureData => ContainerData = new ContainerData(_)
+    val applyFunction: FeatureData => ContainerData = new ContainerData(_)
+    implicit val rendererContainerData: Renderable[ContainerData] = renderer0Super(applyFunction)(_.featureData) ^+ "rendererContainerData"
 }
 
+/**
+ * Folder: sub-element of Container.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#container Folder]].
+ *
+ * @param features      a sequence of Feature elements (where Feature is an abstract super-type).
+ * @param containerData the ContainerData (auxiliary property).
+ */
 case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container
 
 /**
- * Document.
+ * Companion object to Folder.
+ */
+object Folder {
+    implicit val rendererFolder: Renderable[Folder] = renderer1Super(apply)(_.containerData) ^+ "rendererFolder"
+}
+
+/**
+ * Document: sub-element of Container.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#document Document]].
  *
  * TODO add Schemas to this case class
  *
  * @param features      a sequence of Features.
- * @param containerData ContainerData.
+ * @param containerData ContainerData (auxiliary property).
  */
 case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container
 
+/**
+ * Companion object to Document.
+ */
+object Document {
+    implicit val rendererDocument: Renderable[Document] = renderer1Super(apply)(_.containerData) ^+ "rendererDocument"
+}
+
+/**
+ * Geometry: abstract sub-element of KmlObject.
+ * [[https://developers.google.com/kml/documentation/kmlreference#geometry Geometry]]
+ */
 class Geometry extends KmlObject
+
+/**
+ * Companion object to Document.
+ */
+object Geometry {
+    implicit lazy val rendererGeometry: Renderable[Geometry] = rendererSuper2[Geometry, Point, LineString] ^+ "rendererGeometry"
+}
 
 case class GeometryData(kmlData: KmlData)
 
 object GeometryData {
-  val applyFunction: KmlData => GeometryData = new GeometryData(_)
+    implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(apply)(_.kmlData) ^+ "rendererGeometryData"
+
+    val applyFunction: KmlData => GeometryData = new GeometryData(_)
 }
 
 case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
 
+object Point {
+    implicit val rendererPoint: Renderable[Point] = renderer1Super(apply)(_.geometryData) ^+ "rendererPoint"
+}
+
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class StyleSelector() extends KmlObject
+class StyleSelector extends KmlObject
+
+object StyleSelector {
+    implicit lazy val rendererStyleSelector: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^+ "rendererStyleSelector"
+}
 
 case class StyleSelectorData(kmlData: KmlData)
 
 object StyleSelectorData {
-  val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
+    val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
+    implicit val rendererStyleSelectorData: Renderable[StyleSelectorData] = renderer1(apply) ^+ "rendererStyleSelectorData"
 }
 
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class SubStyle() extends KmlObject
+class SubStyle extends KmlObject
 
 case class SubStyleData(kmlData: KmlData)
 
 object SubStyleData {
-  val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
+    private val fKP2SSP: KmlData => SubStyleData = k => new SubStyleData(k)
+    implicit val rendererSubStyleData: Renderable[SubStyleData] = renderer0Super(fKP2SSP)(_.kmlData) ^+ "rendererSubStyleData"
+
+    val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
 }
 
-class ColorStyle() extends SubStyle
+class ColorStyle extends SubStyle
+
+object ColorStyle {
+    implicit lazy val rendererColorStyle: Renderable[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^+ "rendererColorStyle"
+}
 
 case class ColorStyleData(maybeColor: Option[Color], maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
+
+object ColorStyleData {
+    implicit val rendererColorStyleData: Renderable[ColorStyleData] = renderer2Super(ColorStyleData.apply)(x => x.subStyleData) ^+ "rendererColorStyleData"
+}
 
 /**
  * BalloonStyle
@@ -132,6 +276,10 @@ case class ColorStyleData(maybeColor: Option[Color], maybeColorMode: Option[Colo
  */
 case class BalloonStyle(text: Text, maybeBgColor: Option[BgColor], maybeTextColor: Option[TextColor], displayMode: DisplayMode)(val colorStyleData: ColorStyleData) extends ColorStyle
 
+object BalloonStyle {
+    implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer4Super(apply)(_.colorStyleData) ^+ "rendererBalloonStyle"
+}
+
 /**
  * ListStyle
  *
@@ -144,6 +292,10 @@ case class BalloonStyle(text: Text, maybeBgColor: Option[BgColor], maybeTextColo
  */
 case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], maybeItemIcon: Option[ItemIcon])(val colorStyleData: ColorStyleData) extends ColorStyle
 
+object ListStyle {
+    implicit val rendererListStyle: Renderable[ListStyle] = renderer3Super(apply)(_.colorStyleData) ^+ "rendererListStyle"
+}
+
 /**
  * LineStyle
  *
@@ -151,6 +303,10 @@ case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], 
  * @param colorStyleData the (auxiliary) color style properties.
  */
 case class LineStyle(width: Width)(val colorStyleData: ColorStyleData) extends ColorStyle
+
+object LineStyle {
+    implicit val rendererLineStyle: Renderable[LineStyle] = renderer1Super(apply)(_.colorStyleData) ^+ "rendererLineStyle"
+}
 
 /**
  * PolyStyle
@@ -161,6 +317,10 @@ case class LineStyle(width: Width)(val colorStyleData: ColorStyleData) extends C
  */
 case class PolyStyle(fill: Fill, outline: Outline)(val colorStyleData: ColorStyleData) extends ColorStyle
 
+object PolyStyle {
+    implicit val rendererPolyStyle: Renderable[PolyStyle] = renderer2Super(apply)(_.colorStyleData) ^+ "rendererPolyStyle"
+}
+
 /**
  * LabelStyle
  *
@@ -168,6 +328,10 @@ case class PolyStyle(fill: Fill, outline: Outline)(val colorStyleData: ColorStyl
  * @param colorStyleData the (auxiliary) color style properties.
  */
 case class LabelStyle(scale: Scale)(val colorStyleData: ColorStyleData) extends ColorStyle
+
+object LabelStyle {
+    implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1Super(apply)(_.colorStyleData) ^+ "rendererLabelStyle"
+}
 
 /**
  * IconStyle
@@ -180,6 +344,10 @@ case class LabelStyle(scale: Scale)(val colorStyleData: ColorStyleData) extends 
  */
 case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot, maybeHeading: Option[Heading])(val colorStyleData: ColorStyleData) extends ColorStyle
 
+object IconStyle {
+    implicit val rendererIconStyle: Renderable[IconStyle] = renderer4Super(IconStyle.apply)(x => x.colorStyleData) ^+ "rendererIconStyle"
+}
+
 /**
  * Fill.
  * NOTE that this is a boolean that is represented by 0 or 1.
@@ -187,6 +355,10 @@ case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot, maybeHeading: O
  * @param boolean whether to fill or not.
  */
 case class Fill(boolean: Int)
+
+object Fill {
+    implicit val rendererFill: Renderable[Fill] = renderer1(apply) ^+ "rendererFill"
+}
 
 /**
  * Outline.
@@ -196,6 +368,10 @@ case class Fill(boolean: Int)
  */
 case class Outline(boolean: Int)
 
+object Outline {
+    implicit val rendererOutline: Renderable[Outline] = renderer1(apply) ^+ "rendererOutline"
+}
+
 /**
  * Case class to represent a Heading which is represented in XML as, for example: <heading>1.1</heading>
  *
@@ -203,7 +379,15 @@ case class Outline(boolean: Int)
  */
 case class Heading($: Double)
 
+object Heading {
+    implicit val rendererHeading: Renderable[Heading] = renderer1(apply) ^+ "rendererHeading"
+}
+
 case class BgColor($: String)
+
+object BgColor {
+    implicit val rendererBgColor: Renderable[BgColor] = renderer1(apply) ^+ "rendererBgColor"
+}
 
 /**
  * TextColor
@@ -213,6 +397,10 @@ case class BgColor($: String)
  */
 case class TextColor($: String)
 
+object TextColor {
+    implicit val rendererTextColor: Renderable[TextColor] = renderer1(apply) ^+ "rendererTextColor"
+}
+
 /**
  * DisplayMode which has values "default" or "hide".
  * Used by BalloonStyle.
@@ -220,6 +408,10 @@ case class TextColor($: String)
  * @param $ the mode.
  */
 case class DisplayMode($: String)
+
+object DisplayMode {
+    implicit val rendererDisplayMode: Renderable[DisplayMode] = renderer1(apply) //^^ "rendererDisplayMode"
+}
 
 /**
  * ListItemType
@@ -229,6 +421,10 @@ case class DisplayMode($: String)
  */
 case class ListItemType($: String)
 
+object ListItemType {
+    implicit val rendererListItemType: Renderable[ListItemType] = renderer1(apply) ^+ "rendererListItemType"
+}
+
 /**
  * State
  * TODO this should be an enumerated type with values: open, closed, error, fetching0, fetching1, or fetching2
@@ -237,6 +433,10 @@ case class ListItemType($: String)
  */
 case class State($: String)
 
+object State {
+    implicit val rendererState: Renderable[State] = renderer1(apply) ^+ "rendererState"
+}
+
 /**
  * ItemIcon
  *
@@ -244,15 +444,39 @@ case class State($: String)
  */
 case class ItemIcon(state: State, href: Text)
 
+object ItemIcon {
+    implicit val rendererItemIcon: Renderable[ItemIcon] = renderer2(apply) ^+ "rendererItemIcon"
+}
+
 case class Icon(href: Text)
+
+object Icon {
+    implicit val rendererIcon: Renderable[Icon] = renderer1(apply) ^+ "rendererIcon"
+}
 
 case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
 
+object HotSpot {
+    implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(apply) ^+ "rendererHotSpot"
+}
+
 case class Color($: String)
+
+object Color {
+    implicit val rendererColor: Renderable[Color] = renderer1(apply) ^+ "rendererColor"
+}
 
 case class ColorMode($: String)
 
+object ColorMode {
+    implicit val rendererColorMode: Renderable[ColorMode] = renderer1(apply) ^+ "rendererColorMode"
+}
+
 case class Width($: Double)
+
+object Width {
+    implicit val rendererWidth: Renderable[Width] = renderer1(apply) ^+ "rendererWidth"
+}
 
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
@@ -269,6 +493,10 @@ case class Width($: Double)
 // TODO add in the xmlns tag (a top-level attribute)
 case class KML(features: Seq[Feature])
 
+object KML {
+    implicit val rendererKml: Renderable[KML] = renderer1(apply) ^+ "rendererKml"
+}
+
 case class KML_Binding(kml: KML, binding: NamespaceBinding)
 
 /**
@@ -284,34 +512,61 @@ case class KML_Binding(kml: KML, binding: NamespaceBinding)
  */
 case class Style(Styles: Seq[ColorStyle])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
+object Style {
+    implicit val rendererStyle: Renderable[Style] = renderer1Super(apply)(_.styleSelectorData) ^+ "rendererStyle"
+}
+
 case class Pair(key: String, styleUrl: String)
 
+object Pair {
+    //    implicit val extractorPair: Extractor[Pair] = extractor20(Pair.apply) ^^ "multiExtractorPair"
+    implicit val rendererPair: Renderable[Pair] = renderer2(Pair.apply) ^+ "rendererPair"
+}
+
 case class StyleMap(Pairs: Seq[Pair])(val styleSelectorData: StyleSelectorData) extends StyleSelector
+
+object StyleMap {
+    implicit val rendererStyleMap: Renderable[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^+ "rendererStyleMap"
+}
 
 //case class Folder(name: Text, Placemarks: Seq[Placemark])
 
 case class Tessellate($: String)
 
+object Tessellate {
+    //    implicit val extractorTessellate: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
+    implicit val rendererTessellate: Renderable[Tessellate] = renderer1(apply) ^+ "rendererTessellate"
+}
+
 case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates]) extends Geometry
+
+object LineString {
+    //    implicit val extractorLineString: Extractor[LineString] = extractor11(apply) ^^ "extractorLineString"
+    implicit val rendererLineString: Renderable[LineString] = renderer2(apply) ^+ "rendererLineString"
+}
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
 object Coordinates {
-  def parse(w: String): Coordinates = {
-    val source = Source.fromString(w)
-    Coordinates((for (line <- source.getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
-  }
+    implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(apply) //^^ "rendererCoordinates"
+
+    def parse(w: String): Coordinates = {
+        val source = Source.fromString(w)
+        Coordinates((for (line <- source.getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
+    }
 }
 
 case class Coordinate(lat: String, long: String, alt: String)
 
 object Coordinate {
-  private val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+    implicit val rendererCoordinate: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long}, ${t.lat}, ${t.alt}") } ^^ "rendererCoordinate"
 
-  def apply(w: String): Coordinate = w match {
-    case latLong(long, lat, alt) => Coordinate(lat, long, alt)
-    case _ => throw XmlException(s"bad coordinate string: $w")
-  }
+    private val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+
+    def apply(w: String): Coordinate = w match {
+        case latLong(long, lat, alt) => Coordinate(lat, long, alt)
+        case _ => throw XmlException(s"bad coordinate string: $w")
+    }
 }
 
 object KmlExtractors extends Extractors {
@@ -349,15 +604,15 @@ object KmlExtractors extends Extractors {
     implicit val extractorKmlData: Extractor[KmlData] = extractor10(KmlData.apply) ^^ "extractorKmlData"
     implicit val extractorKD2GeometryData: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](GeometryData.applyFunction) ^^ "extractorKD2GeometryData"
     implicit val extractorGeometryData: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorKD2GeometryData) ^^ "extractorPair"
-    implicit val extractorPair: Extractor[Pair] = extractor20(Pair) ^^ "multiExtractorPair"
+    implicit val extractorPair: Extractor[Pair] = extractor20(Pair.apply) ^^ "multiExtractorPair"
     implicit val multiExtractorPair: MultiExtractor[Seq[Pair]] = multiExtractor[Pair] ^^ "multiExtractorPair"
     implicit val extractorCoordinates: Extractor[Coordinates] = Extractor((node: Node) => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
     implicit val multiExtractorCoordinates: MultiExtractor[Seq[Coordinates]] = multiExtractor[Coordinates] ^^ "multiExtractorCoordinates"
     implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption[Int] ^^ "extractMaybeOpen"
     implicit val extractorStyleSelector: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap] ^^ "extractorStyleSelector"
     implicit val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply) ^^ "extractorKD2FD"
-    implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate) ^^ "extractorTessellate"
-    implicit val extractorLineString: Extractor[LineString] = extractor11(LineString) ^^ "extractorLineString"
+    implicit val extractorTessellate: Extractor[Tessellate] = extractor10(Tessellate.apply) ^^ "extractorTessellate"
+    implicit val extractorLineString: Extractor[LineString] = extractor11(LineString.apply) ^^ "extractorLineString"
     implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply) ^^ "extractorGD2Point"
     implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point) ^^ "extractorPoint"
     implicit val extractorGeometry: Extractor[Geometry] = extractorAlt[Geometry, LineString, Point] ^^ "extractorGeometry"
@@ -365,28 +620,28 @@ object KmlExtractors extends Extractors {
     implicit val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply) ^^ "extractorFD2Placemark"
     implicit val extractorPlacemark: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorFD2Placemark) ^^ "extractorPlacemark"
     implicit val multiExtractorPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point] ^^ "multiExtractorPoint"
-    implicit val extractorFill: Extractor[Fill] = extractor10(Fill) ^^ "extractorFill"
-    implicit val extractorOutline: Extractor[Outline] = extractor10(Outline) ^^ "extractorOutline"
+    implicit val extractorFill: Extractor[Fill] = extractor10(Fill.apply) ^^ "extractorFill"
+    implicit val extractorOutline: Extractor[Outline] = extractor10(Outline.apply) ^^ "extractorOutline"
     implicit val extractorKD2Scale: Extractor[KmlData => Scale] = extractorPartial10(Scale.apply) ^^ "extractorKD2Scale"
     implicit val extractorScale: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorKD2Scale) ^^ "extractorScale"
-    implicit val extractorHeading: Extractor[Heading] = extractor10(Heading) ^^ "extractorHeading"
+    implicit val extractorHeading: Extractor[Heading] = extractor10(Heading.apply) ^^ "extractorHeading"
     implicit val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption[Heading] ^^ "extractMaybeHeading"
-    implicit val extractorListItemType: Extractor[ListItemType] = extractor10(ListItemType) ^^ "extractorListItemType"
+    implicit val extractorListItemType: Extractor[ListItemType] = extractor10(ListItemType.apply) ^^ "extractorListItemType"
     implicit val extractMaybeListItemType: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
-    implicit val extractorState: Extractor[State] = extractor10(State) ^^ "extractorState"
-    implicit val extractorTextColor: Extractor[TextColor] = extractor10(TextColor) ^^ "extractorTextColor"
+    implicit val extractorState: Extractor[State] = extractor10(State.apply) ^^ "extractorState"
+    implicit val extractorTextColor: Extractor[TextColor] = extractor10(TextColor.apply) ^^ "extractorTextColor"
     implicit val extractMaybeTextColor: Extractor[Option[TextColor]] = extractorOption[TextColor] ^^ "extractMaybeTextColor"
-    implicit val extractorItemIcon: Extractor[ItemIcon] = extractor20(ItemIcon) ^^ "extractorItemIcon"
+    implicit val extractorItemIcon: Extractor[ItemIcon] = extractor20(ItemIcon.apply) ^^ "extractorItemIcon"
     implicit val extractMaybeItemIcon: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
-    implicit val extractorIcon: Extractor[Icon] = extractor10(Icon) ^^ "extractorIcon"
-    implicit val extractorBgColor: Extractor[BgColor] = extractor10(BgColor) ^^ "extractorBgColor"
+    implicit val extractorIcon: Extractor[Icon] = extractor10(Icon.apply) ^^ "extractorIcon"
+    implicit val extractorBgColor: Extractor[BgColor] = extractor10(BgColor.apply) ^^ "extractorBgColor"
     implicit val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
-    implicit val extractorColor: Extractor[Color] = extractor10(Color) ^^ "extractorColor"
+    implicit val extractorColor: Extractor[Color] = extractor10(Color.apply) ^^ "extractorColor"
     implicit val extractMaybeColor: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
-    implicit val extractorWidth: Extractor[Width] = extractor10(Width) ^^ "extractorWidth"
-    implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot) ^^ "extractorHotspot"
-    implicit val extractorDisplayMode: Extractor[DisplayMode] = extractor10(DisplayMode) ^^ "extractorDisplayMode"
-    implicit val extractorColorMode: Extractor[ColorMode] = extractor10(ColorMode) ^^ "extractorColorMode"
+    implicit val extractorWidth: Extractor[Width] = extractor10(Width.apply) ^^ "extractorWidth"
+    implicit val extractorHotspot: Extractor[HotSpot] = extractor40(HotSpot.apply) ^^ "extractorHotspot"
+    implicit val extractorDisplayMode: Extractor[DisplayMode] = extractor10(DisplayMode.apply) ^^ "extractorDisplayMode"
+    implicit val extractorColorMode: Extractor[ColorMode] = extractor10(ColorMode.apply) ^^ "extractorColorMode"
     implicit val extractMaybeColorMode: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
     implicit val extractorKD2SubStyleData: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](SubStyleData.applyFunction) ^^ "extractorKD2SubStyleData"
     implicit val extractorSubStyleData: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorKD2SubStyleData) ^^ "extractorSubStyleData"
@@ -428,7 +683,7 @@ object KmlExtractors extends Extractors {
     implicit val extractorCD2Document: Extractor[ContainerData => Document] = extractorPartial01(Document.apply) ^^ "extractorCD2Document"
     implicit val extractorDocument: Extractor[Document] = extractorPartial(extractorCD2Document) ^^ "extractorDocument"
     implicit val multiExtractorDocument: MultiExtractor[Seq[Document]] = multiExtractor[Document] ^^ "multiExtractorDocument"
-    implicit val extractorKml: Extractor[KML] = extractor01(KML) ^^ "extractorKml"
+    implicit val extractorKml: Extractor[KML] = extractor01(KML.apply) ^^ "extractorKml"
     implicit val multiExtractorKml: MultiExtractor[Seq[KML]] = multiExtractor[KML] ^^ "multiExtractorKml"
 
     implicit def extractorFeature: Extractor[Feature] = none[Feature].|[Container]()
@@ -457,94 +712,38 @@ object KmlRenderers extends Renderers {
       }
   }
 
-    import Renderers._
-
-    implicit val rendererKmlData: Renderable[KmlData] = renderer1(KmlData.apply) ^+ "rendererKmlData"
-    implicit val rendererGeometryData: Renderable[GeometryData] = renderer0Super(GeometryData.apply)(_.kmlData) ^+ "rendererGeometryData"
-    implicit val rendererStyleSelectors: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^+ "rendererStyleSelectors"
-    implicit val rendererFeatureData: Renderable[FeatureData] = renderer5Super(FeatureData.apply)(_.kmlData) ^+ "rendererFeatureData"
-    implicit val rendererScale: Renderable[Scale] = renderer1Super(Scale.apply)(_.kmlData) ^+ "rendererScale"
-    implicit val rendererIcon: Renderable[Icon] = renderer1(Icon) ^+ "rendererIcon"
-    implicit val rendererColor: Renderable[Color] = renderer1(Color) ^+ "rendererColor"
     implicit val rendererOptionColor: Renderable[Option[Color]] = optionRenderer[Color] ^+ "rendererOptionColor"
-    implicit val rendererBgColor: Renderable[BgColor] = renderer1(BgColor) ^+ "rendererBgColor"
     implicit val rendererOptionBgColor: Renderable[Option[BgColor]] = optionRenderer[BgColor] ^+ "rendererOptionBgColor"
-    implicit val rendererTextColor: Renderable[TextColor] = renderer1(TextColor) ^+ "rendererTextColor"
     implicit val rendererOptionTextColor: Renderable[Option[TextColor]] = optionRenderer[TextColor] ^+ "rendererOptionTextColor"
-    implicit val rendererColorMode: Renderable[ColorMode] = renderer1(ColorMode) ^+ "rendererColorMode"
     implicit val rendererOptionColorMode: Renderable[Option[ColorMode]] = optionRenderer[ColorMode] ^+ "rendererOptionColorMode"
-    implicit val rendererWidth: Renderable[Width] = renderer1(Width) ^+ "rendererWidth"
-    implicit val rendererHeading: Renderable[Heading] = renderer1(Heading) ^+ "rendererHeading"
-    implicit val rendererFill: Renderable[Fill] = renderer1(Fill) ^+ "rendererFill"
-    implicit val rendererOutline: Renderable[Outline] = renderer1(Outline) ^+ "rendererOutline"
     implicit val rendererOptionHeading: Renderable[Option[Heading]] = optionRenderer[Heading] ^+ "rendererOptionHeading"
-    implicit val rendererListItemType: Renderable[ListItemType] = renderer1(ListItemType) ^+ "rendererListItemType"
     implicit val rendererOptionListItemType: Renderable[Option[ListItemType]] = optionRenderer[ListItemType] ^+ "rendererOptionListItemType"
-    implicit val rendererHotSpot: Renderable[HotSpot] = renderer4(HotSpot) ^+ "rendererHotSpot"
-    implicit val rendererState: Renderable[State] = renderer1(State) ^+ "rendererState"
     implicit val rendererOptionState: Renderable[Option[State]] = optionRenderer[State] ^+ "rendererOptionState"
-    implicit val rendererItemIcon: Renderable[ItemIcon] = renderer2(ItemIcon) ^+ "rendererItemIcon"
     implicit val rendererOptionItemIcon: Renderable[Option[ItemIcon]] = optionRenderer[ItemIcon] ^+ "rendererOptionItemIcon"
-    private val fKP2SSP: KmlData => SubStyleData = k => new SubStyleData(k)
-    implicit val rendererSubStyleData: Renderable[SubStyleData] = renderer0Super(fKP2SSP)(x => x.kmlData) ^+ "rendererSubStyleData"
-    implicit val rendererColorStyleData: Renderable[ColorStyleData] = renderer2Super(ColorStyleData.apply)(x => x.subStyleData) ^+ "rendererColorStyleData"
-    implicit val rendererIconStyle: Renderable[IconStyle] = renderer4Super(IconStyle.apply)(x => x.colorStyleData) ^+ "rendererIconStyle"
-    implicit val rendererDisplayMode: Renderable[DisplayMode] = renderer1(DisplayMode) //^^ "rendererDisplayMode"
-    implicit val rendererBalloonStyle: Renderable[BalloonStyle] = renderer4Super(BalloonStyle.apply)(_.colorStyleData) ^+ "rendererBalloonStyle"
-    implicit val rendererLabelStyle: Renderable[LabelStyle] = renderer1Super(LabelStyle.apply)(_.colorStyleData) ^+ "rendererLabelStyle"
-    implicit val rendererLineStyle: Renderable[LineStyle] = renderer1Super(LineStyle.apply)(_.colorStyleData) ^+ "rendererLineStyle"
-    implicit val rendererListStyle: Renderable[ListStyle] = renderer3Super(ListStyle.apply)(_.colorStyleData) ^+ "rendererListStyle"
-    implicit val rendererPolyStyle: Renderable[PolyStyle] = renderer2Super(PolyStyle.apply)(_.colorStyleData) ^+ "rendererPolyStyle"
     implicit val rendererOptionLineStyle: Renderable[Option[LineStyle]] = optionRenderer[LineStyle] ^+ "rendererOptionLineStyle"
     implicit val rendererOptionLabelStyle: Renderable[Option[LabelStyle]] = optionRenderer[LabelStyle] ^+ "rendererOptionLabelStyle"
     implicit val rendererOptionBalloonStyle: Renderable[Option[BalloonStyle]] = optionRenderer[BalloonStyle] ^+ "rendererOptionBalloonStyle"
     implicit val rendererOptionIconStyle: Renderable[Option[IconStyle]] = optionRenderer[IconStyle] ^+ "rendererOptionIconStyle"
-    implicit val rendererStyleSelectorData: Renderable[StyleSelectorData] = renderer1(StyleSelectorData.apply) ^+ "rendererStyleSelectorData"
     implicit val rendererColorStyles: Renderable[Seq[ColorStyle]] = sequenceRenderer[ColorStyle] ^+ "rendererColorStyles"
-    implicit val rendererStyle: Renderable[Style] = renderer1Super(Style.apply)(_.styleSelectorData) ^+ "rendererStyle"
-    implicit val rendererPair: Renderable[Pair] = renderer2(Pair) ^+ "rendererPair"
     implicit val rendererSequencePair: Renderable[Seq[Pair]] = sequenceRenderer[Pair] ^+ "rendererSequencePair"
-    implicit val rendererStyleMap: Renderable[StyleMap] = renderer1Super(StyleMap.apply)(_.styleSelectorData) ^+ "rendererStyleMap"
-    implicit val rendererCoordinate: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => s"${t.long}, ${t.lat}, ${t.alt}" } ^^ "rendererCoordinate"
     implicit val rendererCoordinates1: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](FormatCoordinate) ^+ "rendererCoordinates1"
-    implicit val rendererCoordinates: Renderable[Coordinates] = renderer1(Coordinates.apply) //^^ "rendererCoordinates"
     // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
     implicit val rendererCoordinates_s: Renderable[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML) ^+ "rendererCoordinates_s"
-    implicit val rendererTessellate: Renderable[Tessellate] = renderer1(Tessellate) ^+ "rendererTessellate"
-    implicit val rendererLineString: Renderable[LineString] = renderer2(LineString) ^+ "rendererLineString"
     implicit val rendererLineStrings: Renderable[Seq[LineString]] = sequenceRenderer[LineString] ^+ "rendererLineStrings"
-    implicit val rendererPoint: Renderable[Point] = renderer1Super(Point.apply)(_.geometryData) ^+ "rendererPoint"
     implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point] ^+ "rendererPoints"
-    implicit val rendererGeometrys: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry] ^+ "rendererGeometrys"
-    implicit val rendererPlacemark: Renderable[Placemark] = renderer1Super(Placemark.apply)(_.featureData) ^+ "rendererPlacemark"
+    implicit lazy val rendererGeometrys: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry] ^+ "rendererGeometrys"
     implicit val rendererPlacemarks: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark] ^+ "rendererPlacemarks"
-    implicit val rendererContainerData: Renderable[ContainerData] = renderer0Super(ContainerData.applyFunction)(_.featureData) ^+ "rendererContainerData"
-    implicit val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature] ^+ "rendererFeatures"
+    implicit lazy val rendererFeatures: Renderable[Seq[Feature]] = sequenceRenderer[Feature] ^+ "rendererFeatures"
     implicit val rendererStyles: Renderable[Seq[Style]] = sequenceRenderer[Style] ^+ "rendererStyles"
     implicit val rendererStyleMaps: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^+ "rendererStyleMaps"
-    implicit lazy val rendererColorStyle: Renderable[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^+ "rendererColorStyle"
-    implicit lazy val rendererGeometry: Renderable[Geometry] = rendererSuper2[Geometry, Point, LineString] ^+ "rendererGeometry"
-    implicit val rendererFolder: Renderable[Folder] = renderer1Super(Folder.apply)(_.containerData) ^+ "rendererFolder"
     implicit val rendererFolders: Renderable[Seq[Folder]] = sequenceRenderer[Folder] ^+ "rendererFolders"
-    implicit val rendererDocument: Renderable[Document] = renderer1Super(Document.apply)(_.containerData) ^+ "rendererDocument"
     implicit val rendererDocuments: Renderable[Seq[Document]] = sequenceRenderer[Document] ^+ "rendererDocuments"
-    implicit lazy val rendererContainer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^+ "rendererContainer"
-    implicit lazy val rendererStyleSelector: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^+ "rendererStyleSelector"
-    implicit lazy val rendererFeature: Renderable[Feature] = rendererSuper2[Feature, Placemark, Container] ^+ "rendererFeature"
-    implicit val rendererKml: Renderable[KML] = renderer1(KML) ^+ "rendererKml"
     implicit val rendererKml_Binding: Renderable[KML_Binding] = Renderable {
-        (t: KML_Binding, format: Format, stateR: StateR) =>
-            doRenderKML_Binding(t, format, stateR)
+        (t: KML_Binding, format: Format, stateR: StateR) => doRenderKML_Binding(t, format, stateR)
     } ^^ "rendererKml_Binding"
 
-    private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR): String = {
-        val renderer: Renderable[KML] = renderer1(KML)
-        val wy = Using(stateR.addAttribute(s"""${t.binding}"""))(rs => renderer.render(t.kml, format, rs))
-        wy match {
-            case Success(w) => w
-            case Failure(x) => logger.warn("doRenderKML_Binding", x); ""
-        }
-    }
+    private def doRenderKML_Binding(t: KML_Binding, format: Format, stateR: StateR): Try[String] =
+        TryUsing(stateR.addAttribute(s"""${t.binding}"""))(rs => implicitly[Renderable[KML]].render(t.kml, format, rs))
 }
 
 // CONSIDER Rename as KML

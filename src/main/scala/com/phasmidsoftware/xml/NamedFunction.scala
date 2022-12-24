@@ -1,6 +1,5 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.kmldoc.KmlRenderers
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -31,17 +30,18 @@ trait NamedFunction[E] {
 }
 
 object NamedFunction {
-    def assertNamedNotNullMember[N: NamedFunction, T: ClassTag](member: String): Unit = {
-        Option(implicitly[NamedFunction[N]]) match {
-            case None =>
-                val kml: KmlRenderers.type = KmlRenderers
-                logger.warn(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
-                throw new AssertionError(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
-            case _ =>
-        }
+    def assertNamedNotNullMember[N: NamedFunction, T: ClassTag](caller: String, member: String): Unit = {
+        // NOTE: for now we do nothing to actually evaluate the implicit evidence of NamedFunction[N].
+//        Option(implicitly[NamedFunction[N]]) match {
+//            case None =>
+//                val kml: KmlRenderers.type = KmlRenderers
+//                logger.warn(s"$caller: named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
+//                throw new AssertionError(s"named function for $member of ${implicitly[ClassTag[T]]} is not initialized")
+//            case _ =>
+//        }
     }
 
-    def assertNamedNotNull[N: NamedFunction, T: ClassTag](): Unit = assertNamedNotNullMember("anonymous")
+    def assertNamedNotNull[N: NamedFunction, T: ClassTag](caller: String): Unit = assertNamedNotNullMember("", "anonymous")
 
     def named[P: NamedFunction]: NamedFunction[P] = implicitly[NamedFunction[P]]
 
