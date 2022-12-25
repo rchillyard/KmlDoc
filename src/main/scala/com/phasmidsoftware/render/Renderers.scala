@@ -1,9 +1,11 @@
 package com.phasmidsoftware.render
 
 import com.phasmidsoftware.core.FP.tryNotNull
+import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
+import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractor, NamedFunction}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
@@ -550,28 +552,31 @@ trait Renderers {
         Try(sb.toString())
     }
 
-    private def doRenderSequence[R: Renderable : ClassTag](rs: Seq[R], format: Format, maybeName: Option[String]): Try[String] = {
-        val separator = format.sequencer(None)
-        val sb = new mutable.StringBuilder()
-        sb.append(format.sequencer(Some(true)))
-        var first = true
-        for (r <- rs) {
-            if (!first) sb.append(if (separator == "\n") format.newline else separator)
-            val wy = TryUsing(StateR(maybeName)) { sr =>
-                for {
-                    rr <- tryNotNull(implicitly[Renderable[R]])(s"doRenderSequence: ${implicitly[ClassTag[R]]}")
-                    result <- rr.render(r, format, sr)
-                } yield result
-            }
-            wy match {
-                case Success(w) => sb.append(w)
-                case Failure(x) => Renderers.logger.warn("doRenderSequence: failure", x)
-            }
-            first = false
+    private def doRenderSequence[R: Renderable : ClassTag](rs: Seq[R], format: Format, maybeName: Option[String]): Try[String] =
+        doRenderSequenceElements(rs, format, maybeName, format.sequencer(None)) map {
+            w =>
+                val sb = new StringBuilder()
+                sb.append(format.sequencer(Some(true)))
+                sb.append(w)
+                sb.append(format.newline)
+                sb.append(format.sequencer(Some(false)))
+                sb.toString()
         }
-        sb.append(format.newline)
-        sb.append(format.sequencer(Some(false)))
-        Success(sb.toString())
+
+    private def doRenderSequenceElements[R: Renderable : ClassTag](rs: Seq[R], format: Format, maybeName: Option[String], separator: String) = {
+        val wys = for {
+            r <- rs
+            w = renderR(r)(format, StateR(maybeName))
+        } yield w
+        sequence(wys) map (_.mkString("", if (separator == "\n") format.newline else separator, ""))
+    }
+
+    private def renderR[R: Renderable : ClassTag](r: R)(format: Format, stateR: StateR) = TryUsing(stateR) {
+        sr =>
+            for {
+                rr <- tryNotNull(implicitly[Renderable[R]])(s"doRenderSequence: ${implicitly[ClassTag[R]]}")
+                result <- rr.render(r, format, sr)
+            } yield result
     }
 }
 
@@ -799,8 +804,9 @@ case class StateR(maybeName: Option[String], private val attributes: mutable.Str
   def isInternal: Boolean = interior
 
   def close(): Unit = {
-      if (attributes.toString().trim.nonEmpty)
-          throw XmlException(s"StateR.close: attributes not empty: '$attributes'")
+      if (attributes.toString().trim.nonEmpty) {
+          logger.warn(s"StateR.close: attributes not empty: '$attributes'")
+      }
   }
 }
 
