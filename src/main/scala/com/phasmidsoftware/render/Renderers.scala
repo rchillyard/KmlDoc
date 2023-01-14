@@ -3,7 +3,7 @@ package com.phasmidsoftware.render
 import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
-import com.phasmidsoftware.flog.Flog
+//import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractor, NamedFunction}
@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
  */
 trait Renderers {
 
-    val flog: Flog = Flog[Renderers]
+//    val flog: Flog = Flog[Renderers]
 
     /**
      * Method to create a renderer fpr a case class with no members, or a case object.
@@ -265,11 +265,12 @@ trait Renderers {
       (r: R, format: Format, stateR: StateR) => {
           val b = lens(r)
           val constructOuter: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _)(b)
-          for {br <- tryNotNull(implicitly[Renderable[B]])("renderer5Super: Renderable[B]")
+          for {
+              br <- tryNotNull(implicitly[Renderable[B]])("renderer5Super: Renderable[B]")
                wInner <- br.render(b, format.indent, stateR.recurse)
                wOuter <- renderer5(constructOuter).render(r, format.indent, stateR.recurse)
                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
-               } yield result
+          } yield result
       }
   } ^^ s"renderer5Super: ${implicitly[ClassTag[R]]}"
 
@@ -586,7 +587,7 @@ object Renderers {
 
     private val cdata: Regex = """.*([<&>]).*""".r
 
-    implicit val stringRenderer: Renderable[String] = Renderable {
+    implicit lazy val stringRenderer: Renderable[String] = Renderable {
         (t: String, _: Format, stateR: StateR) =>
             renderAttribute(
                 t match {
@@ -595,33 +596,33 @@ object Renderers {
                 }, stateR.maybeName)
     } ^^ "stringRenderer"
 
-    implicit val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
+    implicit lazy val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
 
-    implicit val intRenderer: Renderable[Int] = Renderable {
+    implicit lazy val intRenderer: Renderable[Int] = Renderable {
         (t: Int, _: Format, stateR: StateR) =>
             renderAttribute(t.toString, stateR.maybeName)
     } ^^ "intRenderer"
 
-    implicit val rendererOptionInt: Renderable[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
+    implicit lazy val rendererOptionInt: Renderable[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 
-    implicit val booleanRenderer: Renderable[Boolean] = Renderable { (t: Boolean, _: Format, stateR: StateR) =>
+    implicit lazy val booleanRenderer: Renderable[Boolean] = Renderable { (t: Boolean, _: Format, stateR: StateR) =>
         renderAttribute(t.toString, stateR.maybeName)
     } ^^ "booleanRenderer"
-    implicit val rendererOptionBoolean: Renderable[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
+    implicit lazy val rendererOptionBoolean: Renderable[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
 
-    implicit val doubleRenderer: Renderable[Double] = Renderable {
+    implicit lazy val doubleRenderer: Renderable[Double] = Renderable {
         (t: Double, _: Format, stateR: StateR) =>
             renderAttribute(t.toString, stateR.maybeName)
     } ^^ "doubleRenderer"
 
-    implicit val longRenderer: Renderable[Long] = Renderable {
+    implicit lazy val longRenderer: Renderable[Long] = Renderable {
         (t: Long, _: Format, stateR: StateR) =>
             renderAttribute(t.toString, stateR.maybeName)
     } ^^ "longRenderer"
 
     private val renderers = new Renderers {}
-    implicit val rendererText: Renderable[Text] = renderers.renderer1(Text)
-    implicit val rendererOptionText: Renderable[Option[Text]] = renderers.optionRenderer[Text]
+    implicit lazy val rendererText: Renderable[Text] = renderers.renderer1(Text.apply)
+    implicit lazy val rendererOptionText: Renderable[Option[Text]] = renderers.optionRenderer[Text]
 
     def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
         r.productElementName(index) match {
@@ -657,7 +658,7 @@ trait Renderable[T] extends NamedFunction[Renderable[T]] {
 }
 
 object Renderable {
-    val flog: Flog = Flog[Renderers]
+//    val flog: Flog = Flog[Renderers]
 
     /**
      * Method which allows us to wrap a function as a Renderable.

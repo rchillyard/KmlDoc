@@ -81,11 +81,11 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     Extractor.translations += "empties" -> Seq("empty")
 
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
-    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractor[Empty.type]
+    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractorBase[Empty.type]
     implicit val extractJunk: Extractor[Junk] = extractor0[Junk](_ => Junk())
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument1: Extractor[Document1] = extractor01(Document1)
-    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractor[Document1]
+    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractorBase[Document1]
     val makeDocument2A: (String, Seq[Empty.type]) => Document2A = Document2A.apply _
     implicit val extractDocument2A: Extractor[Document2A] = extractor11(makeDocument2A)
     implicit val extractDocument2: Extractor[Document2] = extractor11(Document2)
@@ -202,7 +202,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     result.__id shouldBe "Hello World!"
   }
 
-  it should "multiExtractor[Document1]" in {
+  it should "multiExtractorBase[Document1]" in {
     val xml: Elem = <xml>
       <document1>
         <empty></empty> <empty></empty>

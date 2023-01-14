@@ -15,8 +15,6 @@ lazy val scalaModules = "org.scala-lang.modules"
 // https://mvnrepository.com/artifact/org.scala-lang.modules/scala-xml
 libraryDependencies += scalaModules %% "scala-xml" % "2.1.0"
 
-libraryDependencies += "com.phasmidsoftware" % "flog_2.13" % "1.0.8"
-
 libraryDependencies ++= Seq(
   "com.phasmidsoftware" %% "flog" % "1.0.9",
   "ch.qos.logback" % "logback-classic" % "1.4.5" % "runtime",

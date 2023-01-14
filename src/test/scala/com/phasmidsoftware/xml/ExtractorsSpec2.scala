@@ -24,7 +24,7 @@
 //     */
 //    case class KmlData(_id: String)
 //
-//    class Geometry extends KmlObject
+//    class geometrys extends KmlObject
 //
 //    case class GeometryData(kmlData: KmlData)
 //
@@ -32,7 +32,7 @@
 //        val applyFunction: KmlData => GeometryData = new GeometryData(_)
 //    }
 //
-//    case class Point(x: Double, y: Double)(val geometryData: GeometryData) extends Geometry
+//    case class Point(x: Double, y: Double)(val geometryData: GeometryData) extends geometrys
 //
 //    /**
 //     * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
@@ -83,7 +83,7 @@
 //        implicit val extractorGeometryData: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorKPP2GeometryData)
 //        implicit val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial20(Point.apply)
 //        implicit val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorGD2Point)
-//        implicit val extractorMultiPoint: MultiExtractor[Seq[Point]] = multiExtractor[Point]
+//        implicit val extractorMultiPoint: MultiExtractor[Seq[Point]] = multiExtractorBase[Point]
 //        implicit val extractorKPP2SubStyleData: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](SubStyleData.applyFunction)
 //        implicit val extractorSubStyleData: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorKPP2SubStyleData)
 //        implicit val extractorSSP2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(ColorStyleData.apply)
@@ -91,12 +91,12 @@
 //        implicit val extractorCSP2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(LineStyle.apply)
 //        implicit val extractorLineStyle: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSP2LineStyle)
 //        implicit val extractorColorStyle: Extractor[ColorStyle] = Extractor.none[ColorStyle].|[LineStyle]()
-//        implicit val extractorMultiColorStyle: MultiExtractor[Seq[ColorStyle]] = multiExtractor[ColorStyle]
+//        implicit val extractorMultiColorStyle: MultiExtractor[Seq[ColorStyle]] = multiExtractorBase[ColorStyle]
 //        implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractor10(StyleSelectorData.apply)
 //        implicit val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(StyleMap.apply)
 //        implicit val extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
 //        implicit val extractorStyleSelector: Extractor[StyleSelector] = Extractor.none[StyleSelector].|[StyleMap]()
-//        implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractor[StyleSelector]
+//        implicit val extractorMultiStyleSelector: MultiExtractor[Seq[StyleSelector]] = multiExtractorBase[StyleSelector]
 //    }
 //
 //    import Renderers._

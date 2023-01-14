@@ -1,5 +1,6 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{Reflection, Text, XmlException}
 import com.phasmidsoftware.flog.{Flog, Loggable}
@@ -7,7 +8,7 @@ import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildren, e
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import com.phasmidsoftware.xml.NamedFunction.{combineNamed2, combineNameds2, name}
 import scala.Function.uncurried
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
@@ -37,11 +38,13 @@ trait Extractors {
    * @tparam P1 second extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlt[R, P0 <: R : Extractor, P1 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]()
+  def extractorAlt[R, P0 <: R : Extractor, P1 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]])
 
   /**
    * Method to yield an Extractor which can choose from three other extractors.
    * Why is this method not called extractorAlt3? Because I know my Latin ;)
+   *
+   * TODO remove explicit implicit parameters
    *
    * @tparam R  result type.
    * @tparam P0 first extractor type.
@@ -49,7 +52,7 @@ trait Extractors {
    * @tparam P2 third extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]()
+  def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]])
 
   /**
    * Method to yield an Extractor which can choose from four other extractors.
@@ -88,7 +91,7 @@ trait Extractors {
    * @tparam P5 sixth extractor type.
    * @return an Extractor[R].
    */
-  def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]().|[P4]().|[P5]()
+  def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]]).|[P3]()(implicitly[Extractor[P3]]).|[P4]()(implicitly[Extractor[P4]]).|[P5]()(implicitly[Extractor[P5]])
 
     /**
      * Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
@@ -99,7 +102,7 @@ trait Extractors {
      * @tparam P the underlying type of the result.
      * @return an Extractor of Iterable[P].
      */
-    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = (node: Node) => extractSequence[P](node / label)
+    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = (node: Node) => extractSequence[P](node / label)(implicitly[Extractor[P]])
 
     /**
      * Method to create a new MultiExtractor based on type P such that the underlying type of the result
@@ -108,26 +111,30 @@ trait Extractors {
      * @tparam P the underlying (Extractor) type.
      * @return a MultiExtractor of Seq[P]
      */
-    def multiExtractor[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
+    def multiExtractorBase[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
+
+    def multiExtractor[P](f: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = (nodeSeq: NodeSeq) => f(nodeSeq)
 
     /**
-     * Method to yield an ElementExtractor[T] which in turns invokes extractField with the given tag.
+     * Method to yield an ElementExtractor[P] which in turns invokes extractField with the given tag.
      *
-     * @tparam T the underlying (Extractor) type of the result.
-     * @return an ElementExtractor[T] based on extractField.
+     * @tparam P the underlying (Extractor) type of the result.
+     * @return an ElementExtractor[P] based on extractField.
      */
-    def fieldExtractor[T: Extractor]: ElementExtractor[T] = (tag: String) => extractField[T](tag)
+    def fieldExtractor[P: Extractor]: ElementExtractor[P] = (tag: String) => extractField[P](tag)
 
     /**
-     * Method to yield an ElementExtractor[T] which in turns invokes extractChildren with the given tag.
+     * Method to yield an ElementExtractor[P] which in turns invokes extractChildren with the given tag.
      *
-     * @tparam T the underlying (MultiExtractor) type of the result.
-     * @return an ElementExtractor[T] based on extractField.
+     * @tparam P the underlying (MultiExtractor) type of the result.
+     * @return an ElementExtractor[P] based on extractField.
      */
-    def childrenExtractor[T: MultiExtractor]: ElementExtractor[T] = (tag: String) => extractChildren[T](tag)
+    def childrenExtractor[P: MultiExtractor]: ElementExtractor[P] = (tag: String) => extractChildren[P](tag)
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
+     *
+     * FIXME: this logic seems to be deeply flawed: expanding the labels means that the types and labels may no longer be aligned.
      *
      * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
      * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.
@@ -136,10 +143,10 @@ trait Extractors {
      * @tparam P0 the first (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-    def multiExtractor1[T, U <: Product, P0 <: T : Extractor](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    def multiExtractor1[T, U <: Product, P0 <: T : Extractor: ClassTag](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: Nil =>
-                sequence(extractElementsByLabel[P0](nodeSeq, label))
+                sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
             case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
         }
 
@@ -155,16 +162,27 @@ trait Extractors {
      * @tparam P1 the second (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-    def multiExtractor2[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-        expandTranslations(labels) match {
-            case label :: fs =>
-                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
-                val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs).extract(nodeSeq)
-                for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
-        }
+//    def multiExtractor2[T, U <: Product, P0 <: T, P1 <: T](construct: (P0, P1) => U, labels: Seq[String])(implicit evp0: Extractor[P0], evp1: Extractor[P1], evcp0: ClassTag[P0], evcp1: ClassTag[P1]): MultiExtractor[Seq[T]] = nodeSeq =>
+    def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+    multiExtractor[T]{
+        nodeSeq =>
+            println(s"multiExtractor2: ${implicitly[ClassTag[T]]} from ${implicitly[ClassTag[P0]]}, ${implicitly[ClassTag[P1]]} with labels: $labels")
+
+            val extractors = new Extractors{}
+            println(extractors)
+    expandTranslations(labels) match {
+        case label :: fs =>
+            val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
+            val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs)(implicitly[Extractor[P1]],classTag).extract(nodeSeq)
+            for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+    }
+    }
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of three P-types.
+     * The labels are "translated" according to the translation table, which may produce more labels than in the original.
+     * The first label is used to filter the P0-type child nodes of nodeSeq (the input of the resulting MultiExtractor).
+     * Then, the resulting
      *
      * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
      * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
@@ -175,10 +193,10 @@ trait Extractors {
      * @tparam P2 the third (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-    def multiExtractor3[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    def multiExtractor3[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: fs =>
-                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
                 val tsy = multiExtractor2[T, (P1, P2), P1, P2]((p1, p2) => (p1, p2), fs).extract(nodeSeq)
                 for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
         }
@@ -196,7 +214,7 @@ trait Extractors {
      * @tparam P3 the fourth (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-    def multiExtractor4[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor, P3 <: T : Extractor](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    def multiExtractor4[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag, P3 <: T : Extractor: ClassTag](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
@@ -218,7 +236,7 @@ trait Extractors {
      * @tparam P4 the fifth (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-    def multiExtractor5[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor, P3 <: T : Extractor, P4 <: T : Extractor](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    def multiExtractor5[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag, P3 <: T : Extractor: ClassTag, P4 <: T : Extractor: ClassTag](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
@@ -241,7 +259,7 @@ trait Extractors {
      * @tparam P5 the sixth (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-    def multiExtractor6[T, U <: Product, P0 <: T : Extractor, P1 <: T : Extractor, P2 <: T : Extractor, P3 <: T : Extractor, P4 <: T : Extractor, P5 <: T : Extractor](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
+    def multiExtractor6[T:ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag, P3 <: T : Extractor: ClassTag, P4 <: T : Extractor: ClassTag, P5 <: T : Extractor: ClassTag](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
@@ -256,6 +274,8 @@ trait Extractors {
      *
      * CONSIDER rename this (compose? or extractorCompose?) and couldn't it go inside Extractor?
      *
+     * CONSIDER inverting the parametric types so that the resulting type (T) is first.
+     *
      * @param extractorBtoT an extractor for the type B => T.
      * @tparam B the type of the value in the additional parameter set of T.
      * @tparam T the underlying type of the resulting extractor.
@@ -263,10 +283,13 @@ trait Extractors {
      */
     def extractorPartial[B <: Product : Extractor, T: ClassTag](extractorBtoT: Extractor[B => T]): Extractor[T] =
         Extractor { (node: Node) =>
-            for {q <- extractorBtoT.extract(node)
-                 b <- Extractor.extract[B](node)
+            for {
+                b2te <- tryNotNull(extractorBtoT)(s"extractorPartial: extractorBtoT where T is ${implicitly[ClassTag[T]]}")
+                 be <- tryNotNull(implicitly[Extractor[B]])(s"extractorPartial: extractorB")
+                 q <- b2te.extract(node)
+                 b <- be.extract(node)
                  } yield q(b)
-        } ^^ combineNameds2[Extractor[B], Extractor[B => T]](extractorBtoT)
+        } //^^ combineNameds2[Extractor[B], Extractor[B => T]](extractorBtoT)
 
     /**
      * Extractor which will convert an Xml Node (which is ignored) into an instance of a case object or case class.
@@ -305,7 +328,7 @@ trait Extractors {
     def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
         import Extractors.flog._
         (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
-    } ^^ s"extractor10(${name[Extractor[P0]]})"
+    } //^^ s"extractor10(${name[Extractor[P0]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member.
@@ -317,7 +340,7 @@ trait Extractors {
      */
     def extractor01[P0: MultiExtractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
         (node: Node) => extractorPartial1[P0, Unit, T](childrenExtractor[P0], m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
-    } ^^ s"extractor01(${name[MultiExtractor[P0]]})"
+    } //^^ s"extractor01(${name[MultiExtractor[P0]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
@@ -329,7 +352,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial10[P0: Extractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial1[P0, B, T](fieldExtractor, e0 => b => construct(e0)(b), dropLast = true, fields).extract(node)) ^^ s"extractorPartial10(${name[Extractor[P0]]})"
+        Extractor((node: Node) => extractorPartial1[P0, B, T](fieldExtractor, e0 => b => construct(e0)(b), dropLast = true, fields).extract(node)) //^^ s"extractorPartial10(${name[Extractor[P0]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
@@ -341,7 +364,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial01[P0: MultiExtractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial1[P0, B, T](childrenExtractor, m0 => b => construct(m0)(b), dropLast = true, fields).extract(node)) ^^ s"extractorPartial01(${name[MultiExtractor[P0]]})"
+        Extractor((node: Node) => extractorPartial1[P0, B, T](childrenExtractor, m0 => b => construct(m0)(b), dropLast = true, fields).extract(node))// ^^ s"extractorPartial01(${name[MultiExtractor[P0]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with two members.
@@ -353,8 +376,8 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor20[P0: Extractor, P1: Extractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fieldExtractor[P0], extractorPartial10[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z())) ^^
-                s"extractor20(${combineNamed2[Extractor[P0], Extractor[P1]]})"
+        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fieldExtractor[P0], extractorPartial10[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z()))// ^^
+//                s"extractor20(${combineNamed2[Extractor[P0], Extractor[P1]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with two members.
@@ -366,8 +389,8 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor11[P0: Extractor, P1: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fieldExtractor[P0], extractorPartial01[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z())) ^^
-                s"extractor11(${combineNamed2[Extractor[P0], MultiExtractor[P1]]})"
+        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fieldExtractor[P0], extractorPartial01[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z()))// ^^
+//                s"extractor11(${combineNamed2[Extractor[P0], MultiExtractor[P1]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with two members.
@@ -381,8 +404,8 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor02[P0: MultiExtractor, P1: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](childrenExtractor[P0], extractorPartial01[P1, Unit, T](_, _), (m0, m1) => _ => construct(m0, m1), dropLast = false, fields).extract(node) map (z => z())) ^^
-                s"extractor02(${combineNamed2[MultiExtractor[P0], MultiExtractor[P1]]})"
+        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](childrenExtractor[P0], extractorPartial01[P1, Unit, T](_, _), (m0, m1) => _ => construct(m0, m1), dropLast = false, fields).extract(node) map (z => z()))// ^^
+//                s"extractor02(${combineNamed2[MultiExtractor[P0], MultiExtractor[P1]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with two members and one auxiliary (non-member) parameter.
@@ -395,8 +418,8 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial20[P0: Extractor, P1: Extractor, B, T <: Product : ClassTag](construct: (P0, P1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fieldExtractor[P0], extractorPartial10[P1, B, T](_, _), construct, dropLast = true, fields).extract(node)) ^^
-                s"extractorPartial20(${combineNamed2[Extractor[P0], Extractor[P1]]})"
+        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fieldExtractor[P0], extractorPartial10[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
+//                s"extractorPartial20(${combineNamed2[Extractor[P0], Extractor[P1]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with two members and one auxiliary (non-member) parameter.
@@ -409,8 +432,8 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial11[P0: Extractor, P1: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fieldExtractor[P0], extractorPartial01[P1, B, T](_, _), construct, dropLast = true, fields).extract(node)) ^^
-                s"extractorPartial11(${combineNamed2[Extractor[P0], MultiExtractor[P1]]})"
+        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fieldExtractor[P0], extractorPartial01[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
+//                s"extractorPartial11(${combineNamed2[Extractor[P0], MultiExtractor[P1]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with two members and one auxiliary (non-member) parameter.
@@ -423,8 +446,8 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial02[P0: MultiExtractor, P1: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](childrenExtractor[P0], extractorPartial01[P1, B, T](_, _), construct, dropLast = true, fields).extract(node)) ^^
-                s"extractorPartial02(${combineNamed2[MultiExtractor[P0], MultiExtractor[P1]]})"
+        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](childrenExtractor[P0], extractorPartial01[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
+//                s"extractorPartial02(${combineNamed2[MultiExtractor[P0], MultiExtractor[P1]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members.
@@ -1254,8 +1277,6 @@ object Extractors {
    */
   val flog: Flog = Flog[Extractors]
 
-  implicit def tryLoggable[T: Loggable]: Loggable[Try[T]] = new com.phasmidsoftware.flog.Loggables {}.tryLoggable
-
   /**
    * Unit extractor.
    */
@@ -1333,17 +1354,17 @@ object Extractors {
   /**
    * Text extractor.
    */
-  implicit val extractorText: Extractor[Text] = extractors.extractor10(Text)
+  implicit val extractorText: Extractor[Text] = extractors.extractor10(Text)(StringExtractor, classTag)
 
   /**
    * Optional text extractor.
    */
-  implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text]
+  implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text](extractorText)
 
   /**
    * Optional string extractor.
    */
-  implicit val extractorOptionalString: Extractor[Option[String]] = extractors.extractorOption[String]
+  implicit val extractorOptionalString: Extractor[Option[String]] = extractors.extractorOption[String](StringExtractor)
 
   /**
    * Method to extract an optional value from a NodeSeq.

@@ -42,7 +42,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "parse Scale with id" in {
     val xml: Elem = <scale id="Hello">2.0</scale>
-    import KmlExtractors._
+//    import KmlExtractors._
     val triedScale = extract[Scale](xml)
     triedScale.isSuccess shouldBe true
     triedScale.get.$ shouldBe 2.0
@@ -50,7 +50,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "parse Scale without id" in {
     val xml: Elem = <scale>2.0</scale>
-    import KmlExtractors._
+//    import KmlExtractors._
     val triedScale = Extractor.extract[Scale](xml)
     triedScale.isSuccess shouldBe true
     triedScale.get.$ shouldBe 2.0
@@ -92,7 +92,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  behavior of "Geometry"
+  behavior of "geometrys"
 
   it should "extract LineString as geometry" in {
     import KmlExtractors._
@@ -213,7 +213,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Feature"
 
-  ignore should "extract Placemark" in {
+  def trimWhiteSpace(w: String) =
+    w.replace("\n", "").replace(" >", ">").replace("  "," ").replace("  "," ").replace("  "," ").replace("  "," ").replace("  "," ").replace("  "," ")
+
+
+  it should "extract Placemark" in {
     val xml: Elem = <xml>
       <Placemark>
         <name>Wakefield Branch of Eastern RR</name>
@@ -242,36 +246,31 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         feature match {
           case placemark: Placemark =>
             val featureData: FeatureData = placemark.featureData
-            val geometry: Seq[Geometry] = placemark.Geometry
+          placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
+            val geometry: Seq[Geometry] = placemark.geometrys
             geometry.size shouldBe 1
             geometry.head match {
               case LineString(Tessellate("1"), coordinates) =>
                 coordinates.size shouldBe 1
                 val coordinate = coordinates.head
                 coordinate.coordinates.size shouldBe 8
+              case _ => fail("first geometrys is not a LineString")
+
             }
             featureData match {
               case FeatureData(Text("Wakefield Branch of Eastern RR"), maybeDescription, _, _, Nil) =>
                 println(s"maybeDescription: $maybeDescription")
               case _ => println(s"$featureData did not match the expected result")
             }
-//          case placemark: Placemark => placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
-//            val coordinates: scala.Seq[Coordinates] = geometry match {
-//              case lineString: LineString => lineString.coordinates
-//              case _ => fail("first Geometry is not a LineString")
-//            }
-//            coordinates.size shouldBe 1
-//            val coordinate = coordinates.head
-//            coordinate.coordinates.size shouldBe 8
-            val wy = Using(StateR())(sr => Renderable.render[Placemark](placemark, FormatXML(0), sr))
+            val wy = TryUsing(StateR())(sr => Renderable.render[Placemark](placemark, FormatXML(0), sr))
             wy.isSuccess shouldBe true
-            wy.get shouldBe "<Placemark ><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>" +
+            trimWhiteSpace(wy.get) shouldBe trimWhiteSpace("<Placemark ><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>" +
                     "<styleUrl>#line-006600-5000</styleUrl>\n    " +
                     "      \n      \n      " +
                     "<LineString>" +
                     "<tessellate>1</tessellate>\n      <coordinates>\n        -71.06992, 42.49424, 0\n        -71.07018, 42.49512, 0\n        -71.07021, 42.49549, 0\n        -71.07008, 42.49648, 0\n        -71.069849, 42.497415, 0\n        -71.06954, 42.49833, 0\n        -70.9257614, 42.5264001, 0\n        -70.9254345, 42.5262817, 0\n        </coordinates>\n      \n      " +
                     "</LineString>" +
-                    "\n    \n    \n  \n  \n  </Placemark>"
+                    "\n    \n    \n  \n  \n  </Placemark>")
         }
       case Failure(x) => fail(x)
     }
@@ -279,7 +278,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Container"
 
-  ignore should "extract Folder" in {
+  it should "extract Folder" in {
     val xml: Elem = <xml>
       <Folder>
         <name>Untitled layer</name>
@@ -321,20 +320,20 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
               case placemark: Placemark =>
                 placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
                 placemark.featureData.maybeDescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
-                val ls: scala.Seq[Geometry] = placemark.Geometry
+                val ls: scala.Seq[Geometry] = placemark.geometrys
                 ls.size shouldBe 1
                 val geometry: Geometry = ls.head
                 val coordinates: scala.Seq[Coordinates] = geometry match {
                   case lineString: LineString => lineString.coordinates
-                  case _ => fail("first Geometry is not a LineString")
+                  case _ => fail("first geometrys is not a LineString")
                 }
                 coordinates.size shouldBe 1
                 val coordinate = coordinates.head
                 coordinate.coordinates.size shouldBe 8
                 println(implicitly[Renderable[Folder]])
-                val wy = Using(StateR())(sr => Renderable.render[Folder](f, FormatXML(0), sr))
+                val wy = TryUsing(StateR())(sr => Renderable.render[Folder](f, FormatXML(0), sr))
                 wy.isSuccess shouldBe true
-                wy.get shouldBe "<Folder><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>"
+                trimWhiteSpace(wy.get) shouldBe trimWhiteSpace("<Folder ><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>")
             }
         }
       case Failure(x) => fail(x)
@@ -3230,12 +3229,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                   """
       K405<br>RDK1: 51B
     """)
-                val ls: scala.Seq[Geometry] = placemark.Geometry
+                val ls: scala.Seq[Geometry] = placemark.geometrys
                 ls.size shouldBe 1
                 val geometry: Geometry = ls.head
                 val coordinates: scala.Seq[Coordinates] = geometry match {
                   case lineString: LineString => lineString.coordinates
-                  case _ => fail("first Geometry is not a LineString")
+                  case _ => fail("first geometrys is not a LineString")
                 }
                 coordinates.size shouldBe 1
                 val coordinate = coordinates.head
@@ -3787,7 +3786,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   // FIXME Issue #8
-  ignore should "extract and render mini sample kml as XML from file" in {
+  it should "extract and render mini sample kml as XML from file" in {
     val renderer = KmlRenderers.rendererKml_Binding
     val url = KML.getClass.getResource("minisample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -3811,7 +3810,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   // FIXME Issue #8
-  ignore should "extract and render sample kml as XML from file" in {
+  it should "extract and render sample kml as XML from file" in {
     val renderer = KmlRenderers.rendererKml_Binding
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -3834,7 +3833,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  ignore should "extract and render sample kml as XML from Google sample" in {
+  it should "extract and render sample kml as XML from Google sample" in {
     val renderer = KmlRenderers.rendererKml_Binding
     val url = KML.getClass.getResource("/KML_Samples.kml")
     val xml: Elem = XML.loadFile(url.getFile)
