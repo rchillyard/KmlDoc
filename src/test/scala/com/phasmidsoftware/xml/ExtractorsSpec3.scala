@@ -24,7 +24,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
     object KmlData extends Extractors {
         import Extractor.stringExtractor
-        implicit val extractorKmlData: Extractor[KmlData] = extractor10(apply)
+        implicit val extractor: Extractor[KmlData] = extractor10(apply)
     }
 
     class geometrys extends KmlObject
@@ -42,14 +42,12 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
      */
     class StyleSelector() extends KmlObject
 
-    object StyleSelector {
-    }
+    object StyleSelector
 
     case class StyleSelectorData(kmlData: KmlData)
 
     object StyleSelectorData extends Extractors {
-        implicit val extractorStyleSelectorData: Extractor[StyleSelectorData] = extractor10(StyleSelectorData.apply)
-
+        implicit val extractor: Extractor[StyleSelectorData] = extractor10(apply)
     }
 
     /**
@@ -61,51 +59,50 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
     object SubStyleData extends Extractors {
         val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
-        val extractorKPP2SubStyleData: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](applyFunction)
-        implicit val extractorSubStyleData: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorKPP2SubStyleData)
+        lazy val extractorKPP2SubStyleData: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](applyFunction)
+        implicit val extractor: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorKPP2SubStyleData)
     }
 
     class ColorStyle() extends SubStyle
 
     object ColorStyle extends Extractors {
-        implicit val extractorColorStyle: Extractor[ColorStyle] = extractorSubtype[ColorStyle,LineStyle]
-        implicit val extractorMultiColorStyle: MultiExtractor[Seq[ColorStyle]] = multiExtractorBase[ColorStyle]
-
+        implicit val extractor: Extractor[ColorStyle] = extractorSubtype[ColorStyle, LineStyle]
+        implicit val multiExtractor: MultiExtractor[Seq[ColorStyle]] = multiExtractorBase[ColorStyle]
     }
 
     case class ColorStyleData(color: Long, maybeColorMode: Option[String])(val subStyleData: SubStyleData)
 
     object ColorStyleData extends Extractors {
+
         import Extractors._
-        implicit val extractorSSP2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(apply)
-        implicit val extractorColorStyleData: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorSSP2ColorStyleData)
+
+        lazy val extractorSSP2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(apply)
+        implicit val extractor: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorSSP2ColorStyleData)
     }
 
     case class LineStyle(width: Double)(val colorStyleData: ColorStyleData) extends ColorStyle
 
     object LineStyle extends Extractors {
-         val extractorCSP2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(LineStyle.apply)
-        implicit val extractorLineStyle: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSP2LineStyle)
+        lazy val extractorCSP2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
+        implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSP2LineStyle)
     }
 
     case class StyleMap(Pairs: Seq[String])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
     object StyleMap extends Extractors {
-        val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply)
-        implicit val extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
+        lazy val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply)
+        implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
     }
 
     case class Style(Styles: Seq[ColorStyle])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
     object Style extends Extractors {
-        lazy val extractorSSD2Style: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply)
-        implicit  val extractorStyle: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorSSD2Style)
+        lazy val extractorSSD2Style: Extractor[StyleSelectorData => Style] = extractorPartial01(apply)
+        implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorSSD2Style)
     }
     case class Base(_id: Int)
 
     case class Simple($: String)(val superObject: Base)
-
-    import com.phasmidsoftware.xml.Extractors._
 
     object MyExtractors extends Extractors {
         implicit val extractorBase: Extractor[Base] = extractor10(Base)
@@ -131,7 +128,6 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     }
 
     it should "extract LineStyle" in {
-        import MyExtractors._
         val xml: Elem = <linestyle id="2">
             <width>1.0</width> <color>42</color>
         </linestyle>
