@@ -28,7 +28,16 @@ trait Extractors {
    */
   def extractorOption[P: Extractor]: Extractor[Option[P]] = implicitly[Extractor[P]] map (p => Option(p))
 
-  /**
+    /**
+     * Method to yield an Extractor of a super-type based on the extractor of a sub-type.
+     *
+     * @tparam R  result type.
+     * @tparam P0 extractor type.
+     * @return an Extractor[R].
+     */
+    def extractorSubtype[R, P0 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]])
+
+    /**
    * Method to yield an Extractor which can choose from (two) alternative extractors.
    *
    * FIXME this doesn't work properly: the order of P0 and P1 is significant: it shouldn't be.
@@ -1271,46 +1280,11 @@ trait Extractors {
 /**
  * Companion object to Extractors.
  */
-object Extractors {
+object Extractors extends Extractors {
   /**
    * Preparing the way for when we provide better logging for when things go wrong.
    */
   val flog: Flog = Flog[Extractors]
-
-  /**
-   * Unit extractor.
-   */
-  implicit val unitExtractor: Extractor[Unit] = Extractor(Success())
-
-  /**
-   * String extractor.
-   */
-  implicit object StringExtractor extends Extractor[String] {
-    def extract(node: Node): Try[String] = Success(node.text)
-  }
-
-  /**
-   * Int extractor.
-   */
-  implicit val intExtractor: Extractor[Int] = StringExtractor map (_.toInt)
-
-  /**
-   * Boolean extractor.
-   */
-  implicit val booleanExtractor: Extractor[Boolean] = StringExtractor map {
-    case "true" | "yes" | "T" | "Y" => true
-    case _ => false
-  }
-
-  /**
-   * Double extractor.
-   */
-  implicit val doubleExtractor: Extractor[Double] = StringExtractor map (_.toDouble)
-
-  /**
-   * Long extractor.
-   */
-  implicit val longExtractor: Extractor[Long] = StringExtractor map (_.toLong)
 
   class MultiExtractorBase[P: Extractor] extends MultiExtractor[Seq[P]] {
     def extract(nodeSeq: NodeSeq): Try[Seq[P]] = sequence(nodeSeq map Extractor.extract[P])
@@ -1319,7 +1293,7 @@ object Extractors {
   /**
    * String multi extractor.
    */
-  implicit object StringMultiExtractor extends MultiExtractorBase[String]
+  implicit object stringMultiExtractor extends MultiExtractorBase[String]
 
   /**
    * Int multi extractor.
@@ -1361,12 +1335,13 @@ object Extractors {
    */
   implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text]
 
-  /**
-   * Optional string extractor.
-   */
-  implicit val extractorOptionalString: Extractor[Option[String]] = extractors.extractorOption[String]
 
-  /**
+    /**
+     * Optional string extractor.
+     */
+    implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[String]
+
+    /**
    * Method to extract an optional value from a NodeSeq.
    *
    * NOTE: this code looks very wrong. But, as Galileo said, "eppur si muove."

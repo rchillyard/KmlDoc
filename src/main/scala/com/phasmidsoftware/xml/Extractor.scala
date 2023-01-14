@@ -257,6 +257,42 @@ object Extractor {
 
     private def extractText[P: Extractor](node: Node): Try[P] = Extractor.extract[P](node)
 
+    /**
+     * Unit extractor.
+     */
+    implicit val unitExtractor: Extractor[Unit] = Extractor(Success())
+
+    /**
+     * String extractor.
+     */
+    implicit object stringExtractor extends Extractor[String] {
+        def extract(node: Node): Try[String] = Success(node.text)
+    }
+
+    /**
+     * Int extractor.
+     */
+    implicit val intExtractor: Extractor[Int] = stringExtractor map (_.toInt)
+
+    /**
+     * Boolean extractor.
+     */
+    implicit val booleanExtractor: Extractor[Boolean] = stringExtractor map {
+        case "true" | "yes" | "T" | "Y" => true
+        case _ => false
+    }
+
+    /**
+     * Double extractor.
+     */
+    implicit val doubleExtractor: Extractor[Double] = stringExtractor map (_.toDouble)
+
+    /**
+     * Long extractor.
+     */
+    implicit val longExtractor: Extractor[Long] = stringExtractor map (_.toLong)
+
+
     val logger: Logger = LoggerFactory.getLogger(Extractor.getClass)
 }
 
