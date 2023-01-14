@@ -102,7 +102,7 @@ trait Extractors {
      * @tparam P the underlying type of the result.
      * @return an Extractor of Iterable[P].
      */
-    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = (node: Node) => extractSequence[P](node / label)(implicitly[Extractor[P]])
+    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = (node: Node) => extractSequence[P](node / label)
 
     /**
      * Method to create a new MultiExtractor based on type P such that the underlying type of the result
@@ -146,7 +146,7 @@ trait Extractors {
     def multiExtractor1[T, U <: Product, P0 <: T : Extractor: ClassTag](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: Nil =>
-                sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
+                sequence(extractElementsByLabel[P0](nodeSeq, label))
             case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
         }
 
@@ -196,7 +196,7 @@ trait Extractors {
     def multiExtractor3[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
         expandTranslations(labels) match {
             case label :: fs =>
-                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
+                val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
                 val tsy = multiExtractor2[T, (P1, P2), P1, P2]((p1, p2) => (p1, p2), fs).extract(nodeSeq)
                 for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
         }
@@ -1354,17 +1354,17 @@ object Extractors {
   /**
    * Text extractor.
    */
-  implicit val extractorText: Extractor[Text] = extractors.extractor10(Text)(StringExtractor, classTag)
+  implicit val extractorText: Extractor[Text] = extractors.extractor10(Text)
 
   /**
    * Optional text extractor.
    */
-  implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text](extractorText)
+  implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text]
 
   /**
    * Optional string extractor.
    */
-  implicit val extractorOptionalString: Extractor[Option[String]] = extractors.extractorOption[String](StringExtractor)
+  implicit val extractorOptionalString: Extractor[Option[String]] = extractors.extractorOption[String]
 
   /**
    * Method to extract an optional value from a NodeSeq.
