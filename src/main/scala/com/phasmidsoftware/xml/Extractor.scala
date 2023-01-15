@@ -1,13 +1,14 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP.tryNotNull
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
 import com.phasmidsoftware.core.XmlException
-import com.phasmidsoftware.flog.{Flog, Loggable}
+import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.kmldoc.{KmlExtractors, StyleSelector}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
@@ -106,7 +107,8 @@ object Extractor {
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-        s"multi-extract: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !? implicitly[MultiExtractor[T]].extract(nodeSeq)
+    //        s"multi-extract: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !?
+        implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
      * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -135,7 +137,8 @@ object Extractor {
      * @return a Try[P].
      */
     def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
-        case _ -> Success(p) => s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !? Success(p)
+        case _ -> Success(p) => //s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !?
+            Success(p)
         case m -> Failure(x) =>
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])

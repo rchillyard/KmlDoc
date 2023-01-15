@@ -1,5 +1,7 @@
 package com.phasmidsoftware.core
 
+import com.phasmidsoftware.xml.{Extractor, Extractors}
+
 import scala.collection.mutable
 import scala.util.Try
 import scala.xml.{Elem, Node, NodeSeq}
@@ -85,8 +87,22 @@ case class Text($: String) {
     }
 }
 
+object Text extends Extractors {
+
+    /**
+     * Text extractor.
+     */
+    implicit val extractorText: Extractor[Text] = extractor10(apply)
+
+    /**
+     * Optional text extractor.
+     */
+    implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]
+
+}
+
 case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
 
 object XmlException {
-  def apply(message: String): XmlException = apply(message, null)
+    def apply(message: String): XmlException = apply(message, null)
 }

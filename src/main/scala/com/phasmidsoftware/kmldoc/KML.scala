@@ -2,15 +2,15 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlData.{extractorKmlData, rendererKmlData}
-import com.phasmidsoftware.kmldoc.KmlExtractors.{extractor0, extractor01, extractor10, extractor11, extractor20, extractor40, extractorAlia6, extractorAlt, extractorCD2Document, extractorCD2Folder, extractorCSD2BalloonStyle, extractorCSD2LabelStyle, extractorCSD2LineStyle, extractorCSD2ListStyle, extractorCSD2PolyStyle, extractorCSP2IconStyle, extractorFD2ContainerData, extractorFD2Placemark, extractorGD2Point, extractorKD2FD, extractorKD2GeometryData, extractorKD2Scale, extractorKD2StyleSelectorData, extractorKD2SubStyleData, extractorPartial, extractorSSD2ColorStyleData, extractorSSD2Style, extractorSSD2StyleMap, multiExtractorCoordinates, multiExtractorFeature}
-import com.phasmidsoftware.kmldoc.KmlRenderers.{renderer0Super, renderer1, renderer1Super, renderer2, renderer2Super, renderer3Super, renderer4, renderer4Super, renderer5Super, rendererColorStyles, rendererCoordinates1, rendererCoordinates_s, rendererFeatures, rendererGeometrys, rendererOptionBgColor, rendererOptionColor, rendererOptionColorMode, rendererOptionHeading, rendererOptionItemIcon, rendererOptionListItemType, rendererOptionTextColor, rendererSequencePair, rendererSuper2, rendererSuper6, sequenceRenderer}
+import com.phasmidsoftware.kmldoc.KmlExtractors.{extractor0, extractor01, extractor10, extractor11, extractor20, extractor40, extractorAlia6, extractorCD2Document, extractorCD2Folder, extractorCSD2BalloonStyle, extractorCSD2LabelStyle, extractorCSD2LineStyle, extractorCSD2ListStyle, extractorCSD2PolyStyle, extractorCSP2IconStyle, extractorFD2ContainerData, extractorFD2Placemark, extractorGD2Point, extractorKD2FD, extractorKD2GeometryData, extractorKD2Scale, extractorKD2StyleSelectorData, extractorKD2SubStyleData, extractorPartial, extractorSSD2ColorStyleData, extractorSSD2Style, extractorSSD2StyleMap, multiExtractorFeature}
+import com.phasmidsoftware.kmldoc.KmlRenderers.{renderer0Super, renderer1, renderer1Super, renderer2, renderer2Super, renderer3Super, renderer4, renderer4Super, renderer5Super, rendererColorStyles, rendererCoordinates1, rendererCoordinates_s, rendererFeatures, rendererGeometrys, rendererOptionBgColor, rendererOptionColor, rendererOptionColorMode, rendererOptionHeading, rendererOptionItemIcon, rendererOptionListItemType, rendererOptionTextColor, rendererSequencePair, rendererSuper2, rendererSuper6}
 import com.phasmidsoftware.render.Renderers.{doubleRenderer, intRenderer, rendererOptionInt, rendererOptionString, rendererOptionText, rendererText, stringRenderer}
 import com.phasmidsoftware.render._
-import com.phasmidsoftware.xml.Extractor.{none, stringExtractor}
-import com.phasmidsoftware.xml.Extractors.extractorText
+import com.phasmidsoftware.xml.Extractor.stringExtractor
 import com.phasmidsoftware.xml._
-import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
+
+import java.net.URL
 import scala.io.Source
 import scala.reflect.{ClassTag, classTag}
 import scala.util.matching.Regex
@@ -492,14 +492,14 @@ object State {
 case class ItemIcon(state: State, href: Text)
 
 object ItemIcon {
-    implicit lazy  val extractorItemIcon: Extractor[ItemIcon] = extractor20(apply)(State.extractorState, extractorText, classTag) ^^ "extractorItemIcon"
+    implicit lazy val extractorItemIcon: Extractor[ItemIcon] = extractor20(apply)(State.extractorState, Text.extractorText, classTag) ^^ "extractorItemIcon"
     implicit lazy val rendererItemIcon: Renderable[ItemIcon] = renderer2(apply) ^+ "rendererItemIcon"
 }
 
 case class Icon(href: Text)
 
 object Icon {
-    implicit lazy  val extractorIcon: Extractor[Icon] = extractor10(apply)(extractorText, classTag) ^^ "extractorIcon"
+    implicit lazy val extractorIcon: Extractor[Icon] = extractor10(apply)(Text.extractorText, classTag) ^^ "extractorIcon"
     implicit lazy val rendererIcon: Renderable[Icon] = renderer1(apply) ^+ "rendererIcon"
 }
 
@@ -582,7 +582,6 @@ object Pair {
 case class StyleMap(Pairs: Seq[Pair])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
 object StyleMap {
-    import StyleSelectorData.extractorStyleSelectorData
     lazy  val extractorStyleMap: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorSSD2StyleMap)(StyleSelectorData.extractorStyleSelectorData, classTag)
     implicit lazy val rendererStyleMap: Renderable[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^+ "rendererStyleMap"
 }
@@ -638,8 +637,6 @@ object KmlExtractors extends Extractors {
     Extractor.translations += "StyleSelector" -> Seq("_")
     Extractor.translations += "SubStyle" -> Seq("_")
     Extractor.translations += "ColorStyle" -> Seq("_")
-
-    import Extractors._
 
     /**
      * The following extractors do not depend on any other extractors.
@@ -724,14 +721,14 @@ object KmlExtractors extends Extractors {
     /**
      * The following extractors do not need to be declared implicit.
      */
-    lazy val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply)(extractorText, extractorOptionalText, extractorOptionalText, extractMaybeOpen, multiExtractorStyleSelector, classTag) ^^ "extractorKD2FD"
+    lazy val extractorKD2FD: Extractor[KmlData => FeatureData] = extractorPartial41(FeatureData.apply)(Text.extractorText, Text.extractorOptionalText, Text.extractorOptionalText, extractMaybeOpen, multiExtractorStyleSelector, classTag) ^^ "extractorKD2FD"
     lazy val extractorGD2Point: Extractor[GeometryData => Point] = extractorPartial01(Point.apply)(multiExtractorCoordinates, classTag) ^^ "extractorGD2Point"
     lazy val extractorFD2Placemark: Extractor[FeatureData => Placemark] = extractorPartial01(Placemark.apply)(multiExtractorGeometry, classTag) ^^ "extractorFD2Placemark"
     lazy val extractorSSD2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(ColorStyleData.apply)(extractMaybeColor, extractMaybeColorMode, classTag) ^^ "extractorSSD2ColorStyleData"
     lazy val extractorCSD2PolyStyle: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(PolyStyle.apply)(Fill.extractorFill, Outline.extractorOutline, classTag) ^^ "extractorCSD2PolyStyle"
     lazy val extractorCSD2ListStyle: Extractor[ColorStyleData => ListStyle] = extractorPartial30(ListStyle.apply)(BgColor.extractorBgColor, extractMaybeListItemType, extractMaybeItemIcon, classTag) ^^ "extractorCSD2ListStyle"
-    lazy val extractorCSP2IconStyle: Extractor[ColorStyleData => IconStyle] = extractorPartial40(IconStyle.apply)(Scale.extractorScale,Icon.extractorIcon,HotSpot.extractorHotspot, extractMaybeHeading, classTag) ^^ "extractorCSP2IconStyle"
-    lazy val extractorCSD2BalloonStyle: Extractor[ColorStyleData => BalloonStyle] = extractorPartial40(BalloonStyle.apply)(extractorText, extractorMaybeBgColor, extractMaybeTextColor, DisplayMode.extractorDisplayMode, classTag) ^^ "extractorCSD2BalloonStyle"
+    lazy val extractorCSP2IconStyle: Extractor[ColorStyleData => IconStyle] = extractorPartial40(IconStyle.apply)(Scale.extractorScale, Icon.extractorIcon, HotSpot.extractorHotspot, extractMaybeHeading, classTag) ^^ "extractorCSP2IconStyle"
+    lazy val extractorCSD2BalloonStyle: Extractor[ColorStyleData => BalloonStyle] = extractorPartial40(BalloonStyle.apply)(Text.extractorText, extractorMaybeBgColor, extractMaybeTextColor, DisplayMode.extractorDisplayMode, classTag) ^^ "extractorCSD2BalloonStyle"
     lazy val extractorCSD2LabelStyle: Extractor[ColorStyleData => LabelStyle] = extractorPartial10(LabelStyle.apply)(Scale.extractorScale, classTag) ^^ "extractorCSD2LabelStyle"
     lazy val extractorCSD2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(LineStyle.apply)(Width.extractorWidth, classTag) ^^ "extractorCSD2LineStyle"
     lazy val extractorSSD2Style: Extractor[StyleSelectorData => Style] = extractorPartial01(Style.apply)(multiExtractorColorStyle, classTag) ^^ "extractorSSD2Style"

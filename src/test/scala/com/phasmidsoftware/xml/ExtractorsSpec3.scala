@@ -1,11 +1,12 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.XmlException
-import com.phasmidsoftware.xml.Extractor.{extract, extractMulti}
+import com.phasmidsoftware.core.{Text, XmlException}
+import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.Extractors.stringMultiExtractor
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
 import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -27,6 +28,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     case class KmlData(__id: Option[String])
 
     object KmlData extends Extractors {
+        def nemo: KmlData = KmlData(None)
 
         import Extractors._
 
@@ -36,7 +38,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     class Geometry extends KmlObject
 
     object Geometry extends Extractors {
-        implicit lazy val multiExtractorGeometry: MultiExtractor[Seq[Geometry]] =
+        implicit val multiExtractorGeometry: MultiExtractor[Seq[Geometry]] =
             multiExtractor1[Geometry, Point, Point](identity, Seq("Point"))
     }
 
@@ -51,25 +53,34 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
 
 
-//    case class Point(x: Double, y: Double)(val geometryData: GeometryData) extends Geometry
+    //    case class Point(x: Double, y: Double)(val geometryData: GeometryData) extends Geometry
 
     object Point extends Extractors {
         val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
-        //             extractorPartial20(apply)
-//        implicit lazy val extractorPoint: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial)
-implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial)
+        implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial)
         implicit val extractorMulti: MultiExtractor[Seq[Point]] = multiExtractorBase[Point]
     }
 
 
+    case class Tessellate($: String)
+
+    object Tessellate extends Extractors {
+        implicit val extractor: Extractor[Tessellate] = extractor10(apply)
+    }
+
+    case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates]) extends Geometry
+
+    object LineString extends Extractors {
+        implicit val extractor: Extractor[LineString] = extractor11(apply)
+    }
+
     case class Coordinates(coordinates: Seq[Coordinate])
 
     object Coordinates extends Extractors {
-        implicit lazy val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text)))
-        implicit lazy val extractorMulti: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates]
+        implicit val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text)))
+        implicit val extractorMulti: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates]
 
-        def parse(w: String): Coordinates =
-            Coordinates((for (line <- Source.fromString(w).getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
+        def parse(w: String): Coordinates = Coordinates((for (line <- Source.fromString(w).getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
     }
 
 
@@ -92,6 +103,8 @@ implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point]
 
     object StyleSelector extends Extractors {
         implicit val extractor: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
+        implicit val extractorMulti: MultiExtractor[Seq[StyleSelector]] =
+            multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap"))
     }
 
     case class StyleSelectorData(kmlData: KmlData)
@@ -151,6 +164,74 @@ implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point]
         implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorSSD2Style)
     }
 
+
+    /**
+     * Abstract Feature element.
+     * Feature is a sub-type of Object and a super-type of Placemark, Container.
+     * See [[https://developers.google.com/kml/documentation/kmlreference#feature Feature]].
+     *
+     * TODO add Overlay, NetworkLink.
+     */
+    class Feature extends KmlObject
+
+    /**
+     * Companion object to Feature.
+     */
+    object Feature extends Extractors {
+        // NOTE we don't currently use extractorFeature.
+        // CONSIDER should we use it instead of the mechanism in, for example, multiExtractor2.
+        //    implicit lazy  val extractorFeature: Extractor[Feature] = extractorAlt[Feature,Container,Placemark](Container.extractorContainer,Placemark.extractorPlacemark)
+        //    val applyFunction: Unit => Feature = _ => new Feature() // CONSIDER do we need this?
+
+        // NOTE it works to make this val and have extractorCD2Folder, etc. as lazy val.
+        implicit val multiExtractorFeature: MultiExtractor[Seq[Feature]] =
+            multiExtractor1[Feature, Placemark, Placemark](identity, Seq("Placemark"))
+    }
+
+    /**
+     * Properties of a Feature (and therefore all its sub-types).
+     *
+     * @param name             the name (a Text).
+     * @param maybeDescription an optional description: Option[Text].
+     * @param maybeStyleUrl    an optional style URL: Option[String].
+     * @param maybeOpen        an optional openness designation: Option[Int].
+     * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
+     * @param kmlData          (auxiliary) member: KmlData.
+     */
+    case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
+
+    /**
+     * Companion object to Feature.
+     */
+    object FeatureData extends Extractors {
+
+        import Extractors._
+
+        lazy val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial41(apply)
+        implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial)
+    }
+
+    /**
+     * Placemark: sub-type of Feature.
+     * See [[https://developers.google.com/kml/documentation/kmlreference#placemark Placemark]].
+     *
+     * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
+     * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
+     */
+    case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
+
+    /**
+     * Companion object to Placemark.
+     */
+    object Placemark extends Extractors {
+        lazy val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
+
+        import FeatureData.extractorFeatureData
+
+        implicit val extractor: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorPartial)
+    }
+
+
     case class Base(_id: Int)
 
     object Base extends Extractors {
@@ -178,7 +259,7 @@ implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point]
     object Scale extends Extractors {
 
         val partialExtractor: Extractor[KmlData => Scale] = extractorPartial10(apply)
-        implicit lazy val extractor: Extractor[Scale] = extractorPartial[KmlData, Scale](partialExtractor)
+        implicit val extractor: Extractor[Scale] = extractorPartial[KmlData, Scale](partialExtractor)
 
 //        def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
     }
@@ -265,14 +346,81 @@ implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point]
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                 }
-//                val wy = TryUsing(StateR())(sr => KmlRenderers.rendererGeometrys.render(gs, FormatXML(0), sr))
-//                wy.isSuccess shouldBe true
-//                println(wy.get)
-//                // TODO fix the rendering of Point: the following line is how it really SHOULD be:
-//                //        wy.get shouldBe "<Point>\n  <coordinates>\n    -71.097293, 42.478238, 0\n    </coordinates>\n  \n  </Point>"
-//                wy.get shouldBe "\n<Point id=\"my point\">\n    <coordinates>\n      -71.097293, 42.478238, 0\n      </coordinates>\n    \n    </Point>\n\n".format().stripMargin
+            //                val wy = TryUsing(StateR())(sr => KmlRenderers.rendererGeometrys.render(gs, FormatXML(0), sr))
+            //                wy.isSuccess shouldBe true
+            //                println(wy.get)
+            //                // TODO fix the rendering of Point: the following line is how it really SHOULD be:
+            //                //        wy.get shouldBe "<Point>\n  <coordinates>\n    -71.097293, 42.478238, 0\n    </coordinates>\n  \n  </Point>"
+            //                wy.get shouldBe "\n<Point id=\"my point\">\n    <coordinates>\n      -71.097293, 42.478238, 0\n      </coordinates>\n    \n    </Point>\n\n".format().stripMargin
             case Failure(x) => fail(x)
         }
     }
+
+    ignore should "extract Placemark" in {
+        val xml: Elem = <xml>
+            <Placemark>
+                <name>Wakefield Branch of Eastern RR</name>
+                <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>
+                <styleUrl>#line-006600-5000</styleUrl>
+                <LineString>
+                    <tessellate>1</tessellate>
+                    <coordinates>
+                        -71.06992,42.49424,0
+                        -71.07018,42.49512,0
+                        -71.07021,42.49549,0
+                        -71.07008,42.49648,0
+                        -71.069849,42.497415,0
+                        -71.06954,42.49833,0
+                        -70.9257614,42.5264001,0
+                        -70.9254345,42.5262817,0
+                    </coordinates>
+                </LineString>
+            </Placemark>
+        </xml>
+        extractAll[Seq[Feature]](xml) match {
+            case Success(ps) =>
+                ps.size shouldBe 1
+                val feature: Feature = ps.head
+                feature match {
+                    case placemark: Placemark =>
+                        val featureData: FeatureData = placemark.featureData
+                        placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
+                        val geometry: Seq[Geometry] = placemark.Geometry
+                        geometry.size shouldBe 1
+                        geometry.head match {
+                            case LineString(Tessellate("1"), coordinates) =>
+                                coordinates.size shouldBe 1
+                                val coordinate = coordinates.head
+                                coordinate.coordinates.size shouldBe 8
+                            case _ => fail("first Geometry is not a LineString")
+
+                        }
+                        featureData match {
+                            case FeatureData(Text("Wakefield Branch of Eastern RR"), maybeDescription, _, _, Nil) =>
+                                println(s"maybeDescription: $maybeDescription")
+                            case _ => println(s"$featureData did not match the expected result")
+                        }
+                    //                        val wy = TryUsing(StateR())(sr => Renderable.render[Placemark](placemark, FormatXML(0), sr))
+                    //                        wy.isSuccess shouldBe true
+                    //                        trimWhiteSpace(wy.get) shouldBe trimWhiteSpace("<Placemark ><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>" +
+                    //                            "<styleUrl>#line-006600-5000</styleUrl>\n    " +
+                    //                            "      \n      \n      " +
+                    //                            "<LineString>" +
+                    //                            "<tessellate>1</tessellate>\n      <coordinates>\n        -71.06992, 42.49424, 0\n        -71.07018, 42.49512, 0\n        -71.07021, 42.49549, 0\n        -71.07008, 42.49648, 0\n        -71.069849, 42.497415, 0\n        -71.06954, 42.49833, 0\n        -70.9257614, 42.5264001, 0\n        -70.9254345, 42.5262817, 0\n        </coordinates>\n      \n      " +
+                    //                            "</LineString>" +
+                    //                            "\n    \n    \n  \n  \n  </Placemark>")
+                }
+            case Failure(x) => fail(x)
+        }
+    }
+
+    //    it should "extract Placemark" in {
+    //        val coordinates1 = Coordinates(Seq(Coordinate("0", "-72", "0")))
+    //        val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
+    //        val featureData: FeatureData = FeatureData(Text("Hello"), None, None, None, Nil)(KmlData.nemo)
+    //        val placemark = Placemark(Seq(point))(featureData)
+    ////        val wy = TryUsing(StateR())(sr => Renderable.render[Placemark](placemark, FormatXML(0), sr))
+    ////        wy shouldBe Success("<Placemark ><name>Hello</name>\n      \n      \n      \n    <Point >\n        <coordinates>\n          -72, 0, 0\n          </coordinates>\n        \n        </Point>\n    \n    </Placemark>".stripMargin)
+    //    }
 
 }

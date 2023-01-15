@@ -2,11 +2,11 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.sequence
-import com.phasmidsoftware.core.{Reflection, Text, XmlException}
-import com.phasmidsoftware.flog.{Flog, Loggable}
+import com.phasmidsoftware.core.{Reflection, XmlException}
+import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildren, extractElementsByLabel, extractField, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
-import com.phasmidsoftware.xml.NamedFunction.{combineNamed2, combineNameds2, name}
+
 import scala.Function.uncurried
 import scala.reflect.{ClassTag, classTag}
 import scala.util.{Failure, Success, Try}
@@ -1325,16 +1325,7 @@ object Extractors extends Extractors {
 
   private val extractors: Extractors = new Extractors {}
 
-  /**
-   * Text extractor.
-   */
-  implicit val extractorText: Extractor[Text] = extractors.extractor10(Text)
-
-  /**
-   * Optional text extractor.
-   */
-  implicit val extractorOptionalText: Extractor[Option[Text]] = extractors.extractorOption[Text]
-
+    implicit lazy val extractOptionalInt: Extractor[Option[Int]] = extractorOption[Int]
 
     /**
      * Optional string extractor.

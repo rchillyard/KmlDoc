@@ -16,8 +16,8 @@ lazy val scalaModules = "org.scala-lang.modules"
 libraryDependencies += scalaModules %% "scala-xml" % "2.1.0"
 
 libraryDependencies ++= Seq(
-  "com.phasmidsoftware" %% "flog" % "1.0.9",
+  "com.phasmidsoftware" %% "flog" % "1.0.8",
   "ch.qos.logback" % "logback-classic" % "1.4.5" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "org.scalatest" %% "scalatest" % "3.2.14" % Test
+  "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )
