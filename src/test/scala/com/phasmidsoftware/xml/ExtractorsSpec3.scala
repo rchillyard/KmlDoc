@@ -1,7 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.{Text, XmlException}
-import com.phasmidsoftware.xml.Extractor.{extract, extractChildren, extractMulti}
+import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.Extractors.stringMultiExtractor
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
@@ -139,29 +139,29 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
         import Extractors._
 
-        lazy val extractorSSP2ColorStyleData: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(apply)
-        implicit val extractor: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorSSP2ColorStyleData)
+        lazy val extractorPartial: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(apply)
+        implicit val extractor: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorPartial)
     }
 
     case class LineStyle(width: Double)(val colorStyleData: ColorStyleData) extends ColorStyle
 
     object LineStyle extends Extractors {
-        lazy val extractorCSP2LineStyle: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
-        implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorCSP2LineStyle)
+        lazy val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
+        implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorPartial)
     }
 
     case class StyleMap(Pairs: Seq[String])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
     object StyleMap extends Extractors {
-        lazy val extractorBT2: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply)
-        implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorBT2)
+        lazy val extractorPartial: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply)
+        implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorPartial)
     }
 
     case class Style(Styles: Seq[ColorStyle])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
     object Style extends Extractors {
-        lazy val extractorSSD2Style: Extractor[StyleSelectorData => Style] = extractorPartial01(apply)
-        implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorSSD2Style)
+        lazy val extractorPartial: Extractor[StyleSelectorData => Style] = extractorPartial01(apply)
+        implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorPartial)
     }
 
 
@@ -184,8 +184,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         //    val applyFunction: Unit => Feature = _ => new Feature() // CONSIDER do we need this?
 
         // NOTE it works to make this val and have extractorCD2Folder, etc. as lazy val.
-        implicit val multiExtractorFeature: MultiExtractor[Seq[Feature]] =
-            multiExtractor1[Feature, Placemark, Placemark](identity, Seq("Placemark"))
+        implicit val multiExtractor: MultiExtractor[Seq[Feature]] = multiExtractor1[Feature, Placemark, Placemark](identity, Seq("Placemark"))
     }
 
     /**
@@ -208,7 +207,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         import Extractors._
 
         lazy val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial41(apply)
-        implicit val extractorFeatureData: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial)
+        implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial)
     }
 
     /**
@@ -225,12 +224,63 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
      */
     object Placemark extends Extractors {
         lazy val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
-
-        import FeatureData.extractorFeatureData
-
         implicit val extractor: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorPartial)
     }
 
+    /**
+     * Abstract Container element.
+     * Container is a sub-type of Feature and a super-type of Folder, Document.
+     * See [[https://developers.google.com/kml/documentation/kmlreference#container Container]].
+     *
+     * A Container has no properties of its own.
+     */
+    class Container extends Feature
+
+    /**
+     * Companion object to Container.
+     */
+    object Container extends Extractors {
+        lazy val applyFunction: Unit => Container = _ => new Container()
+        implicit val extractor: Extractor[Container] = extractor0(applyFunction) ^^ "extractorContainer"
+        implicit val multiExtractor: MultiExtractor[Seq[Container]] =
+//            multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"
+            multiExtractor1[Container, Folder, Folder](identity, Seq("Folder")) ^^ "multiExtractorContainer"
+    }
+
+    /**
+     * Properties of a Container (and therefore all its sub-types).
+     *
+     * CONSIDER having an empty member set.
+     *
+     * @param featureData (auxiliary) member: FeatureData, shared by sub-elements.
+     */
+    case class ContainerData(featureData: FeatureData)
+
+    /**
+     * Companion object to ContainerData.
+     */
+    object ContainerData extends Extractors {
+        lazy val applyFunction: FeatureData => ContainerData = new ContainerData(_)
+        val extractorPartial: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](applyFunction) ^^ "extractorFD2ContainerData"
+        implicit val extractor: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorPartial) ^^ "extractorContainerData"
+    }
+
+    /**
+     * Folder: sub-element of Container.
+     * See [[https://developers.google.com/kml/documentation/kmlreference#container Folder]].
+     *
+     * @param features      a sequence of Feature elements (where Feature is an abstract super-type).
+     * @param containerData the ContainerData (auxiliary property).
+     */
+    case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container
+
+    /**
+     * Companion object to Folder.
+     */
+    object Folder extends Extractors {
+        lazy val extractorPartial: Extractor[ContainerData => Folder] = extractorPartial01(apply) ^^ "extractorCD2Folder"
+        implicit val extractor: Extractor[Folder] = extractorPartial(extractorPartial) ^^ "extractorFolder"
+    }
 
     case class Base(_id: Int)
 
@@ -265,7 +315,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     }
 
     Extractor.translations += "coordinates" -> Seq("coordinates")
-    Extractor.translations += "Feature" -> Seq("Placemark", "Folder", "Document")
+    Extractor.translations += "features" -> Seq("Placemark", "Folder", "Document")
     Extractor.translations += "Geometry" -> Seq("LineString", "Point")
     Extractor.translations += "StyleSelector" -> Seq("Style", "StyleMap")
 
@@ -380,8 +430,9 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                 </LineString>
             </Placemark>
         </xml>
-        extractChildren[Seq[Feature]]("Feature")(xml) match {
-//        extractAll[Seq[Feature]](xml) match {
+        // NOTE: we can use either extractChildren or extractAll here.
+//        extractChildren[Seq[Feature]]("features")(xml) match {
+        extractAll[Seq[Feature]](xml) match {
             case Success(ps) =>
                 ps.size shouldBe 1
                 val feature: Feature = ps.head
@@ -426,5 +477,69 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     ////        val wy = TryUsing(StateR())(sr => Renderable.render[Placemark](placemark, FormatXML(0), sr))
     ////        wy shouldBe Success("<Placemark ><name>Hello</name>\n      \n      \n      \n    <Point >\n        <coordinates>\n          -72, 0, 0\n          </coordinates>\n        \n        </Point>\n    \n    </Placemark>".stripMargin)
     //    }
+
+    behavior of "Container"
+
+    it should "extract Folder" in {
+        val xml: Elem = <xml>
+            <Folder>
+                <name>Untitled layer</name>
+                <Placemark>
+                    <name>Wakefield Branch of Eastern RR</name>
+                    <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>
+                    <styleUrl>#line-006600-5000</styleUrl>
+                    <LineString>
+                        <tessellate>1</tessellate>
+                        <coordinates>
+                            -71.06992,42.49424,0
+                            -71.07018,42.49512,0
+                            -71.07021,42.49549,0
+                            -71.07008,42.49648,0
+                            -71.069849,42.497415,0
+                            -71.06954,42.49833,0
+                            -70.9257614,42.5264001,0
+                            -70.9254345,42.5262817,0
+                        </coordinates>
+                    </LineString>
+                </Placemark>
+            </Folder>
+        </xml>
+        extractAll[Seq[Container]](xml) match {
+            case Success(cs) =>
+                cs.size shouldBe 1
+                val container: Container = cs.head
+                container match {
+                    case f@Folder(features) =>
+                        println(s"got Folder($features)(${f.containerData})")
+                        val containerData: ContainerData = f.containerData
+                        val featureData: FeatureData = containerData.featureData
+                        val name = featureData.name
+                        val untitledLayer = Text("Untitled layer")
+                        name shouldBe untitledLayer
+                        features.size shouldBe 1
+                        val feature = features.head
+                        feature match {
+                            case placemark: Placemark =>
+                                placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
+                                placemark.featureData.maybeDescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
+                                val ls: scala.Seq[Geometry] = placemark.Geometry
+                                ls.size shouldBe 1
+                                val geometry: Geometry = ls.head
+                                val coordinates: scala.Seq[Coordinates] = geometry match {
+                                    case lineString: LineString => lineString.coordinates
+                                    case _ => fail("first geometry is not a LineString")
+                                }
+                                coordinates.size shouldBe 1
+                                val coordinate = coordinates.head
+                                coordinate.coordinates.size shouldBe 8
+//                                println(implicitly[Renderable[Folder]])
+//                                val wy = TryUsing(StateR())(sr => Renderable.render[Folder](f, FormatXML(0), sr))
+//                                wy.isSuccess shouldBe true
+//                                trimWhiteSpace(wy.get) shouldBe trimWhiteSpace("<Folder ><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>")
+                        }
+                }
+            case Failure(x) => fail(x)
+        }
+    }
 
 }
