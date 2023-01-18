@@ -1,14 +1,11 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.FP.tryNotNull
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.kmldoc.{KmlExtractors, StyleSelector}
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
@@ -95,8 +92,8 @@ object Extractor {
      * @return a Try[T].
      */
     def extract[T: Extractor](node: Node): Try[T] =
-        implicitly[Extractor[T]].extract(node)
-//    s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
+//        implicitly[Extractor[T]].extract(node)
+        s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
 
     /**
      * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -107,8 +104,8 @@ object Extractor {
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-    //        s"multi-extract: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !?
-        implicitly[MultiExtractor[T]].extract(nodeSeq)
+        s"multi-extract: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !?
+                implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
      * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -159,24 +156,19 @@ object Extractor {
      * @return a Try[P].
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
+        // TODO use Flog logging
         val ts = translateMemberNames(member)
         logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
         if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-        if (nodeSeq.isEmpty) logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-        val junk = KmlExtractors
-        val junk1 = Extractors
-        val junk2 = StyleSelector
-        println(junk.toString+junk1+junk2)
         if (nodeSeq.nonEmpty) {
-            for {
-                pm <- tryNotNull(implicitly[MultiExtractor[P]])(s"multi-extractor for $member")
-                result <- pm.extract(nodeSeq)
-            } yield result
+            logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+            extractMulti(nodeSeq)
         }
-//        s"extractChildren($member)(${renderNode(node)})(${name[MultiExtractor[P]]})" |! implicitly[MultiExtractor[P]].extract(nodeSeq)
-        else
+        else {
+            logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
             Try(Nil.asInstanceOf[P])
+        }
     }
 
     /**
@@ -307,7 +299,7 @@ object Extractor {
 trait MultiExtractor[T] extends NamedFunction[MultiExtractor[T]] {
     /**
      * Method to convert a NodeSeq into a Try[T], usually an iterable type.
-     * This method will typically be used on the result of: <code>node \ tag</code> where tag is particular tag String.
+     * This method will typically be used on the result of: <code>node \ tag</code> where tag is a particular tag String.
      *
      * @param nodeSeq a NodeSeq.
      * @return a Try[T].

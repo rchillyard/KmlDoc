@@ -1,12 +1,11 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.{Text, XmlException}
-import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
+import com.phasmidsoftware.xml.Extractor.{extract, extractChildren, extractMulti}
 import com.phasmidsoftware.xml.Extractors.stringMultiExtractor
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-
 import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -39,7 +38,8 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
     object Geometry extends Extractors {
         implicit val multiExtractorGeometry: MultiExtractor[Seq[Geometry]] =
-            multiExtractor1[Geometry, Point, Point](identity, Seq("Point"))
+        // CONSIDER passing identity instead of (l,p) => (l,p)
+            multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^ "multiExtractorGeometry"
     }
 
     case class GeometryData(kmlData: KmlData)
@@ -265,6 +265,9 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     }
 
     Extractor.translations += "coordinates" -> Seq("coordinates")
+    Extractor.translations += "Feature" -> Seq("Placemark", "Folder", "Document")
+    Extractor.translations += "Geometry" -> Seq("LineString", "Point")
+    Extractor.translations += "StyleSelector" -> Seq("Style", "StyleMap")
 
     behavior of "Extractors"
 
@@ -356,7 +359,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         }
     }
 
-    ignore should "extract Placemark" in {
+    it should "extract Placemark" in {
         val xml: Elem = <xml>
             <Placemark>
                 <name>Wakefield Branch of Eastern RR</name>
@@ -377,7 +380,8 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                 </LineString>
             </Placemark>
         </xml>
-        extractAll[Seq[Feature]](xml) match {
+        extractChildren[Seq[Feature]]("Feature")(xml) match {
+//        extractAll[Seq[Feature]](xml) match {
             case Success(ps) =>
                 ps.size shouldBe 1
                 val feature: Feature = ps.head
