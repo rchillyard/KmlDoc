@@ -9,7 +9,7 @@ import com.phasmidsoftware.xml.{Extractors, _}
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Success, Try}
 import scala.xml.{Elem, NamespaceBinding, XML}
@@ -82,11 +82,6 @@ class Feature extends KmlObject
  * Companion object to Feature.
  */
 object Feature extends Extractors {
-    // NOTE we don't currently use extractorFeature.
-    // CONSIDER should we use it instead of the mechanism in, for example, multiExtractor2.
-    //    implicit lazy  val extractorFeature: Extractor[Feature] = extractorAlt[Feature,Container,Placemark](Container.extractorContainer,Placemark.extractorPlacemark)
-    //    val applyFunction: Unit => Feature = _ => new Feature() // CONSIDER do we need this?
-
     implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
         lazyMultiExtractor(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")))
     implicit val renderer: Renderable[Feature] = new Renderers {}.lazyRenderer(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
@@ -114,7 +109,7 @@ object FeatureData extends Extractors {
 
     lazy val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial41(apply)
     implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial)
-    implicit lazy val renderer: Renderable[FeatureData] = renderer5Super(apply)(_.kmlData) ^^ "rendererFeatureData"
+    implicit val renderer: Renderable[FeatureData] = renderer5Super(apply)(_.kmlData) ^^ "rendererFeatureData"
 }
 
 /**
@@ -281,7 +276,7 @@ object Coordinate {
         case _ => throw XmlException(s"bad coordinate string: $w")
     }
 
-    implicit lazy val renderer: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long}, ${t.lat}, ${t.alt}") } ^^ "rendererCoordinate"
+    implicit val renderer: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long}, ${t.lat}, ${t.alt}") } ^^ "rendererCoordinate"
 }
 
 /**
@@ -481,8 +476,8 @@ object IconStyle extends Extractors {
 case class Fill(boolean: Int)
 
 object Fill extends Extractors {
-    implicit val extractorFill: Extractor[Fill] = extractor10(apply)(Extractor.intExtractor, classTag) ^^ "extractorFill"
-    implicit lazy val rendererFill: Renderable[Fill] = renderer1(apply) ^+ "rendererFill"
+    implicit val extractor: Extractor[Fill] = extractor10(apply) ^^ "extractorFill"
+    implicit val renderer: Renderable[Fill] = renderer1(apply) ^^ "rendererFill"
 }
 
 /**
@@ -494,8 +489,8 @@ object Fill extends Extractors {
 case class Outline(boolean: Int)
 
 object Outline extends Extractors {
-    implicit lazy val extractorOutline: Extractor[Outline] = extractor10(apply)(Extractor.intExtractor, classTag) ^^ "extractorOutline"
-    implicit lazy val rendererOutline: Renderable[Outline] = renderer1(apply) ^+ "rendererOutline"
+    implicit val extractor: Extractor[Outline] = extractor10(apply) ^^ "extractorOutline"
+    implicit val renderer: Renderable[Outline] = renderer1(apply) ^^ "rendererOutline"
 }
 
 /**
@@ -506,15 +501,15 @@ object Outline extends Extractors {
 case class Heading($: Double)
 
 object Heading extends Extractors {
-    implicit lazy val extractorHeading: Extractor[Heading] = extractor10(apply)(Extractor.doubleExtractor, classTag) ^^ "extractorHeading"
-    implicit lazy val rendererHeading: Renderable[Heading] = renderer1(apply) ^+ "rendererHeading"
+    implicit val extractor: Extractor[Heading] = extractor10(apply) ^^ "extractorHeading"
+    implicit val renderer: Renderable[Heading] = renderer1(apply) ^^ "rendererHeading"
 }
 
 case class BgColor($: String)
 
 object BgColor extends Extractors {
-    implicit lazy val extractorBgColor: Extractor[BgColor] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorBgColor"
-    implicit lazy val rendererBgColor: Renderable[BgColor] = renderer1(apply) ^+ "rendererBgColor"
+    implicit val extractor: Extractor[BgColor] = extractor10(apply) ^^ "extractorBgColor"
+    implicit val renderer: Renderable[BgColor] = renderer1(apply) ^^ "rendererBgColor"
 }
 
 /**
@@ -526,8 +521,8 @@ object BgColor extends Extractors {
 case class TextColor($: String)
 
 object TextColor extends Extractors {
-    implicit lazy val extractorTextColor: Extractor[TextColor] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorTextColor"
-    implicit lazy val rendererTextColor: Renderable[TextColor] = renderer1(apply) ^+ "rendererTextColor"
+    implicit val extractor: Extractor[TextColor] = extractor10(apply) ^^ "extractorTextColor"
+    implicit val renderer: Renderable[TextColor] = renderer1(apply) ^^ "rendererTextColor"
 }
 
 /**
@@ -539,8 +534,8 @@ object TextColor extends Extractors {
 case class DisplayMode($: String)
 
 object DisplayMode extends Extractors {
-    implicit lazy val extractorDisplayMode: Extractor[DisplayMode] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorDisplayMode"
-    implicit lazy val rendererDisplayMode: Renderable[DisplayMode] = renderer1(apply) //^^ "rendererDisplayMode"
+    implicit val extractor: Extractor[DisplayMode] = extractor10(apply) ^^ "extractorDisplayMode"
+    implicit val renderer: Renderable[DisplayMode] = renderer1(apply) ^^ "rendererDisplayMode"
 }
 
 /**
@@ -552,8 +547,8 @@ object DisplayMode extends Extractors {
 case class ListItemType($: String)
 
 object ListItemType extends Extractors {
-    implicit lazy val extractorListItemType: Extractor[ListItemType] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorListItemType"
-    implicit lazy val rendererListItemType: Renderable[ListItemType] = renderer1(apply) ^+ "rendererListItemType"
+    implicit val extractor: Extractor[ListItemType] = extractor10(apply) ^^ "extractorListItemType"
+    implicit val renderer: Renderable[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
 }
 
 /**
@@ -565,8 +560,8 @@ object ListItemType extends Extractors {
 case class State($: String)
 
 object State extends Extractors {
-    implicit lazy val extractorState: Extractor[State] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorState"
-    implicit lazy val rendererState: Renderable[State] = renderer1(apply) ^+ "rendererState"
+    implicit val extractor: Extractor[State] = extractor10(apply) ^^ "extractorState"
+    implicit val renderer: Renderable[State] = renderer1(apply) ^^ "rendererState"
 }
 
 /**
@@ -577,48 +572,44 @@ object State extends Extractors {
 case class ItemIcon(state: State, href: Text)
 
 object ItemIcon extends Extractors {
-    implicit lazy val extractorItemIcon: Extractor[ItemIcon] = extractor20(apply)(State.extractorState, Text.extractorText, classTag) ^^ "extractorItemIcon"
-    implicit lazy val rendererItemIcon: Renderable[ItemIcon] = renderer2(apply) ^+ "rendererItemIcon"
+    implicit val extractor: Extractor[ItemIcon] = extractor20(apply) ^^ "extractorItemIcon"
+    implicit val renderer: Renderable[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
 }
 
 case class Icon(href: Text)
 
 object Icon extends Extractors {
-    implicit lazy val extractorIcon: Extractor[Icon] = extractor10(apply)(Text.extractorText, classTag) ^^ "extractorIcon"
-    implicit lazy val rendererIcon: Renderable[Icon] = renderer1(apply) ^+ "rendererIcon"
+    implicit val extractor: Extractor[Icon] = extractor10(apply) ^^ "extractorIcon"
+    implicit val renderer: Renderable[Icon] = renderer1(apply) ^^ "rendererIcon"
 }
 
 case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
 
 object HotSpot extends Extractors {
-    implicit lazy val extractorHotspot: Extractor[HotSpot] = extractor40(apply)(Extractor.intExtractor, stringExtractor, Extractor.intExtractor, stringExtractor, classTag) ^^ "extractorHotspot"
-    implicit lazy val rendererHotSpot: Renderable[HotSpot] = renderer4(apply) ^+ "rendererHotSpot"
+    implicit val extractor: Extractor[HotSpot] = extractor40(apply) ^^ "extractorHotspot"
+    implicit val renderer: Renderable[HotSpot] = renderer4(apply) ^^ "rendererHotSpot"
 }
 
 case class Color($: String)
 
 object Color extends Extractors {
-    implicit lazy val extractorColor: Extractor[Color] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorColor"
-    implicit lazy val rendererColor: Renderable[Color] = renderer1(apply) ^+ "rendererColor"
+    implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractorColor"
+    implicit val renderer: Renderable[Color] = renderer1(apply) ^^ "rendererColor"
 }
 
 case class ColorMode($: String)
 
 object ColorMode extends Extractors {
-    implicit lazy val extractorColorMode: Extractor[ColorMode] = extractor10(apply)(stringExtractor, classTag) ^^ "extractorColorMode"
-    implicit lazy val rendererColorMode: Renderable[ColorMode] = renderer1(apply) ^+ "rendererColorMode"
+    implicit val extractor: Extractor[ColorMode] = extractor10(apply) ^^ "extractorColorMode"
+    implicit val renderer: Renderable[ColorMode] = renderer1(apply) ^+ "rendererColorMode"
 }
 
 case class Width($: Double)
 
 object Width extends Extractors {
-    implicit lazy val extractorWidth: Extractor[Width] = extractor10(apply)(Extractor.doubleExtractor, classTag) ^^ "extractorWidth"
-    implicit lazy val rendererWidth: Renderable[Width] = renderer1(apply) ^+ "rendererWidth"
+    implicit val extractor: Extractor[Width] = extractor10(apply) ^^ "extractorWidth"
+    implicit val renderer: Renderable[Width] = renderer1(apply) ^^ "rendererWidth"
 }
-
-/**
- * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
- */
 
 /**
  * Case class to define a KML object.
@@ -632,8 +623,9 @@ object Width extends Extractors {
 case class KML(features: Seq[Feature])
 
 object KML extends Extractors {
-    lazy val extractorKml: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
-    implicit lazy val rendererKml: Renderable[KML] = renderer1(apply) ^^ "rendererKml"
+    implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
+    implicit val renderer: Renderable[KML] = renderer1(apply) ^^ "rendererKml"
+    implicit val multiExtractor: MultiExtractor[Seq[KML]] = multiExtractorBase[KML] ^^ "multiExtractorKml"
 }
 
 case class KML_Binding(kml: KML, binding: NamespaceBinding)
@@ -662,13 +654,9 @@ object KmlExtractors extends Extractors {
     /**
      * The following extractors depend on other KML-defined extractors which depend on others.
      *
-     * NOTE: these declarations need to be non-lazy else stack overflow: at least SOMETHING needs to break the recursion. ???
      */
-    implicit val multiExtractorGeometry: MultiExtractor[Seq[Geometry]] =
-        multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^
-                "multiExtractorGeometry"
 
-    // NOTE it works to make this val and have extractorCD2Folder, etc. as lazy val.
+    // NOTE these multi implicits need to be lazy.
     implicit lazy val multiExtractorFeature: MultiExtractor[Seq[Feature]] =
         multiExtractor3[Feature, (Placemark, Folder, Document), Placemark, Folder, Document]((p, f, d) => (p, f, d), Seq("Placemark", "Folder", "Document")) ^^ "multiExtractorFeature"
 
@@ -683,15 +671,15 @@ object KmlExtractors extends Extractors {
             (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
         ) ^^ "multiExtractorColorStyle"
 
-    implicit lazy val multiExtractorKml: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](KML.extractorKml) ^^ "multiExtractorKml"
-    implicit lazy val extractMaybeOpen: Extractor[Option[Int]] = extractorOption[Int](Extractor.intExtractor) ^^ "extractMaybeOpen"
-    implicit lazy val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption[Heading](Heading.extractorHeading) ^^ "extractMaybeHeading"
-    implicit lazy val extractMaybeListItemType: Extractor[Option[ListItemType]] = extractorOption[ListItemType](ListItemType.extractorListItemType) ^^ "extractMaybeListItemType"
-    implicit lazy val extractMaybeTextColor: Extractor[Option[TextColor]] = extractorOption[TextColor](TextColor.extractorTextColor) ^^ "extractMaybeTextColor"
-    implicit lazy val extractMaybeItemIcon: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon](ItemIcon.extractorItemIcon) ^^ "extractMaybeItemIcon"
-    implicit lazy val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption[BgColor](BgColor.extractorBgColor) ^^ "extractorMaybeBgColor"
-    implicit lazy val extractMaybeColor: Extractor[Option[Color]] = extractorOption[Color](Color.extractorColor) ^^ "extractMaybeColor"
-    implicit lazy val extractMaybeColorMode: Extractor[Option[ColorMode]] = extractorOption[ColorMode](ColorMode.extractorColorMode) ^^ "extractMaybeColorMode"
+
+    implicit val extractMaybeOpen: Extractor[Option[Int]] = extractorOption[Int] ^^ "extractMaybeOpen"
+    implicit val extractMaybeHeading: Extractor[Option[Heading]] = extractorOption[Heading] ^^ "extractMaybeHeading"
+    implicit val extractMaybeListItemType: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
+    implicit val extractMaybeTextColor: Extractor[Option[TextColor]] = extractorOption[TextColor] ^^ "extractMaybeTextColor"
+    implicit val extractMaybeItemIcon: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
+    implicit val extractorMaybeBgColor: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
+    implicit val extractMaybeColor: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
+    implicit val extractMaybeColorMode: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
 }
 
 object KmlRenderers extends Renderers {

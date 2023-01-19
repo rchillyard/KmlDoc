@@ -42,7 +42,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "parse Scale with id" in {
     val xml: Elem = <scale id="Hello">2.0</scale>
-//    import KmlExtractors._
     val triedScale = extract[Scale](xml)
     triedScale.isSuccess shouldBe true
     triedScale.get.$ shouldBe 2.0
@@ -50,7 +49,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "parse Scale without id" in {
     val xml: Elem = <scale>2.0</scale>
-//    import KmlExtractors._
     val triedScale = Extractor.extract[Scale](xml)
     triedScale.isSuccess shouldBe true
     triedScale.get.$ shouldBe 2.0
@@ -71,7 +69,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     coordinates.coordinates.size shouldBe 2
   }
 
-  import KmlExtractors._
+//  import KmlExtractors._
 
   it should "extract Coordinates" in {
     val xml: Elem = <xml>
@@ -95,7 +93,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "geometrys"
 
   it should "extract LineString as geometry" in {
-    import KmlExtractors._
     val xml: Elem = <xml>
       <LineString>
         <tessellate>1</tessellate>
@@ -138,7 +135,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
   it should "extract Point as geometry" in {
-    import KmlExtractors._
     val xml: Elem = <xml>
       <Point id="my point">
         <coordinates>
@@ -232,7 +228,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </LineString>
       </Placemark>
     </xml>
-    import KmlExtractors._
     extractAll[Seq[Feature]](xml) match {
       case Success(ps) =>
         ps.size shouldBe 1
@@ -3757,7 +3752,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   it should "extract and render sample Kml from file" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
-    import KmlExtractors._
     extractMulti[Seq[KML]](xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
