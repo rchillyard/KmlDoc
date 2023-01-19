@@ -493,9 +493,9 @@ trait Renderers {
      * @tparam R the underlying element type.
      * @return a Renderable of Seq[R].
      */
-    def sequenceRenderer[R: Renderable : ClassTag]: Renderable[Seq[R]] = Renderable {
+    def sequenceRenderer[R: Renderable]: Renderable[Seq[R]] = Renderable {
         (rs: Seq[R], format: Format, _: StateR) => doRenderSequence(rs, format, None)
-    } ^^ s"sequenceRenderer: ${implicitly[ClassTag[R]]}"
+    }
 
     /**
      * Method to return a Renderable of Seq[R] with a pre-defined format.
@@ -565,7 +565,7 @@ trait Renderers {
         Try(sb.toString())
     }
 
-    private def doRenderSequence[R: Renderable : ClassTag](rs: Seq[R], format: Format, maybeName: Option[String]): Try[String] =
+    private def doRenderSequence[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String]): Try[String] =
         doRenderSequenceElements(rs, format, maybeName, format.sequencer(None)) map {
             w =>
                 val sb = new StringBuilder()
@@ -576,7 +576,7 @@ trait Renderers {
                 sb.toString()
         }
 
-    private def doRenderSequenceElements[R: Renderable : ClassTag](rs: Seq[R], format: Format, maybeName: Option[String], separator: String) = {
+    private def doRenderSequenceElements[R: Renderable](rs: Seq[R], format: Format, maybeName: Option[String], separator: String) = {
         val wys = for {
             r <- rs
             w = renderR(r)(format, StateR(maybeName))
@@ -584,10 +584,10 @@ trait Renderers {
         sequence(wys) map (_.mkString("", if (separator == "\n") format.newline else separator, ""))
     }
 
-    private def renderR[R: Renderable : ClassTag](r: R)(format: Format, stateR: StateR) = TryUsing(stateR) {
+    private def renderR[R: Renderable](r: R)(format: Format, stateR: StateR) = TryUsing(stateR) {
         sr =>
             for {
-                rr <- tryNotNull(implicitly[Renderable[R]])(s"doRenderSequence: ${implicitly[ClassTag[R]]}")
+                rr <- tryNotNull(implicitly[Renderable[R]])(s"doRenderSequence")
                 result <- rr.render(r, format, sr)
             } yield result
     }
@@ -608,7 +608,10 @@ object Renderers {
                 }, stateR.maybeName)
     } ^^ "stringRenderer"
 
-    implicit lazy val rendererOptionString: Renderable[Option[String]] = optionRenderer[String]// ^^ "rendererOptionString"
+    // CONSIDER why do we not get this from Renderers
+    implicit lazy val rendererOptionString: Renderable[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+
+    implicit lazy val rendererSequenceString: Renderable[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
 
     implicit lazy val intRenderer: Renderable[Int] = Renderable {
         (t: Int, _: Format, stateR: StateR) =>

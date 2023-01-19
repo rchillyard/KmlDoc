@@ -83,7 +83,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         cs.size shouldBe 1
         val coordinates: Coordinates = cs.head
         coordinates.coordinates.size shouldBe 2
-        val wy = TryUsing(StateR())(sr => KmlRenderers.rendererCoordinates_s.render(cs, FormatXML(0), sr))
+        val wy = TryUsing(StateR())(sr => Renderable.render(cs, FormatXML(0), sr))
         // TODO remove the final newline from the expected output.
         wy shouldBe Success("\n<Coordinates>\n  -71.06992, 42.49424, 0\n  -71.07018, 42.49512, 0\n  </Coordinates>\n\n")
       case Failure(x) => fail(x)
@@ -128,7 +128,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             cs.size shouldBe 1
             cs.head.coordinates.size shouldBe 18
         }
-        val wy = TryUsing(StateR())(sr => KmlRenderers.rendererGeometrys.render(gs, FormatXML(0), sr))
+        val wy = TryUsing(StateR())(sr => Renderable.render(gs, FormatXML(0), sr))
         wy.isSuccess shouldBe true
         wy.get shouldBe "\n<LineString><tessellate>1</tessellate>\n  <coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n    </coordinates>\n  \n  </LineString>\n\n".stripMargin
       case Failure(x) => fail(x)
@@ -150,7 +150,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             cs.size shouldBe 1
             cs.head.coordinates.size shouldBe 1
         }
-        val wy = TryUsing(StateR())(sr => KmlRenderers.rendererGeometrys.render(gs, FormatXML(0), sr))
+        val wy = TryUsing(StateR())(sr => Renderable.render(gs, FormatXML(0), sr))
         wy.isSuccess shouldBe true
         println(wy.get)
 // TODO fix the rendering of Point: the following line is how it really SHOULD be:
@@ -3779,7 +3779,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   // FIXME Issue #8
   it should "extract and render mini sample kml as XML from file" in {
-    val renderer = KmlRenderers.rendererKml_Binding
+    val renderer = implicitly[Renderable[KML_Binding]]
     val url = KML.getClass.getResource("minisample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -3803,7 +3803,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   // FIXME Issue #8
   it should "extract and render sample kml as XML from file" in {
-    val renderer = KmlRenderers.rendererKml_Binding
+    val renderer = implicitly[Renderable[KML_Binding]]
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -3827,8 +3827,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     // FIXME
     ignore should "extract and render sample kml as XML from Google sample" in {
-        val renderer = KmlRenderers.rendererKml_Binding
-        val url = KML.getClass.getResource("/KML_Samples.kml")
+      val renderer = implicitly[Renderable[KML_Binding]]
+      val url = KML.getClass.getResource("/KML_Samples.kml")
         val xml: Elem = XML.loadFile(url.getFile)
         extractMulti[Seq[KML]](xml) match {
             case Success(ks) =>
