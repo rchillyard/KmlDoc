@@ -389,8 +389,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
     }
 
-    // FIXME
-    ignore should "extract and render Styles (type A)" in {
+    it should "extract and render Styles (type A)" in {
         val xml = <xml>
             <Style id="icon-22-nodesc-normal">
                 <IconStyle>

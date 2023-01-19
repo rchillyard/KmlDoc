@@ -149,8 +149,6 @@ class Container extends Feature
  * Companion object to Container.
  */
 object Container extends Extractors with Renderers {
-    lazy val applyFunction: Unit => Container = _ => new Container()
-    implicit val extractor: Extractor[Container] = extractor0(applyFunction) ^^ "extractorContainer"
     implicit val multiExtractor: MultiExtractor[Seq[Container]] =
         multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"
     implicit val renderer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^^ "rendererContainer"
@@ -298,10 +296,19 @@ object Coordinate {
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class StyleSelector() extends KmlObject
+class StyleSelector extends KmlObject
 
 object StyleSelector extends Extractors with Renderers {
-    implicit val extractor: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
+//    lazy val applyFunction: Unit => Container = _ => new Container()
+//    implicit val extractor: Extractor[Container] = extractor0(applyFunction) ^^ "extractorContainer"
+//    implicit val multiExtractor: MultiExtractor[Seq[Container]] =
+//        multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"
+//    implicit val renderer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^^ "rendererContainer"
+
+    lazy val applyFunction: Unit => StyleSelector = _ => new StyleSelector()
+    implicit val extractor: Extractor[StyleSelector] = extractor0(applyFunction) ^^ "extractorStyleSelector"
+
+    //    implicit val extractor: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
     implicit val extractorMulti: MultiExtractor[Seq[StyleSelector]] =
         multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap")) ^^ "multiExtractorStyleSelector"
     implicit val renderer: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
@@ -311,16 +318,16 @@ object StyleSelector extends Extractors with Renderers {
 case class StyleSelectorData(kmlData: KmlData)
 
 object StyleSelectorData extends Extractors with Renderers {
-//    val extractorKD2StyleSelectorData: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](StyleSelectorData.applyFunction) ^^ "extractorKD2StyleSelectorData"
-
-    implicit val extractor: Extractor[StyleSelectorData] = extractor10(apply)
+    lazy val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
+    lazy val extractorPartial: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](applyFunction) ^^ "extractorKD2StyleSelectorData"
+    implicit val extractor: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorPartial) ^^ "extractorStyleSelectorData"
     implicit val renderer: Renderable[StyleSelectorData] = renderer1(apply) ^^ "rendererStyleSelectorData"
 }
 
 /**
  * Trait to allow Style and StyleMap to be alternatives in the sequence member of Document.
  */
-class SubStyle() extends KmlObject
+class SubStyle extends KmlObject
 
 case class SubStyleData(kmlData: KmlData)
 
@@ -337,7 +344,7 @@ object SubStyleData extends Extractors with Renderers {
  * TODO add ColorStyleData
  *
  */
-class ColorStyle() extends SubStyle
+class ColorStyle extends SubStyle
 
 /**
  * Companion object to ColorStyle.
