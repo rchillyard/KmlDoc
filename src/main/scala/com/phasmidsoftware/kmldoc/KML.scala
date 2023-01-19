@@ -355,11 +355,11 @@ object ColorStyle extends Extractors with Renderers {
 /**
  * Case class to represent the data associated with all ColorStyle elements.
  *
- * @param color          the Color.
+ * @param maybeColor     an optional Color.
  * @param maybeColorMode an optional ColorMode.
  * @param subStyleData   the SubStyleData.
  */
-case class ColorStyleData(color: Color, maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
+case class ColorStyleData(maybeColor: Option[Color], maybeColorMode: Option[ColorMode])(val subStyleData: SubStyleData)
 
 object ColorStyleData extends Extractors with Renderers {
 

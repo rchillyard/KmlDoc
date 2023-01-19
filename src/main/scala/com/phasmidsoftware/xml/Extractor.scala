@@ -140,7 +140,7 @@ object Extractor {
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])
                 case _ =>
-                    val message = s"extractField($field)(${renderNode(node)})(${implicitly[Extractor[P]].name}): ($m)"
+                    val message = s"extractField(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
                     logger.warn(s"$message caused by $x")
                     Failure(XmlException(message, x))
             }

@@ -346,28 +346,27 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val wy1 = TryUsing(StateR())(sr => Renderable.render[HotSpot](hotSpot, FormatXML(0), sr))
         wy1.isSuccess shouldBe true
         wy1.get shouldBe """<HotSpot x="16" xunits="pixels" y="32" yunits="insetPixels" ></HotSpot>"""
-          // XXX the second is rendering a HotSpot object as if it was in the context of its parent where the attribute name starts with lower case h.
-          val wy2 = TryUsing(StateR())(sr => Renderable.render[HotSpot](hotSpot, FormatXML(0), sr.setName("hotSpot")))
-          wy2.isSuccess shouldBe true
-          wy2.get shouldBe """<hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels" ></hotSpot>"""
+        // XXX the second is rendering a HotSpot object as if it was in the context of its parent where the attribute name starts with lower case h.
+        val wy2 = TryUsing(StateR())(sr => Renderable.render[HotSpot](hotSpot, FormatXML(0), sr.setName("hotSpot")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels" ></hotSpot>"""
       case Failure(x) => fail(x)
     }
   }
 
-    behavior of "Style"
+  behavior of "Style"
 
-    // FIXME
-    ignore should "extract IconStyle" in {
-        val xml = <xml>
-            <IconStyle>
-                <scale>1.1</scale>
-                <Icon>
-                    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
-                </Icon>
-                <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
-            </IconStyle>
-        </xml>
-        val nodeSeq = xml / "IconStyle"
+  it should "extract IconStyle" in {
+    val xml = <xml>
+      <IconStyle>
+        <scale>1.1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+        </Icon>
+        <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+      </IconStyle>
+    </xml>
+    val nodeSeq = xml / "IconStyle"
     nodeSeq.size shouldBe 1
     val iconStyle = nodeSeq.head
     extract[IconStyle](iconStyle) match {
@@ -379,8 +378,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
             maybeHeading shouldBe None
             x.colorStyleData match {
-              case c@ColorStyleData(color, maybeColorMode) =>
-                  println(c)
+              case c@ColorStyleData(maybeColor, maybeColorMode) =>
+                println(c)
             }
         }
           val wy = TryUsing(StateR())(sr => Renderable.render[IconStyle](is, FormatXML(0), sr))
