@@ -38,7 +38,6 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
 
     object Geometry extends Extractors {
         implicit val multiExtractorGeometry: MultiExtractor[Seq[Geometry]] =
-        // CONSIDER passing identity instead of (l,p) => (l,p)
             multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^ "multiExtractorGeometry"
     }
 
@@ -51,8 +50,6 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     }
 
     case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
-
-    //    case class Point(x: Double, y: Double)(val geometryData: GeometryData) extends Geometry
 
     object Point extends Extractors {
         val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)

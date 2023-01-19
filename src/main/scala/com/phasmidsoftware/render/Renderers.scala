@@ -23,6 +23,18 @@ trait Renderers {
 //    val flog: Flog = Flog[Renderers]
 
     /**
+     * Method to create a lazy Renderable[T] from an explicit Renderable[T] which is call-by-name.
+     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
+     * recursively.
+     * See the Play JSON library method in JsPath called lazyRead.
+     *
+     * @param tr a Renderable[T].
+     * @tparam T the underlying type of the Renderable required.
+     * @return a Renderable[T].
+     */
+    def lazyRenderer[T](tr: => Renderable[T]): Renderable[T] = (t: T, format: Format, stateR: StateR) => tr.render(t, format, stateR)
+
+    /**
      * Method to create a renderer fpr a case class with no members, or a case object.
      *
      * @tparam R the type of Renderable to be returned (must be a Product).
