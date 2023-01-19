@@ -463,9 +463,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case m@StyleMap(pairs) =>
             pairs.size shouldBe 2
             pairs.head match {
-                case Pair(key, styleUrl) =>
-                    key shouldBe "normal"
-                    styleUrl shouldBe "#icon-22-nodesc-normal"
+              case Pair(key, styleUrl) =>
+                key shouldBe "normal"
+                styleUrl shouldBe "#icon-22-nodesc-normal"
             }
         }
       case Failure(x) => fail(x)
@@ -473,18 +473,17 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     }
 
-    // FIXME
-    ignore should "extract Styles (type B)" in {
-        val xml = <xml>
-            <Style id="icon-22-nodesc-normal">
-                <IconStyle>
-                    <scale>1.1</scale>
-                    <Icon>
-                        <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
-                    </Icon>
-                    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
-                </IconStyle>
-                <LabelStyle>
+  it should "extract Styles (type B)" in {
+    val xml = <xml>
+      <Style id="icon-22-nodesc-normal">
+        <IconStyle>
+          <scale>1.1</scale>
+          <Icon>
+            <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+          </Icon>
+          <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+        </IconStyle>
+        <LabelStyle>
           <scale>0</scale>
         </LabelStyle>
         <BalloonStyle>
@@ -541,27 +540,26 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 wy.get shouldBe "<Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\" ></hotSpot></IconStyle><LabelStyle><scale>0.0</scale></LabelStyle><BalloonStyle><text>\n            <h3>$[name]</h3>\n          </text></BalloonStyle></Style>".stripMargin
             }
           case StyleMap(pairs) =>
-              pairs.size shouldBe 2
-              pairs.head shouldBe Pair("normal", "#icon-22-nodesc-normal")
+            pairs.size shouldBe 2
+            pairs.head shouldBe Pair("normal", "#icon-22-nodesc-normal")
         }
       case Failure(x) => fail(x)
     }
-    }
+  }
 
-    behavior of "StyleMap"
+  behavior of "StyleMap"
 
-    // FIXME
-    ignore should "extract StyleMaps" in {
-        val xml = <xml>
-            <StyleMap id="icon-22-nodesc">
-                <Pair>
-                    <key>normal</key>
-                    <styleUrl>#icon-22-nodesc-normal</styleUrl>
-                </Pair>
-                <Pair>
-                    <key>highlight</key>
-                    <styleUrl>#icon-22-nodesc-highlight</styleUrl>
-                </Pair>
+  it should "extract StyleMaps" in {
+    val xml = <xml>
+      <StyleMap id="icon-22-nodesc">
+        <Pair>
+          <key>normal</key>
+          <styleUrl>#icon-22-nodesc-normal</styleUrl>
+        </Pair>
+        <Pair>
+          <key>highlight</key>
+          <styleUrl>#icon-22-nodesc-highlight</styleUrl>
+        </Pair>
       </StyleMap>
     </xml>
     extractMulti[Seq[StyleMap]](xml / "StyleMap") match {

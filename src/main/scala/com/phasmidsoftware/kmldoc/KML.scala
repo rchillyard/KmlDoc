@@ -282,10 +282,10 @@ case class Coordinate(long: String, lat: String, alt: String)
 
 object Coordinate {
 
-    private val latLong: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+    private val longLatAlt: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
 
     def apply(w: String): Coordinate = w match {
-        case latLong(long, lat, alt) => Coordinate(long, lat, alt)
+        case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)
         case _ => throw XmlException(s"bad coordinate string: $w")
     }
 
@@ -299,16 +299,8 @@ object Coordinate {
 class StyleSelector extends KmlObject
 
 object StyleSelector extends Extractors with Renderers {
-//    lazy val applyFunction: Unit => Container = _ => new Container()
-//    implicit val extractor: Extractor[Container] = extractor0(applyFunction) ^^ "extractorContainer"
-//    implicit val multiExtractor: MultiExtractor[Seq[Container]] =
-//        multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"
-//    implicit val renderer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^^ "rendererContainer"
-
     lazy val applyFunction: Unit => StyleSelector = _ => new StyleSelector()
     implicit val extractor: Extractor[StyleSelector] = extractor0(applyFunction) ^^ "extractorStyleSelector"
-
-    //    implicit val extractor: Extractor[StyleSelector] = extractorAlt[StyleSelector, Style, StyleMap]
     implicit val extractorMulti: MultiExtractor[Seq[StyleSelector]] =
         multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap")) ^^ "multiExtractorStyleSelector"
     implicit val renderer: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
