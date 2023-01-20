@@ -313,7 +313,7 @@ object StyleSelectorData extends Extractors with Renderers {
     lazy val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
     lazy val extractorPartial: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](applyFunction) ^^ "extractorKD2StyleSelectorData"
     implicit val extractor: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorPartial) ^^ "extractorStyleSelectorData"
-    implicit val renderer: Renderable[StyleSelectorData] = renderer1(apply) ^^ "rendererStyleSelectorData"
+    implicit val renderer: Renderable[StyleSelectorData] = renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
 }
 
 /**
@@ -387,7 +387,7 @@ object StyleMap extends Extractors {
     import KmlRenderers._
 
     lazy val extractorPartial: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply) ^^ "extractorSSD2StyleMap"
-    implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorPartial)
+    implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorPartial) ^^ "extractorStyleMap"
     implicit val multiExtractor: MultiExtractor[Seq[StyleMap]] = multiExtractorBase[StyleMap] ^^ "multiExtractorStyleMap"
     implicit val renderer: Renderable[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyleMap"
     implicit val seqRenderer: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
@@ -408,8 +408,8 @@ object StyleMap extends Extractors {
 case class Style(Styles: Seq[ColorStyle])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
 object Style extends Extractors with Renderers {
-    lazy val extractorPartial: Extractor[StyleSelectorData => Style] = extractorPartial01(apply)
-    implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorPartial)
+    lazy val extractorPartial: Extractor[StyleSelectorData => Style] = extractorPartial01(apply) ^^ "extractorSSD2Style"
+    implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorPartial) ^^ "extractorStyle"
     implicit val renderer: Renderable[Style] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyle"
     implicit val seqRenderer: Renderable[Seq[Style]] = sequenceRenderer[Style] ^^ "rendererStyles"
 }
