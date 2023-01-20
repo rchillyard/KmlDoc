@@ -1,4 +1,4 @@
-package com.phasmidsoftware.xml
+package com.phasmidsoftware.core
 
 import java.lang.reflect.Modifier
 import scala.reflect.ClassTag
