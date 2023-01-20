@@ -190,6 +190,7 @@ object Extractor {
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
 
+    // CONSIDER removing this as it appears to be useless.
     // TODO make this immutable.
     val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
