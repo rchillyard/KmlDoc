@@ -160,23 +160,23 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "extract as String" in {
     val xml: Elem = <xml>
-      <description>Hello</description>
+        <description>Hello</description>
     </xml>
-    val result: Try[String] = Extractor.extractField[String]("description")(xml)
+      val result: Try[String] = Extractor.fieldExtractor[String]("description").extract(xml)
     result shouldBe Success("Hello")
   }
   it should "extract as Text" in {
-    val xml: Elem = <xml>
-      <description>Hello</description>
-    </xml>
-    val result: Try[Text] = Extractor.extractField[Text]("description")(xml)
+      val xml: Elem = <xml>
+          <description>Hello</description>
+      </xml>
+      val result: Try[Text] = Extractor.fieldExtractor[Text]("description").extract(xml)
     result shouldBe Success(Text("Hello"))
   }
   it should "extract as Option[Text]" in {
-    val xml: Elem = <xml>
-      <description>Hello</description>
-    </xml>
-    val result: Try[Option[Text]] = Extractor.extractField[Option[Text]]("description")(xml)
+      val xml: Elem = <xml>
+          <description>Hello</description>
+      </xml>
+      val result: Try[Option[Text]] = Extractor.fieldExtractor[Option[Text]]("description").extract(xml)
     result shouldBe Success(Some(Text("Hello")))
   }
   case class Element(maybeDescription: Option[Text])

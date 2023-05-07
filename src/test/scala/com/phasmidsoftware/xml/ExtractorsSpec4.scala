@@ -315,7 +315,7 @@ class ExtractorsSpec4 extends AnyFlatSpec with Extractors with should.Matchers {
 
     }
 
-    it should "fieldExtractor" in {
+    it should "fTagToFieldExtractor" in {
 
     }
 

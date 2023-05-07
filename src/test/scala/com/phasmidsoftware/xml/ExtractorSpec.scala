@@ -34,7 +34,7 @@ class ExtractorSpec extends AnyFlatSpec {
 
     }
 
-    it should "extractField" in {
+    it should "fieldExtractor" in {
 
     }
 

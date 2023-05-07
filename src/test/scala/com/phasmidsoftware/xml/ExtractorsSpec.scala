@@ -6,7 +6,7 @@ import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, Node}
+import scala.xml.Elem
 
 class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
 
@@ -97,37 +97,37 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   it should "extract normal attribute" in {
     val xml: Elem = <kml id="2.2"></kml>
     import Extractor.stringExtractor
-    extractField[String]("_id")(xml) should matchPattern { case Success("2.2") => }
+    fieldExtractor[String]("_id").extract(xml) should matchPattern { case Success("2.2") => }
   }
 
   it should "extract absent normal attribute" in {
     val xml: Elem = <kml></kml>
     import Extractor.stringExtractor
-    extractField[String]("_id")(xml) should matchPattern { case Failure(_) => }
+    fieldExtractor[String]("_id").extract(xml) should matchPattern { case Failure(_) => }
   }
 
   it should "extract normal optional attribute" in {
     val xml: Elem = <kml id="2.2"></kml>
     import Extractor.stringExtractor
-    extractField[String]("__id")(xml) should matchPattern { case Success("2.2") => }
+    fieldExtractor[String]("__id").extract(xml) should matchPattern { case Success("2.2") => }
   }
 
   it should "extract absent optional attribute" in {
     val xml: Elem = <kml></kml>
     import Extractor.stringExtractor
-    extractField[String]("__id")(xml) should matchPattern { case Success(None) => }
+    fieldExtractor[String]("__id").extract(xml) should matchPattern { case Success(None) => }
   }
 
   it should "not extract reserved attribute" in {
     val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
     import Extractor.stringExtractor
-    extractField[String]("_xmlns")(xml) should matchPattern { case Failure(_) => }
+    fieldExtractor[String]("_xmlns").extract(xml) should matchPattern { case Failure(_) => }
   }
 
   it should "not extract plural attribute" in {
     val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
     import MyExtractors.extractEmpty
-    extractField[Empty.type]("documents")(xml) should matchPattern { case Failure(_) => }
+    fieldExtractor[Empty.type]("documents").extract(xml) should matchPattern { case Failure(_) => }
   }
 
   it should "extractSequence" in {
@@ -282,29 +282,29 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     matcher.group(1) shouldBe "xs"
   }
 
-  it should "extractField String" in {
-    val we: Node => Try[String] = extractField[String]("_id")
-    we(<xml id="xyz"></xml>) shouldBe Success("xyz")
+  it should "fieldExtractor String" in {
+    val we: Extractor[String] = fieldExtractor[String]("_id")
+    we.extract(<xml id="xyz"></xml>) shouldBe Success("xyz")
   }
 
-  it should "extractField Int" in {
-    val ie: Node => Try[Int] = extractField[Int]("_id")
-    ie(<xml id="1"></xml>) shouldBe Success(1)
+  it should "fieldExtractor Int" in {
+    val ie: Extractor[Int] = fieldExtractor[Int]("_id")
+    ie.extract(<xml id="1"></xml>) shouldBe Success(1)
   }
 
-  it should "extractField Boolean" in {
-    val be: Node => Try[Boolean] = extractField[Boolean]("_ok")
-    be(<xml ok="true"></xml>) shouldBe Success(true)
+  it should "fieldExtractor Boolean" in {
+    val be: Extractor[Boolean] = fieldExtractor[Boolean]("_ok")
+    be.extract(<xml ok="true"></xml>) shouldBe Success(true)
   }
 
-  it should "extractField Double" in {
-    val de: Node => Try[Double] = extractField[Double]("_weight")
-    de(<xml weight="42.0"></xml>) shouldBe Success(42)
+  it should "fieldExtractor Double" in {
+    val de: Extractor[Double] = fieldExtractor[Double]("_weight")
+    de.extract(<xml weight="42.0"></xml>) shouldBe Success(42)
   }
 
-  it should "extractField Long" in {
-    val le: Node => Try[Long] = extractField[Long]("_id")
-    le(<xml id="42"></xml>) shouldBe Success(42)
+  it should "fieldExtractor Long" in {
+    val le: Extractor[Long] = fieldExtractor[Long]("_id")
+    le.extract(<xml id="42"></xml>) shouldBe Success(42)
   }
 
   behavior of "Extractors"

@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.{renderNode, sequence}
 import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildrenDeprecated, extractElementsByLabel, extractField, logger, none}
+import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildrenDeprecated, extractElementsByLabel, fieldExtractor, logger, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
@@ -156,18 +156,18 @@ trait Extractors {
     def multiExtractor[P](f: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = (nodeSeq: NodeSeq) => f(nodeSeq)
 
     /**
-     * Method to yield an TagToExtractorFunc[P] which in turns invokes extractField with the given tag.
+     * Method to yield an TagToExtractorFunc[P] which in turns invokes fieldExtractor with the given tag.
      *
      * @tparam P the underlying (Extractor) type of the result.
-     * @return an TagToExtractorFunc[P] based on extractField.
+     * @return an TagToExtractorFunc[P] based on fieldExtractor.
      */
-    def fieldExtractor[P: Extractor]: TagToExtractorFunc[P] = (tag: String) => extractField[P](tag)
+    def fTagToFieldExtractor[P: Extractor]: TagToExtractorFunc[P] = (tag: String) => fieldExtractor[P](tag)
 
     /**
      * Method to yield an TagToExtractorFunc[P] which in turns invokes extractChildrenDeprecated with the given tag.
      *
      * @tparam P the underlying (MultiExtractor) type of the result.
-     * @return an TagToExtractorFunc[P] based on extractField.
+     * @return an TagToExtractorFunc[P] based on fieldExtractor.
      */
     def deprecatedChildrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] =
     // CONSIDER using TagToExtractorFunc of some sort OR deleting this altogether.
@@ -179,7 +179,7 @@ trait Extractors {
      * TODO this is not currently invoked.
      *
      * @tparam P the underlying (Extractor) type of the result.
-     * @return an TagToExtractorFunc[P] based on extractField.
+     * @return an TagToExtractorFunc[P] based on fieldExtractor.
      */
     def childrenExtractor[P: SubclassExtractor]: Extractor[Seq[P]] = Extractor {
         node => implicitly[SubclassExtractor[P]].extract(node)
@@ -210,16 +210,16 @@ trait Extractors {
      * @tparam T the ultimate underlying type of the resulting MultiExtractor.
      * @return Extractor of Seq[T].
      */
-    def seqExtractorByLabel[T](tag: String, labels: Seq[String])(implicit multiExtractor: MultiExtractor[Seq[T]]): Extractor[Seq[T]] = new TagToSequenceExtractorFunc[T] {
+    def seqExtractorByTag[T](tag: String, labels: Seq[String])(implicit multiExtractor: MultiExtractor[Seq[T]]): Extractor[Seq[T]] = new TagToSequenceExtractorFunc[T] {
 
         /**
          * Method to yield an Extractor[T], given a label.
          *
-         * @param label the label of a node or sequence of nodes we wish to extract.
+         * @param w a String which must match the given tag in order to return a valid Extractor.
          * @return an Extractor[T].
          */
-        def apply(label: String): Extractor[Seq[T]] = if (label == tag) {
-            println(s"seqExtractorByLabel: $label")
+        def apply(w: String): Extractor[Seq[T]] = if (w == tag) {
+            println(s"seqExtractorByTag: $w")
             Extractor(node => {
                 val ws: Seq[Try[Seq[T]]] = for (label <- labels) yield multiExtractor.extract(node \ label)
                 FP.sequence(ws) map (tss => tss.flatten)
@@ -427,7 +427,7 @@ trait Extractors {
      */
     def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
         import Extractors.flog._
-        (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
+        (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fTagToFieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
     }
 
     /**
@@ -466,7 +466,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial10[P0: Extractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial1[P0, B, T](fieldExtractor, e0 => b => construct(e0)(b), dropLast = true, fields).extract(node)) //^^ s"extractorPartial10(${name[Extractor[P0]]})"
+        Extractor((node: Node) => extractorPartial1[P0, B, T](fTagToFieldExtractor, e0 => b => construct(e0)(b), dropLast = true, fields).extract(node)) //^^ s"extractorPartial10(${name[Extractor[P0]]})"
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
@@ -490,7 +490,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor20[P0: Extractor, P1: Extractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fieldExtractor[P0], extractorPartial10[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z()))// ^^
+        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fTagToFieldExtractor[P0], extractorPartial10[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z()))// ^^
 //                s"extractor20(${combineNamed2[Extractor[P0], Extractor[P1]]})"
 
     /**
@@ -503,7 +503,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor11[P0: Extractor, P1: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1) => T, fields: Seq[String] = Nil): Extractor[T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fieldExtractor[P0], extractorPartial01[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z()))// ^^
+        Extractor((node: Node) => extractorPartial2[P0, P1, Unit, T](fTagToFieldExtractor[P0], extractorPartial01[P1, Unit, T](_, _), (e0, e1) => _ => construct(e0, e1), dropLast = false, fields).extract(node) map (z => z()))// ^^
 //                s"extractor11(${combineNamed2[Extractor[P0], MultiExtractor[P1]]})"
 
     /**
@@ -532,7 +532,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial20[P0: Extractor, P1: Extractor, B, T <: Product : ClassTag](construct: (P0, P1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fieldExtractor[P0], extractorPartial10[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
+        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fTagToFieldExtractor[P0], extractorPartial10[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
 //                s"extractorPartial20(${combineNamed2[Extractor[P0], Extractor[P1]]})"
 
     /**
@@ -546,7 +546,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial11[P0: Extractor, P1: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fieldExtractor[P0], extractorPartial01[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
+        Extractor((node: Node) => extractorPartial2[P0, P1, B, T](fTagToFieldExtractor[P0], extractorPartial01[P1, B, T](_, _), construct, dropLast = true, fields).extract(node))// ^^
 //                s"extractorPartial11(${combineNamed2[Extractor[P0], MultiExtractor[P1]]})"
 
     /**
@@ -578,7 +578,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor30[P0: Extractor, P1: Extractor, P2: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fieldExtractor[P0], extractorPartial20[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fTagToFieldExtractor[P0], extractorPartial20[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
 //  XXX   (node: Node) => extractorPartial30[P0,P1,P2,Unit,T]((e0, e1, e2) => _ => construct(e0, e1, e2), fields).extract(node) map (z => z())
 
     /**
@@ -592,7 +592,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor21[P0: Extractor, P1: Extractor, P2: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fieldExtractor[P0], extractorPartial11[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fTagToFieldExtractor[P0], extractorPartial11[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members.
@@ -607,7 +607,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor12[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fieldExtractor[P0], extractorPartial02[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial3[P0, P1, P2, Unit, T](fTagToFieldExtractor[P0], extractorPartial02[P1, P2, Unit, T](_, _), (e0, e1, e2) => _ => construct(e0, e1, e2), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members.
@@ -636,7 +636,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial30[P0: Extractor, P1: Extractor, P2: Extractor, B, T <: Product : ClassTag](construct: (P0, P1, P2) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial3[P0, P1, P2, B, T](fieldExtractor[P0], extractorPartial20[P1, P2, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial3[P0, P1, P2, B, T](fTagToFieldExtractor[P0], extractorPartial20[P1, P2, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
@@ -652,7 +652,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial21[P0: Extractor, P1: Extractor, P2: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial3[P0, P1, P2, B, T](fieldExtractor[P0], extractorPartial11[P1, P2, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial3[P0, P1, P2, B, T](fTagToFieldExtractor[P0], extractorPartial11[P1, P2, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
@@ -666,7 +666,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial12[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial3[P0, P1, P2, B, T](fieldExtractor[P0], extractorPartial02[P1, P2, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial3[P0, P1, P2, B, T](fTagToFieldExtractor[P0], extractorPartial02[P1, P2, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
@@ -696,7 +696,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor40[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fieldExtractor[P0], extractorPartial30[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fTagToFieldExtractor[P0], extractorPartial30[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members.
@@ -712,7 +712,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor31[P0: Extractor, P1: Extractor, P2: Extractor, P3: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fieldExtractor[P0], extractorPartial21[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fTagToFieldExtractor[P0], extractorPartial21[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members.
@@ -728,7 +728,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor22[P0: Extractor, P1: Extractor, P2: MultiExtractor, P3: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fieldExtractor[P0], extractorPartial12[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fTagToFieldExtractor[P0], extractorPartial12[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members.
@@ -744,7 +744,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor13[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, P3: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fieldExtractor[P0], extractorPartial03[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, Unit, T](fTagToFieldExtractor[P0], extractorPartial03[P1, P2, P3, Unit, T](_, _), (p0, p1, p2, p3) => _ => construct(p0, p1, p2, p3), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members.
@@ -775,7 +775,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial40[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fieldExtractor[P0], extractorPartial30[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fTagToFieldExtractor[P0], extractorPartial30[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
@@ -792,7 +792,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial31[P0: Extractor, P1: Extractor, P2: Extractor, P3: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fieldExtractor[P0], extractorPartial21[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fTagToFieldExtractor[P0], extractorPartial21[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
@@ -807,7 +807,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial22[P0: Extractor, P1: Extractor, P2: MultiExtractor, P3: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fieldExtractor[P0], extractorPartial12[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fTagToFieldExtractor[P0], extractorPartial12[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
@@ -824,7 +824,7 @@ trait Extractors {
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
     def extractorPartial13[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, P3: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fieldExtractor[P0], extractorPartial03[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial4[P0, P1, P2, P3, B, T](fTagToFieldExtractor[P0], extractorPartial03[P1, P2, P3, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
@@ -856,7 +856,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor50[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fieldExtractor[P0], extractorPartial40[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fTagToFieldExtractor[P0], extractorPartial40[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members.
@@ -873,7 +873,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor41[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fieldExtractor[P0], extractorPartial31[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fTagToFieldExtractor[P0], extractorPartial31[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members.
@@ -888,7 +888,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor32[P0: Extractor, P1: Extractor, P2: Extractor, P3: MultiExtractor, P4: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fieldExtractor[P0], extractorPartial22[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fTagToFieldExtractor[P0], extractorPartial22[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members.
@@ -905,7 +905,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor23[P0: Extractor, P1: Extractor, P2: MultiExtractor, P3: MultiExtractor, P4: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fieldExtractor[P0], extractorPartial13[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fTagToFieldExtractor[P0], extractorPartial13[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members.
@@ -922,7 +922,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor14[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, P3: MultiExtractor, P4: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fieldExtractor[P0], extractorPartial04[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, Unit, T](fTagToFieldExtractor[P0], extractorPartial04[P1, P2, P3, P4, Unit, T](_, _), (p0, p1, p2, p3, p4) => _ => construct(p0, p1, p2, p3, p4), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members.
@@ -957,7 +957,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial50[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fieldExtractor[P0], extractorPartial40[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fTagToFieldExtractor[P0], extractorPartial40[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
@@ -975,7 +975,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial41[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fieldExtractor[P0], extractorPartial31[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fTagToFieldExtractor[P0], extractorPartial31[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
@@ -993,7 +993,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial32[P0: Extractor, P1: Extractor, P2: Extractor, P3: MultiExtractor, P4: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fieldExtractor[P0], extractorPartial22[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fTagToFieldExtractor[P0], extractorPartial22[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
@@ -1011,7 +1011,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial23[P0: Extractor, P1: Extractor, P2: MultiExtractor, P3: MultiExtractor, P4: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fieldExtractor[P0], extractorPartial13[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fTagToFieldExtractor[P0], extractorPartial13[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
@@ -1029,7 +1029,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial14[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, P3: MultiExtractor, P4: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fieldExtractor[P0], extractorPartial04[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial5[P0, P1, P2, P3, P4, B, T](fTagToFieldExtractor[P0], extractorPartial04[P1, P2, P3, P4, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
@@ -1065,7 +1065,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor60[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, P5: Extractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fieldExtractor[P0], extractorPartial50[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fTagToFieldExtractor[P0], extractorPartial50[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members.
@@ -1083,7 +1083,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor51[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, P5: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fieldExtractor[P0], extractorPartial41[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fTagToFieldExtractor[P0], extractorPartial41[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members.
@@ -1101,7 +1101,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor42[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: MultiExtractor, P5: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fieldExtractor[P0], extractorPartial32[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fTagToFieldExtractor[P0], extractorPartial32[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members.
@@ -1117,7 +1117,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor33[P0: Extractor, P1: Extractor, P2: Extractor, P3: MultiExtractor, P4: MultiExtractor, P5: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fieldExtractor[P0], extractorPartial23[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fTagToFieldExtractor[P0], extractorPartial23[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members.
@@ -1135,7 +1135,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor24[P0: Extractor, P1: Extractor, P2: MultiExtractor, P3: MultiExtractor, P4: MultiExtractor, P5: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fieldExtractor[P0], extractorPartial14[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fTagToFieldExtractor[P0], extractorPartial14[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members.
@@ -1153,7 +1153,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor15[P0: Extractor, P1: MultiExtractor, P2: MultiExtractor, P3: MultiExtractor, P4: MultiExtractor, P5: MultiExtractor, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => T, fields: Seq[String] = Nil): Extractor[T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fieldExtractor[P0], extractorPartial05[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, Unit, T](fTagToFieldExtractor[P0], extractorPartial05[P1, P2, P3, P4, P5, Unit, T](_, _), (p0, p1, p2, p3, p4, p5) => _ => construct(p0, p1, p2, p3, p4, p5), dropLast = false, fields).extract(node) map (z => z())
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members.
@@ -1190,7 +1190,7 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial60[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, P5: Extractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, B, T](fieldExtractor[P0], extractorPartial50[P1, P2, P3, P4, P5, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, B, T](fTagToFieldExtractor[P0], extractorPartial50[P1, P2, P3, P4, P5, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with six members and one auxiliary (non-member) parameter.
@@ -1209,28 +1209,28 @@ trait Extractors {
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractorPartial51[P0: Extractor, P1: Extractor, P2: Extractor, P3: Extractor, P4: Extractor, P5: MultiExtractor, B, T <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => B => T, fields: Seq[String] = Nil): Extractor[B => T] =
-        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, B, T](fieldExtractor[P0], extractorPartial41[P1, P2, P3, P4, P5, B, T](_, _), construct, dropLast = true, fields).extract(node)
+        (node: Node) => extractorPartial6[P0, P1, P2, P3, P4, P5, B, T](fTagToFieldExtractor[P0], extractorPartial41[P1, P2, P3, P4, P5, B, T](_, _), construct, dropLast = true, fields).extract(node)
 
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with one member plus
      * an "auxiliary" parameter of type B, declared in its own parameter set.
      *
-     * @param taggedExtractor the extractor of the first (child) element.
-     * @param construct       a function P0 => T, usually the apply method of a case class.
-     * @param dropLast        if true, then we drop the last declared field (used when T has an auxiliary member)
-     * @param fields          a list of field names which, if not empty, is to be used instead of the reflected fields of T (defaults to Nil).
+     * @param fExtractor the extractor of the first (child) element.
+     * @param construct  a function P0 => T, usually the apply method of a case class.
+     * @param dropLast   if true, then we drop the last declared field (used when T has an auxiliary member)
+     * @param fields     a list of field names which, if not empty, is to be used instead of the reflected fields of T (defaults to Nil).
      * @tparam P the (Extractor) type of the first (only) member of the Product type T.
      * @tparam B the type of the auxiliary parameter of T.
      * @tparam T the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial1[P, B, T <: Product : ClassTag](taggedExtractor: TagToExtractorFunc[P], construct: P => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
+    private def extractorPartial1[P, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P], construct: P => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
         (node: Node) =>
 
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member :: Nil =>
                     logger.debug(s"extractorPartial1: $member ${renderNode(node)}")
-                    for (e0 <- taggedExtractor(member).extract(node)) yield construct(e0)
+                    for (e0 <- fExtractor(member).extract(node)) yield construct(e0)
                 case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
             }
     }
@@ -1239,7 +1239,7 @@ trait Extractors {
      * Extractor which will convert an Xml Node into an instance of a case class with two members plus
      * an "auxiliary" parameter of type B, declared in its own parameter set.
      *
-     * @param taggedExtractor         the extractor for the first member to yield its (child) element.
+     * @param fExtractor              the extractor for the first member to yield its (child) element.
      * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.
      * @param construct               a function (P0, P1) => B => T, usually the apply method of a case class.
      * @param dropLast                if true, then we drop the last declared field (used when T has an auxiliary member)
@@ -1250,12 +1250,12 @@ trait Extractors {
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial2[P0, P1, B, T <: Product : ClassTag](taggedExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
+    private def extractorPartial2[P0, P1, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>
                     for {
-                        e0 <- taggedExtractor(member0).extract(node)
+                        e0 <- fExtractor(member0).extract(node)
                         t <- nestedExtractorFunction(construct.curried(e0), fs).extract(node)
                     } yield t
                 case fs => Failure(XmlException(s"extractorPartial2: insufficient field names: $fs")) // TESTME
@@ -1267,7 +1267,7 @@ trait Extractors {
      * Extractor which will convert an Xml Node into an instance of a case class with three members plus
      * an "auxiliary" parameter of type B, declared in its own parameter set.
      *
-     * @param taggedExtractor         the extractor for the first member to yield its (child) element.
+     * @param fExtractor              the extractor for the first member to yield its (child) element.
      * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.
      * @param construct               a function (P0, P1, P2) => B => T, usually the apply method of a case class.
      * @param dropLast                if true, then we drop the last declared field (used when T has an auxiliary member)
@@ -1279,12 +1279,12 @@ trait Extractors {
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial3[P0, P1, P2, B, T <: Product : ClassTag](taggedExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
+    private def extractorPartial3[P0, P1, P2, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>
                     for {
-                        e0 <- taggedExtractor(member0).extract(node)
+                        e0 <- fExtractor(member0).extract(node)
                         t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
                     } yield t
                 case fs => Failure(XmlException(s"extractorPartial3: insufficient field names: $fs")) // TESTME
@@ -1296,7 +1296,7 @@ trait Extractors {
      * Extractor which will convert an Xml Node into an instance of a case class with four members plus
      * an "auxiliary" parameter of type B, declared in its own parameter set.
      *
-     * @param taggedExtractor         the extractor for the first member to yield its (child) element.
+     * @param fExtractor              the extractor for the first member to yield its (child) element.
      * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.
      * @param construct               a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
      * @param dropLast                if true, then we drop the last declared field (used when T has an auxiliary member)
@@ -1309,12 +1309,12 @@ trait Extractors {
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial4[P0, P1, P2, P3, B, T <: Product : ClassTag](taggedExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2, P3) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2, P3) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
+    private def extractorPartial4[P0, P1, P2, P3, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2, P3) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2, P3) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>
                     for {
-                        e0 <- taggedExtractor(member0).extract(node)
+                        e0 <- fExtractor(member0).extract(node)
                         t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
                     } yield t
                 case fs => Failure(XmlException(s"extractorPartial4: insufficient field names: $fs")) // TESTME
@@ -1325,7 +1325,7 @@ trait Extractors {
      * Extractor which will convert an Xml Node into an instance of a case class with five members plus
      * an "auxiliary" parameter of type B, declared in its own parameter set.
      *
-     * @param taggedExtractor         the extractor for the first member to yield its (child) element.
+     * @param fExtractor              the extractor for the first member to yield its (child) element.
      * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.
      * @param construct               a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
      * @param dropLast                if true, then we drop the last declared field (used when T has an auxiliary member)
@@ -1339,12 +1339,12 @@ trait Extractors {
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial5[P0, P1, P2, P3, P4, B, T <: Product : ClassTag](taggedExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2, P3, P4) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2, P3, P4) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
+    private def extractorPartial5[P0, P1, P2, P3, P4, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2, P3, P4) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2, P3, P4) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>
                     for {
-                        e0 <- taggedExtractor(member0).extract(node)
+                        e0 <- fExtractor(member0).extract(node)
                         t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
                     } yield t
                 case fs => Failure(XmlException(s"extractorPartial5: insufficient field names: $fs")) // TESTME
@@ -1357,7 +1357,7 @@ trait Extractors {
      *
      * TESTME
      *
-     * @param taggedExtractor         the extractor for the first member to yield its (child) element.
+     * @param fExtractor              the extractor for the first member to yield its (child) element.
      * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.
      * @param construct               a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
      * @param dropLast                if true, then we drop the last declared field (used when T has an auxiliary member)
@@ -1372,12 +1372,12 @@ trait Extractors {
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial6[P0, P1, P2, P3, P4, P5, B, T <: Product : ClassTag](taggedExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2, P3, P4, P5) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2, P3, P4, P5) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
+    private def extractorPartial6[P0, P1, P2, P3, P4, P5, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: ((P1, P2, P3, P4, P5) => B => T, List[String]) => Extractor[B => T], construct: (P0, P1, P2, P3, P4, P5) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] =
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>
                     for {
-                        e0 <- taggedExtractor(member0).extract(node)
+                        e0 <- fExtractor(member0).extract(node)
                         t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
                     } yield t
                 case fs => Failure(XmlException(s"extractorPartial5: insufficient field names: $fs")) // TESTME

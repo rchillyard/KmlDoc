@@ -120,7 +120,7 @@ object Extractor {
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
      *
-     * NOTE: Plural members should use extractChildrenDeprecated and not extractField.
+     * NOTE: Plural members should use extractChildrenDeprecated and not fieldExtractor.
      *
      * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
      *
@@ -129,22 +129,22 @@ object Extractor {
      *              if a singleton child, then field is as is;
      *              if an attribute, then field should begin with "_";
      *              if an optional child, then field should begin with "maybe".
-     * @param node  a Node whence field is to be extracted.
      * @tparam P the type to which Node should be converted [must be Extractor].
      * @return a Try[P].
      */
-    def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
-        case _ -> Success(p) => //s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !?
+    def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(node => doExtractField[P](field, node) match {
+        case _ -> Success(p) => //s"fieldExtractor($field)(${renderNode(node)})(${name[Extractor[P]]})" !?
             Success(p)
         case m -> Failure(x) =>
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])
                 case _ =>
-                    val message = s"extractField(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
+                    val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
                     logger.warn(s"$message caused by $x")
                     Failure(XmlException(message, x))
             }
     }
+    )
 
     /**
      * Method to extract child elements from a node.
@@ -215,7 +215,7 @@ object Extractor {
             case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
             case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
             // NOTE child nodes are extracted using extractChildrenDeprecated, not here.
-            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildrenDeprecated instead."))
+            case plural(x) => s"plural:" -> Failure(XmlException(s"fieldExtractor: incorrect usage for plural field: $x. Use extractChildrenDeprecated instead."))
             // NOTE optional members such that the name begins with "maybe"
             case optional(x) =>
                 val y = x.head.toLower + x.tail
