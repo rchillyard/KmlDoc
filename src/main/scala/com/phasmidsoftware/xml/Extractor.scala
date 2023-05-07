@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
@@ -104,7 +104,7 @@ object Extractor {
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-        s"multi-extract: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !?
+        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
                 implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
@@ -150,11 +150,14 @@ object Extractor {
      * Method to extract child elements from a node.
      * It is acceptable
      *
+     * This method is deprecated because specifying member here is counter-productive.
+     *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
      * @tparam P the (MultiExtractor-able) underlying type of the result.
      * @return a Try[P].
      */
+    @deprecated
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
         // TODO use Flog logging
         val ts = translateMemberNames(member)
@@ -288,7 +291,6 @@ object Extractor {
      */
     implicit val longExtractor: Extractor[Long] = stringExtractor map (_.toLong)
 
-
     val logger: Logger = LoggerFactory.getLogger(Extractor.getClass)
 }
 
@@ -312,9 +314,11 @@ trait MultiExtractor[T] extends NamedFunction[MultiExtractor[T]] {
  * Trait which extends a function of type String => Extractor[T].
  * When the apply method is invoked with a particular label, an appropriate Extractor[T] is returned.
  *
- * @tparam T the underlying type of the result of invoking apply.
+ * CONSIDER renaming this because it isn't an extractor, but a function which creates an extractor from a String.
+ *
+ * @tparam T the underlying type of the result of invoking apply. T may be an Iterable type.
  */
-trait ElementExtractor[T] extends (String => Extractor[T]) {
+trait TaggedExtractor[T] extends (String => Extractor[T]) {
 
     /**
      * Method to yield an Extractor[T], given a label.
@@ -323,4 +327,20 @@ trait ElementExtractor[T] extends (String => Extractor[T]) {
      * @return an Extractor[T].
      */
     def apply(label: String): Extractor[T]
+}
+
+trait SequenceExtractorByTag[T] extends TaggedExtractor[Seq[T]] {
+    val tags: Seq[String]
+
+    val pseudo: String
+
+    def valid(w: String): Boolean = w == pseudo
+
+    val tsm: MultiExtractor[Seq[T]]
+
+    def extract(node: Node): Try[Seq[T]] = sequence(for (tag <- tags) yield tsm.extract(node \ tag)) map (_.flatten)
+}
+
+class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
+    def extract(node: Node): Try[Seq[T]] = sequence(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
 }

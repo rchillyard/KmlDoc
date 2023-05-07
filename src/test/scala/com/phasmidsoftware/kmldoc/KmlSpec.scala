@@ -5,7 +5,7 @@ import com.phasmidsoftware.core.{Text, TryUsing}
 import com.phasmidsoftware.render.{FormatXML, Renderable, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
-import java.io.FileWriter
+import java.io.{FileWriter, Writer}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import scala.util.{Failure, Success, Try}
@@ -3794,24 +3794,68 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val renderer = implicitly[Renderable[KML_Binding]]
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
-    extractMulti[Seq[KML]](xml) match {
-      case Success(ks) =>
-        ks.size shouldBe 1
-        val kml = KML_Binding(ks.head, xml.scope)
-        val ksy: Try[Seq[KML]] = TryUsing(new FileWriter("xmlOutput.kml")) {
-          fw =>
-            fw.write(
-              """<?xml version="1.0" encoding="UTF-8"?>
-                |""".stripMargin)
-            for {w <- renderer.render(kml, FormatXML(0), StateR().setName("kml"))
-                 _ = fw.write(w)
-                 ks <- extractMulti[Seq[KML]](parseUnparsed(w))
-                 } yield ks
-        }
-        ksy should matchPattern { case Success(_ :: Nil) => }
-      case Failure(x) => fail(x)
-    }
+      extractMulti[Seq[KML]](xml) match {
+          case Success(ks) =>
+              ks.size shouldBe 1
+              val kml = KML_Binding(ks.head, xml.scope)
+              val ksy: Try[Seq[KML]] = TryUsing(new FileWriter("sampleOutput.kml")) {
+                  fw =>
+                      fw.write(
+                          """<?xml version="1.0" encoding="UTF-8"?>
+                            |""".stripMargin)
+                      for {w <- renderer.render(kml, FormatXML(0), StateR().setName("kml"))
+                           _ = fw.write(w)
+                           ks <- extractMulti[Seq[KML]](parseUnparsed(w))
+                           _ = println(s"$kml => $ks")
+                           } yield ks
+              }
+              ksy should matchPattern { case Success(_ :: Nil) => }
+          case Failure(x) => fail(x)
+      }
   }
+
+    case class StringWriter(sb: StringBuilder) extends Writer {
+        def size: Int = sb.size
+
+        override def toString: String = sb.toString()
+
+        def write(cbuf: Array[Char], off: Int, len: Int): Unit = {
+            sb.appendAll(cbuf, off, len)
+        }
+
+        def flush(): Unit = ()
+
+        def close(): Unit = ()
+    }
+
+    object StringWriter {
+        def apply(): StringWriter = new StringWriter(new StringBuilder())
+    }
+
+    it should "extract and render output kml" in {
+        val renderer = implicitly[Renderable[KML_Binding]]
+        val xml: Elem = XML.loadFile("xmlOutput.kml")
+
+        extract[KML_Binding](xml) match {
+            case Success(k@KML_Binding(kml, binding)) =>
+
+                val stringWriter = StringWriter()
+                val ksy: Try[Seq[KML]] = TryUsing(stringWriter) {
+                    fw =>
+                        fw.write(
+                            """<?xml version="1.0" encoding="UTF-8"?>
+                              |""".stripMargin)
+                        for {w <- renderer.render(k, FormatXML(0), StateR().setName("kml"))
+                             _ = fw.write(w)
+                             ks <- extractMulti[Seq[KML]](parseUnparsed(w))
+                             } yield ks
+                }
+                ksy should matchPattern { case Success(_ :: Nil) => }
+                println(stringWriter)
+                stringWriter.size > 100 shouldBe true
+            case Failure(x) => fail(x)
+        }
+    }
 
   // FIXME
   ignore should "extract and render sample kml as XML from Google sample" in {
