@@ -110,7 +110,7 @@ class ExtractorsSpec4 extends AnyFlatSpec with Extractors with should.Matchers {
 
     }
 
-    it should "childrenExtractor" in {
+    it should "deprecatedChildrenExtractor" in {
 
     }
 

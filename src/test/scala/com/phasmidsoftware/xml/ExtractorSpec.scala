@@ -26,7 +26,7 @@ class ExtractorSpec extends AnyFlatSpec {
 
     }
 
-    it should "extractChildren" in {
+    it should "extractChildrenDeprecated" in {
 
     }
 
@@ -66,7 +66,7 @@ class ExtractorSpec extends AnyFlatSpec {
 
     }
 
-    behavior of "TaggedExtractor"
+    behavior of "TagToExtractorFunc"
 
     it should "apply" in {
 

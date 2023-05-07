@@ -444,8 +444,8 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                 </LineString>
             </Placemark>
         </xml>
-        // NOTE: we can use either extractChildren or extractAll here.
-//        extractChildren[Seq[Feature]]("features")(xml) match {
+        // NOTE: we can use either extractChildrenDeprecated or extractAll here.
+//        extractChildrenDeprecated[Seq[Feature]]("features")(xml) match {
         extractAll[Seq[Feature]](xml) match {
             case Success(ps) =>
                 ps.size shouldBe 1

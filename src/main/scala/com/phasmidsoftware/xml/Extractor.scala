@@ -120,7 +120,7 @@ object Extractor {
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
      *
-     * NOTE: Plural members should use extractChildren and not extractField.
+     * NOTE: Plural members should use extractChildrenDeprecated and not extractField.
      *
      * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
      *
@@ -158,18 +158,18 @@ object Extractor {
      * @return a Try[P].
      */
     @deprecated
-    def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
+    def extractChildrenDeprecated[P: MultiExtractor](member: String)(node: Node): Try[P] = {
         // TODO use Flog logging
         val ts = translateMemberNames(member)
-        logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-        if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+        logger.debug(s"extractChildrenDeprecated(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+        if (ts.isEmpty) logger.warn(s"extractChildrenDeprecated: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
         if (nodeSeq.nonEmpty) {
-            logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+            logger.info(s"extractChildrenDeprecated extracting ${nodeSeq.size} nodes for ($member)")
             extractMulti(nodeSeq)
         }
         else {
-            logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+            logger.info(s"extractChildrenDeprecated: no children matched any of $ts in ${renderNode(node)}")
             Try(Nil.asInstanceOf[P])
         }
     }
@@ -214,13 +214,13 @@ object Extractor {
             case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
             case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
             case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-            // NOTE child nodes are extracted using extractChildren, not here.
-            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
+            // NOTE child nodes are extracted using extractChildrenDeprecated, not here.
+            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildrenDeprecated instead."))
             // NOTE optional members such that the name begins with "maybe"
             case optional(x) =>
                 val y = x.head.toLower + x.tail
                 s"optional: $y" -> extractOptional[P](node / y)
-            // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
+            // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildrenDeprecated).
             case x => s"singleton: $x" -> extractSingleton[P](node / x)
         }
 
@@ -318,7 +318,7 @@ trait MultiExtractor[T] extends NamedFunction[MultiExtractor[T]] {
  *
  * @tparam T the underlying type of the result of invoking apply. T may be an Iterable type.
  */
-trait TaggedExtractor[T] extends (String => Extractor[T]) {
+trait TagToExtractorFunc[T] extends (String => Extractor[T]) {
 
     /**
      * Method to yield an Extractor[T], given a label.
@@ -329,7 +329,12 @@ trait TaggedExtractor[T] extends (String => Extractor[T]) {
     def apply(label: String): Extractor[T]
 }
 
-trait SequenceExtractorByTag[T] extends TaggedExtractor[Seq[T]] {
+/**
+ * Trait which extends TagToExtractorFunc for an underlying sequence type.
+ *
+ * @tparam T the underlying type of the resulting sequence when invoking apply.
+ */
+trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
     val tags: Seq[String]
 
     val pseudo: String
@@ -341,6 +346,13 @@ trait SequenceExtractorByTag[T] extends TaggedExtractor[Seq[T]] {
     def extract(node: Node): Try[Seq[T]] = sequence(for (tag <- tags) yield tsm.extract(node \ tag)) map (_.flatten)
 }
 
+/**
+ * Class which extends an Extractor of Seq[T].
+ *
+ * @param labels a set of labels (tags)
+ * @param tsm    an (implicit) MultiExtractor of Seq[T].
+ * @tparam T the type to be constructed.
+ */
 class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
     def extract(node: Node): Try[Seq[T]] = sequence(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
 }
