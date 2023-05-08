@@ -179,7 +179,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         //    val applyFunction: Unit => Feature = _ => new Feature() // CONSIDER do we need this?
 
         implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
-            lazyMultiExtractor(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")))
+            MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")))
     }
 
     /**

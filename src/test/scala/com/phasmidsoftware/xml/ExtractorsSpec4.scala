@@ -162,7 +162,7 @@ class ExtractorsSpec4 extends AnyFlatSpec with Extractors with should.Matchers {
 
     }
 
-    it should "lazyMultiExtractor" in {
+    it should "createLazy" in {
 
     }
 

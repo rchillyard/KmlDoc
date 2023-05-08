@@ -5,7 +5,7 @@ import com.phasmidsoftware.core.Utilities.{renderNode, sequence}
 import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildrenDeprecated, extractElementsByLabel, fieldExtractor, logger, none}
-import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
+import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -15,40 +15,6 @@ import scala.xml.{Node, NodeSeq}
  * Trait which defines many useful Extractors, where the result is an instance of Extractor[T].
  */
 trait Extractors {
-
-    /**
-     * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
-     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
-     * recursively.
-     * See the Play JSON library method in JsPath called lazyRead.
-     *
-     * @param te an Extractor[T].
-     * @tparam T the underlying type of the Extractor required.
-     * @return an Extractor[T].
-     */
-    def lazyExtractor[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
-
-    /**
-     * Method to create a lazy MultiExtractor[T] from an explicit MultiExtractor[T] which is call-by-name.
-     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
-     * recursively.
-     * See the Play JSON library method in JsPath called lazyRead.
-     *
-     * @param tm a MultiExtractor[T].
-     * @tparam T the underlying type of the MultiExtractor required.
-     * @return a MultiExtractor[T].
-     */
-    def lazyMultiExtractor[T](tm: => MultiExtractor[T]): MultiExtractor[T] = (nodes: NodeSeq) => tm.extract(nodes)
-
-    /**
-     * Method to create a sequence extractor for type T.
-     *
-     * @param extractorFunction a TagToSequenceExtractorFunc[T]
-     * @tparam T an iterable type.
-     * @return a TagToExtractorFunc of Seq[T]
-     */
-    def taggedSequenceExtractor[T <: Iterable[_]](extractorFunction: TagToSequenceExtractorFunc[T]): TagToExtractorFunc[Seq[T]] =
-        (label: String) => if (extractorFunction.valid(label)) extractorFunction(label) else Extractor.none
 
     /**
      * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
@@ -138,11 +104,13 @@ trait Extractors {
      *
      * NOTE This method is used to extract an iterable from a Node, whereas we use MultiExtractor to extract an iterable from a NodeSeq.
      *
+     * CONSIDER there must be an alternative to this code.
+     *
      * @param label the label of the child nodes to be returned.
      * @tparam P the underlying type of the result.
      * @return an Extractor of Iterable[P].
      */
-    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = (node: Node) => extractSequence[P](node / label)
+    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => Extractor.extractSequence[P](node / label))
 
     /**
      * Method to create a new MultiExtractor based on type P such that the underlying type of the result
@@ -153,7 +121,14 @@ trait Extractors {
      */
     def multiExtractorBase[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
-    def multiExtractor[P](f: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = (nodeSeq: NodeSeq) => f(nodeSeq)
+    /**
+     * NOTE not currently used
+     *
+     * @param f a NodeSeq => Try of Seq[P] function.
+     * @tparam P the underlying type of the result.
+     * @return a MultiExtractor of Seq[P]
+     */
+    def multiExtractor[P](f: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = MultiExtractor(f)
 
     /**
      * Method to yield an TagToExtractorFunc[P] which in turns invokes fieldExtractor with the given tag.
@@ -453,7 +428,7 @@ trait Extractors {
 //     */
 //    def extractor01A[P0: TagToSequenceExtractorFunc, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
 //        (node: Node) =>
-//            extractorPartial1[Seq[P0], Unit, T](taggedSequenceExtractor(implicitly[TagToSequenceExtractorFunc[P0]]), m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
+//            extractorPartial1[Seq[P0], Unit, T](tagToSequenceExtractorFunc(implicitly[TagToSequenceExtractorFunc[P0]]), m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
 //    }
 
     /**
@@ -1456,26 +1431,16 @@ object Extractors extends Extractors {
         }
 
     /**
-     * method to extract a singleton from a NodeSeq.
-     */
-    def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
-        extractSequence[P](nodeSeq) match {
-            case Success(p :: Nil) => Success(p)
-            // TESTME
-            case Success(ps) => Failure(XmlException(s"extractSingleton: non-unique value: $ps"))
-            case Failure(x) => Failure(x)
-        }
-
-    /**
-     * Method which tries to extract a sequence of objects from a NodeSeq.
+     * Method to create a sequence extractor for type T.
      *
-     * @param nodeSeq a NodeSeq.
-     * @tparam P the (Extractor) type to which each individual Node should be converted.
-     * @return a Try of Seq[P].
+     * NOTE: not currently used.
+     *
+     * @param fExtractor a TagToSequenceExtractorFunc[T]
+     * @tparam T an iterable type.
+     * @return a TagToExtractorFunc of Seq[T]
      */
-    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
-        sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
-
+    def tagToSequenceExtractorFunc[T <: Iterable[_]](fExtractor: TagToSequenceExtractorFunc[T]): TagToExtractorFunc[Seq[T]] =
+        (label: String) => if (fExtractor.valid(label)) fExtractor(label) else Extractor.none
 
     /**
      * Return the field names as Seq[String], from either the fields parameter or by reflection into T.

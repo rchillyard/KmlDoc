@@ -3,7 +3,7 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
 import com.phasmidsoftware.core.XmlException
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
+import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
@@ -85,6 +85,19 @@ object Extractor {
     def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty) ^^ s"Extractor.apply($ty)"
 
     /**
+     * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
+     * The purpose of this method is to break the infinite recursion caused when implicit values are defined recursively.
+     * See the Play JSON library method in JsPath called lazyRead.
+     *
+     * TESTME
+     *
+     * @param te an Extractor[T].
+     * @tparam T the underlying type of the Extractor required.
+     * @return an Extractor[T].
+     */
+    def createLazy[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
+
+    /**
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
      *
      * @param node the node on which the extractor will work.
@@ -92,7 +105,6 @@ object Extractor {
      * @return a Try[T].
      */
     def extract[T: Extractor](node: Node): Try[T] =
-//        implicitly[Extractor[T]].extract(node)
         s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
 
     /**
@@ -118,6 +130,27 @@ object Extractor {
     def extractAll[T: MultiExtractor](node: Node): Try[T] = extractMulti(node / "_")
 
     /**
+     * method to extract a singleton from a NodeSeq.
+     */
+    def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
+        extractSequence[P](nodeSeq) match {
+            case Success(p :: Nil) => Success(p)
+            // TESTME
+            case Success(ps) => Failure(XmlException(s"extractSingleton: non-unique value: $ps"))
+            case Failure(x) => Failure(x)
+        }
+
+    /**
+     * Method which tries to extract a sequence of objects from a NodeSeq.
+     *
+     * @param nodeSeq a NodeSeq.
+     * @tparam P the (Extractor) type to which each individual Node should be converted.
+     * @return a Try of Seq[P].
+     */
+    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
+        sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
+
+    /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
      *
      * NOTE: Plural members should use extractChildrenDeprecated and not fieldExtractor.
@@ -133,7 +166,7 @@ object Extractor {
      * @return a Try[P].
      */
     def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(node => doExtractField[P](field, node) match {
-        case _ -> Success(p) => //s"fieldExtractor($field)(${renderNode(node)})(${name[Extractor[P]]})" !?
+        case _ -> Success(p) =>
             Success(p)
         case m -> Failure(x) =>
             x match {
@@ -308,6 +341,36 @@ trait MultiExtractor[T] extends NamedFunction[MultiExtractor[T]] {
      * @return a Try[T].
      */
     def extract(nodeSeq: NodeSeq): Try[T]
+}
+
+/**
+ * Companion object to MultiExtractor.
+ */
+object MultiExtractor {
+
+    /**
+     * Method to create an MultiExtractor[T] from a NodeSeq => Try[T] function.
+     * Note that this isn't strictly necessary because of the SAM conversion mechanism which turns a Node => Try[T] function into an Extractor[T].
+     *
+     * TESTME
+     *
+     * @param f a NodeSeq => Try[T] function.
+     * @tparam T the underlying type of the resulting MultiExtractor.
+     * @return a MultiExtractor[T].
+     */
+    def apply[T](f: NodeSeq => Try[T]): MultiExtractor[T] = (nodeSeq: NodeSeq) => f(nodeSeq)
+
+    /**
+     * Method to create a lazy MultiExtractor[T] from an explicit MultiExtractor[T] which is call-by-name.
+     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
+     * recursively.
+     * See the Play JSON library method in JsPath called lazyRead.
+     *
+     * @param tm a MultiExtractor[T].
+     * @tparam T the underlying type of the MultiExtractor required.
+     * @return a MultiExtractor[T].
+     */
+    def createLazy[T](tm: => MultiExtractor[T]): MultiExtractor[T] = (nodes: NodeSeq) => tm.extract(nodes)
 }
 
 /**
