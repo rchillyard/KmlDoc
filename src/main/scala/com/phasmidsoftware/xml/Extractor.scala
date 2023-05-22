@@ -148,7 +148,8 @@ object Extractor {
 
     /**
      * Method to extract child elements from a node.
-     * It is acceptable
+     *
+     * CONSIDER using extractAll instead of this method.
      *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
@@ -316,7 +317,7 @@ trait ElementExtractor[T] extends (String => Extractor[T]) {
  *
  */
 object ChildNames {
-    // TODO make this immutable.
+    // CONSIDER make this immutable.
     val map: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
     def addTranslation(key: String, value: Seq[String]): Unit = map += key -> value

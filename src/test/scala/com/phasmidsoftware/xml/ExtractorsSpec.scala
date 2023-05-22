@@ -310,7 +310,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   behavior of "Extractors"
 
-  // TODO add tests for extractor1, etc.
+  // CONSIDER add tests for extractor1, etc.
 
   it should "extractorIterable" in {
     implicit val ee: Extractor[Empty.type] = MyExtractors.extractor0[Empty.type](_ => Empty)

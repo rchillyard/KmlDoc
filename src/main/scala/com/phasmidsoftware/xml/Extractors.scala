@@ -76,8 +76,6 @@ trait Extractors {
      * Method to yield an Extractor which can choose from three other extractors.
      * Why is this method not called extractorAlt3? Because I know my Latin ;)
      *
-     * TODO remove explicit implicit parameters
-     *
      * @tparam R  result type.
      * @tparam P0 first extractor type.
      * @tparam P1 second extractor type.

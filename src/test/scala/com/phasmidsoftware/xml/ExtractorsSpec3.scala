@@ -11,6 +11,11 @@ import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
 
+/**
+ * NOTE: if you try to delete this class, other unit tests fail. Very strange!!
+ *
+ * TODO figure out what's going on and fix it.
+ */
 class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMethodTester {
 
     /**
@@ -165,7 +170,6 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
      * Feature is a sub-type of Object and a super-type of Placemark, Container.
      * See [[https://developers.google.com/kml/documentation/kmlreference#feature Feature]].
      *
-     * TODO add Overlay, NetworkLink.
      */
     class Feature extends KmlObject
 
@@ -279,8 +283,6 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     /**
      * Document: sub-element of Container.
      * See [[https://developers.google.com/kml/documentation/kmlreference#document Document]].
-     *
-     * TODO add Schemas to this case class
      *
      * @param features      a sequence of Features.
      * @param containerData ContainerData (auxiliary property).
