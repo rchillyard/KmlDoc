@@ -328,10 +328,9 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
 //        def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
     }
 
-    Extractor.translations += "coordinates" -> Seq("coordinates")
-    Extractor.translations += "features" -> Seq("Placemark", "Folder", "Document")
-    Extractor.translations += "Geometry" -> Seq("LineString", "Point")
-    Extractor.translations += "StyleSelector" -> Seq("Style", "StyleMap")
+    ChildNames.addTranslation("coordinates", Seq("coordinates"))
+    ChildNames.addTranslation("features", Seq("Placemark", "Folder", "Document"))
+    ChildNames.addTranslation("Geometry", Seq("LineString", "Point"))
 
     behavior of "Extractors"
 
@@ -717,7 +716,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val xml = <xml>
             <Document>
                 <name>MA - Boston NE: Historic New England Railroads</name>
-                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
                 <Style id="icon-22-nodesc-normal">
                     <IconStyle>
                         <scale>1.1</scale>
@@ -905,7 +904,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val xml = <xml>
             <Document>
                 <name>MA - Boston NE: Historic New England Railroads</name>
-                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
                 <Style id="icon-22-nodesc-normal">
                     <IconStyle>
                         <scale>1.1</scale>

@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.{renderNode, sequence}
 import com.phasmidsoftware.core.{Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractor.{expandTranslations, extractChildren, extractElementsByLabel, extractField, logger, none}
+import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, extractField, logger, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.{ClassTag, classTag}
@@ -153,7 +153,7 @@ trait Extractors {
      * @tparam P the underlying (Extractor) type of the result.
      * @return an ElementExtractor[P] based on extractField.
      */
-    def fieldExtractor[P: Extractor]: ElementExtractor[P] = (tag: String) => extractField[P](tag)
+    private def fieldExtractor[P: Extractor]: ElementExtractor[P] = (tag: String) => extractField[P](tag)
 
     /**
      * Method to yield an ElementExtractor[P] which in turns invokes extractChildren with the given tag.
@@ -161,12 +161,10 @@ trait Extractors {
      * @tparam P the underlying (MultiExtractor) type of the result.
      * @return an ElementExtractor[P] based on extractField.
      */
-    def childrenExtractor[P: MultiExtractor]: ElementExtractor[P] = (tag: String) => extractChildren[P](tag)
+    private def childrenExtractor[P: MultiExtractor]: ElementExtractor[P] = (tag: String) => extractChildren[P](tag)
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
-     *
-     * FIXME: this logic seems to be deeply flawed: expanding the labels means that the types and labels may no longer be aligned.
      *
      * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
      * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.
@@ -176,7 +174,7 @@ trait Extractors {
      * @return MultiExtractor of Seq[T].
      */
     def multiExtractor1[T, U <: Product, P0 <: T : Extractor: ClassTag](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-        expandTranslations(labels) match {
+        labels match {
             case label :: Nil =>
                 sequence(extractElementsByLabel[P0](nodeSeq, label))
             case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
@@ -198,14 +196,10 @@ trait Extractors {
 def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     multiExtractor[T]{
         nodeSeq =>
-            println(s"multiExtractor2: ${implicitly[ClassTag[T]]} from ${implicitly[ClassTag[P0]]}, ${implicitly[ClassTag[P1]]} with labels: $labels")
-
-            val extractors = new Extractors{}
-            println(extractors)
-            expandTranslations(labels) match {
+            labels match {
                 case label :: fs =>
                     val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
-                    val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs)(implicitly[Extractor[P1]],classTag).extract(nodeSeq)
+                    val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs)(implicitly[Extractor[P1]], classTag).extract(nodeSeq)
                     for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
             }
     }
@@ -226,7 +220,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @return MultiExtractor of Seq[T].
      */
     def multiExtractor3[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-        expandTranslations(labels) match {
+        labels match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
                 val tsy = multiExtractor2[T, (P1, P2), P1, P2]((p1, p2) => (p1, p2), fs).extract(nodeSeq)
@@ -247,7 +241,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @return MultiExtractor of Seq[T].
      */
     def multiExtractor4[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag, P3 <: T : Extractor: ClassTag](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-        expandTranslations(labels) match {
+        labels match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
                 val tsy = multiExtractor3[T, (P1, P2, P3), P1, P2, P3]((p1, p2, p3) => (p1, p2, p3), fs).extract(nodeSeq)
@@ -269,7 +263,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @return MultiExtractor of Seq[T].
      */
     def multiExtractor5[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag, P3 <: T : Extractor: ClassTag, P4 <: T : Extractor: ClassTag](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-        expandTranslations(labels) match {
+        labels match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
                 val tsy = multiExtractor4[T, (P1, P2, P3, P4), P1, P2, P3, P4]((p1, p2, p3, p4) => (p1, p2, p3, p4), fs).extract(nodeSeq)
@@ -292,7 +286,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @return MultiExtractor of Seq[T].
      */
     def multiExtractor6[T:ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag, P2 <: T : Extractor: ClassTag, P3 <: T : Extractor: ClassTag, P4 <: T : Extractor: ClassTag, P5 <: T : Extractor: ClassTag](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
-        expandTranslations(labels) match {
+        labels match {
             case label :: fs =>
                 val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label))
                 val tsy = multiExtractor5[T, (P1, P2, P3, P4, P5), P1, P2, P3, P4, P5]((p1, p2, p3, p4, p5) => (p1, p2, p3, p4, p5), fs).extract(nodeSeq)

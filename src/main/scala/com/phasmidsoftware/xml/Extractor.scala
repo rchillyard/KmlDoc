@@ -157,7 +157,7 @@ object Extractor {
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
         // TODO use Flog logging
-        val ts = translateMemberNames(member)
+        val ts = ChildNames.translate(member)
         logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
         if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
         val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
@@ -189,20 +189,6 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
-
-    // CONSIDER removing this as it appears to be useless.
-    // TODO make this immutable.
-    val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
-
-    def expandTranslations(labels: Seq[String]): Seq[String] = for (label <- labels; z <- translateMemberNames(label)) yield z
-
-    private def translateMemberNames(member: String): Seq[String] =
-        translations.getOrElse(member,
-            member match {
-                case plural(x) => Seq(x)
-                case _ => translations.getOrElse(member, Seq(member))
-            })
-
     private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
         field match {
             // NOTE special name for the (text) content of a node.
@@ -323,4 +309,25 @@ trait ElementExtractor[T] extends (String => Extractor[T]) {
      * @return an Extractor[T].
      */
     def apply(label: String): Extractor[T]
+}
+
+/**
+ * Object to manage translation of a name to a Seq of names.
+ *
+ * CONSIDER removing this altogether because there is another mechanism which does something similar.
+ *
+ */
+object ChildNames {
+    // TODO make this immutable.
+    val map: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
+
+    def addTranslation(key: String, value: Seq[String]): Unit = map += key -> value
+
+    def translate(member: String): Seq[String] =
+        map.getOrElse(member,
+            member match {
+                case Extractor.plural(x) => Seq(x)
+                case _ => map.getOrElse(member, Seq(member))
+            })
+
 }

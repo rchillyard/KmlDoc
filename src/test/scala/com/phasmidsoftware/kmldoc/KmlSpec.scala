@@ -575,7 +575,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml = <xml>
       <Document>
         <name>MA - Boston NE: Historic New England Railroads</name>
-        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
         <Style id="icon-22-nodesc-normal">
           <IconStyle>
             <scale>1.1</scale>
@@ -3224,7 +3224,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 coordinate.coordinates.size shouldBe 94
                 val wy = TryUsing(StateR())(sr => Renderable.render[Document](document, FormatXML(0), sr))
                 wy.isSuccess shouldBe true
-                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
+                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
               case _: Folder =>
             }
         }
@@ -3238,7 +3238,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml = <kml xmlns="http://www.opengis.net/kml/2.2">
       <Document>
         <name>MA - Boston NE: Historic New England Railroads</name>
-        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
         <Style id="icon-22-nodesc-normal">
           <IconStyle>
             <scale>1.1</scale>
@@ -3631,7 +3631,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             document.containerData.featureData match {
               case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, styleSelectors) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
-                maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/"))
+                maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
                 maybeOpen shouldBe None
                 styleSelectors.size shouldBe 0
