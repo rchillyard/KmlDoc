@@ -1,7 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
-import com.phasmidsoftware.core.XmlException
+import com.phasmidsoftware.core.{LowerCaseInitialRegex, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import com.phasmidsoftware.xml.NamedFunction.name
@@ -156,7 +156,7 @@ object Extractor {
      * @return a Try[P].
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-        // TODO use Flog logging
+        // CONSIDER use Flog logging
         val ts = ChildNames.translate(member)
         logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
         if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
@@ -200,9 +200,7 @@ object Extractor {
             // NOTE child nodes are extracted using extractChildren, not here.
             case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
             // NOTE optional members such that the name begins with "maybe"
-            case optional(x) =>
-                val y = x.head.toLower + x.tail
-                s"optional: $y" -> extractOptional[P](node / y)
+            case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
             // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
             case x => s"singleton: $x" -> extractSingleton[P](node / x)
         }
@@ -233,9 +231,9 @@ object Extractor {
     /**
      * Regular expression to match an optional name, viz. maybe....
      *
-     * TODO set the first character that is matched to lower case here.
+     * NOTE that the initial character of the result will have been set to lower case.
      */
-    val optional: Regex = """maybe(\w+)""".r
+    val optional: Regex = new LowerCaseInitialRegex("""maybe(\w+)""")
 
     private def extractText[P: Extractor](node: Node): Try[P] = Extractor.extract[P](node)
 

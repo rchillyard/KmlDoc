@@ -349,7 +349,7 @@ trait Renderers {
             ro match {
                 case Some(r) =>
                     val wo = stateR.maybeName match {
-                        case Some(Extractor.optional(x)) => Some(x.head.toLower + x.tail)
+                        case Some(Extractor.optional(x)) => Some(x)
                         case Some(x) => Some(x)
                         case None => None
                     }

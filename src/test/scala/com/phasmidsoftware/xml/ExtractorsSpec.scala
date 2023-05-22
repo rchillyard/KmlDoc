@@ -275,11 +275,12 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   it should "match optional" in {
     optional.matches("xs") shouldBe false
-    val matcher: Matcher = optional.pattern.matcher("maybexs")
+    val matcher: Matcher = optional.pattern.matcher("maybeXs")
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
-    matcher.group(0) shouldBe "maybexs"
-    matcher.group(1) shouldBe "xs"
+    matcher.group(0) shouldBe "maybeXs"
+    matcher.group(1) shouldBe "Xs"
+    optional.unapplySeq("maybeXs") shouldBe Some(List("xs"))
   }
 
   it should "extractField String" in {

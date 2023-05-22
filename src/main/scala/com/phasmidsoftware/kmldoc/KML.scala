@@ -683,7 +683,7 @@ object DisplayMode extends Extractors with Renderers {
 
 /**
  * ListItemType
- * TODO this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
+ * CONSIDER this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
  *
  * @param $ the value.
  */
@@ -701,7 +701,7 @@ object ListItemType extends Extractors with Renderers {
 
 /**
  * State
- * TODO this should be an enumerated type with values: open, closed, error, fetching0, fetching1, or fetching2
+ * CONSIDER this should be an enumerated type with values: open, closed, error, fetching0, fetching1, or fetching2
  *
  * @param $ the value.
  */
