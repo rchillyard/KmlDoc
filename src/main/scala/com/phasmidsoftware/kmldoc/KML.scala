@@ -1,5 +1,6 @@
 package com.phasmidsoftware.kmldoc
 
+import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
@@ -9,8 +10,8 @@ import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
 import scala.reflect.ClassTag
-import scala.util.Success
 import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, NamespaceBinding, XML}
 
 /**
@@ -61,8 +62,10 @@ trait Feature extends KmlObject
  * Companion object to Feature.
  */
 object Feature extends Extractors with Renderers {
+    private val labels: Seq[String] = Seq("Folder", "Document", "Placemark")
     implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
-        lazyMultiExtractor(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
+        MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), labels) ^^ "multiExtractorFeature")
+    implicit val seqExtractor: Extractor[Seq[Feature]] = seqExtractorByTag("features", labels)
     implicit val renderer: Renderable[Feature] = new Renderers {}.lazyRenderer(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
     implicit val seqRenderer: Renderable[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
 }
@@ -565,10 +568,13 @@ case class Coordinate(long: String, lat: String, alt: String)
 
 object Coordinate {
 
-    private val longLatAlt: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+    // CONSIDER using Parser-combinators here.
+    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
 
     def apply(w: String): Coordinate = w match {
-        case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)
+        case longLatAlt(_, long, _, _, _, lat, _, _, _, alt, _, _, _) =>
+            println(s"$long, $lat, $alt")
+            Coordinate(long, lat, alt)
         case _ => throw XmlException(s"bad coordinate string: $w")
     }
 
@@ -819,6 +825,10 @@ object KML extends Extractors with Renderers {
 case class KML_Binding(kml: KML, binding: NamespaceBinding)
 
 object KML_Binding {
+    implicit val extractor: Extractor[KML_Binding] = Extractor {
+        node =>
+            implicitly[Extractor[KML]].extract(node) map (KML_Binding(_, node.scope))
+    }
     implicit val renderer: Renderable[KML_Binding] = Renderable {
         (t: KML_Binding, format: Format, stateR: StateR) =>
             TryUsing(stateR.addAttribute(s"""${t.binding}"""))(rs => implicitly[Renderable[KML]].render(t.kml, format, rs))
@@ -849,25 +859,28 @@ object KmlRenderers extends Renderers {
 // CONSIDER Rename as KML
 object KMLCompanion {
 
-  val logger: Logger = LoggerFactory.getLogger(KML.getClass)
+    val logger: Logger = LoggerFactory.getLogger(KML.getClass)
 
-  // TESTME
-  def loadKML(resource: URL): KML = {
-    require(resource != null)
-    loadKML(resource.getPath)
-  }
+    // TESTME
+    def loadKML(resource: URL): Try[Seq[Feature]] = {
+        val z: Try[URL] = tryNotNull(resource)(s"resource $resource is null")
+        z flatMap (x => loadKML(x.getPath))
+    }
 
-  private def loadKML(file: String): KML = {
-    require(file != null)
-    val xml: Elem = XML.loadFile(file)
-    //    val kmls: collection.Seq[KML] = for (kml <- xml \\ "kml") yield KML.fromXML(kml)
-    //    kmls.head
-    KML(Nil)
-  }
+    private def loadKML(file: String): Try[Seq[Feature]] = {
+        require(file != null)
+        val xml: Elem = XML.loadFile(file)
+
+        val kys: Seq[Try[Seq[Feature]]] = for (kml <- xml \\ "kml") yield Extractor.extractAll[Seq[Feature]](kml)
+        kys.headOption match {
+            case Some(ky) => ky
+            case _ => Failure(new NoSuchElementException)
+        }
+    }
 }
 
 object Test extends App {
     // TESTME -- it appears not to work.
-  val kml: KML = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
-  println(s"KML: $kml")
+    val kml: Try[Seq[Feature]] = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
+    kml foreach (fs => fs foreach (f => println(s"KML: $f")))
 }

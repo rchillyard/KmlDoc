@@ -179,7 +179,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         //    val applyFunction: Unit => Feature = _ => new Feature() // CONSIDER do we need this?
 
         implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
-            lazyMultiExtractor(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")))
+            MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")))
     }
 
     /**
@@ -444,8 +444,8 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                 </LineString>
             </Placemark>
         </xml>
-        // NOTE: we can use either extractChildren or extractAll here.
-//        extractChildren[Seq[Feature]]("features")(xml) match {
+        // NOTE: we can use either extractChildrenDeprecated or extractAll here.
+//        extractChildrenDeprecated[Seq[Feature]]("features")(xml) match {
         extractAll[Seq[Feature]](xml) match {
             case Success(ps) =>
                 ps.size shouldBe 1
@@ -717,7 +717,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val xml = <xml>
             <Document>
                 <name>MA - Boston NE: Historic New England Railroads</name>
-                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
                 <Style id="icon-22-nodesc-normal">
                     <IconStyle>
                         <scale>1.1</scale>
@@ -905,7 +905,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
         val xml = <xml>
             <Document>
                 <name>MA - Boston NE: Historic New England Railroads</name>
-                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+                <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
                 <Style id="icon-22-nodesc-normal">
                     <IconStyle>
                         <scale>1.1</scale>

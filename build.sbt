@@ -1,3 +1,5 @@
+organization := "com.phasmidsoftware"
+
 name := "KMLDoc"
 
 version := "1.0"
@@ -17,7 +19,7 @@ libraryDependencies += scalaModules %% "scala-xml" % "2.1.0"
 
 libraryDependencies ++= Seq(
   "com.phasmidsoftware" %% "flog" % "1.0.8",
-  "ch.qos.logback" % "logback-classic" % "1.4.5" % "runtime",
+  "ch.qos.logback" % "logback-classic" % "1.4.6" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )
