@@ -13,7 +13,8 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
 /**
- * Trait to define the behavior of a type which can be constructed from an XML Node.
+ * Trait to define the behavior of an extractor (parser) which can will take an XML Node
+ * and return Try[T] where T is the underlying type of the Extractor.
  *
  * @tparam T the type to be constructed.
  */
@@ -92,7 +93,7 @@ object Extractor {
      * TESTME
      *
      * @param te an Extractor[T].
-     * @tparam T the underlying type of the Extractor required.
+     * @tparam T the underlying type of the input and output Extractors.
      * @return an Extractor[T].
      */
     def createLazy[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
@@ -101,7 +102,8 @@ object Extractor {
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
      *
      * @param node the node on which the extractor will work.
-     * @tparam T the underlying result type and which provides (implicit) evidence of an Extractor[T].
+     * @tparam T the underlying result type.
+     *           Required: implicit evidence of an Extractor[T].
      * @return a Try[T].
      */
     def extract[T: Extractor](node: Node): Try[T] =
@@ -112,7 +114,8 @@ object Extractor {
      * Usually, T is itself an Iterable type.
      *
      * @param nodeSeq the nodes on which the extractor will work.
-     * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T].
+     * @tparam T the underlying result type.
+     *           Required: implicit evidence of a MultiExtractor[T].
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
@@ -123,14 +126,22 @@ object Extractor {
      * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
      * Usually, T is itself an Iterable type.
      *
+     * The difference between this method and extractMulti is that a Node is passed in, rather than a NodeSeq.
+     *
      * @param node the node on which the extractor will work--it will extract from all the node's children.
-     * @tparam T the underlying result type and which provides (implicit) evidence of a MultiExtractor[T].
+     * @tparam T the underlying result type.
+     *           Required: implicit evidence of a MultiExtractor[T].
      * @return a Try[T].
      */
     def extractAll[T: MultiExtractor](node: Node): Try[T] = extractMulti(node / "_")
 
     /**
-     * method to extract a singleton from a NodeSeq.
+     * Method to extract a singleton from a NodeSeq.
+     *
+     * @param nodeSeq a sequence of Nodes.
+     * @tparam P the underlying type of the result.
+     *           Required: implicit evidence of an Extractor[P].
+     * @return a Try[P].
      */
     def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
         extractSequence[P](nodeSeq) match {
@@ -142,9 +153,13 @@ object Extractor {
 
     /**
      * Method which tries to extract a sequence of objects from a NodeSeq.
+     * The difference between this method and extractMulti is in the declaration of the parametric type and its
+     * implicit evidence.
+     * The difference between this method and extractSingleton is in the result type.
      *
      * @param nodeSeq a NodeSeq.
      * @tparam P the (Extractor) type to which each individual Node should be converted.
+     *           Required: implicit evidence of type Extractor[P].
      * @return a Try of Seq[P].
      */
     def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
@@ -162,7 +177,8 @@ object Extractor {
      *              if a singleton child, then field is as is;
      *              if an attribute, then field should begin with "_";
      *              if an optional child, then field should begin with "maybe".
-     * @tparam P the type to which Node should be converted [must be Extractor].
+     * @tparam P the type to which Node should be converted.
+     *           Required: implicit evidence of type Extractor[P].
      * @return a Try[P].
      */
     def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(node => doExtractField[P](field, node) match {
@@ -187,7 +203,8 @@ object Extractor {
      *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
-     * @tparam P the (MultiExtractor-able) underlying type of the result.
+     * @tparam P the underlying type of the result.
+     *           Required: implicit evidence of type MultiExtractor[P].
      * @return a Try[P].
      */
     @deprecated
@@ -212,7 +229,8 @@ object Extractor {
      *
      * @param nodeSeq the nodes whence to extract.
      * @param label   the label to match.
-     * @tparam P the underlying (Extractor) type of the result.
+     * @tparam P the underlying type of the result.
+     *           Required: implicit evidence of type Extractor[P].
      * @return a Seq of Try[P].
      */
     def extractElementsByLabel[P: Extractor](nodeSeq: NodeSeq, label: String): Seq[Try[P]] =

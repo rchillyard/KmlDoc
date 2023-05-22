@@ -575,7 +575,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml = <xml>
       <Document>
         <name>MA - Boston NE: Historic New England Railroads</name>
-        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
         <Style id="icon-22-nodesc-normal">
           <IconStyle>
             <scale>1.1</scale>
@@ -3224,7 +3224,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 coordinate.coordinates.size shouldBe 94
                 val wy = TryUsing(StateR())(sr => Renderable.render[Document](document, FormatXML(0), sr))
                 wy.isSuccess shouldBe true
-                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
+                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
               case _: Folder =>
             }
         }
@@ -3238,7 +3238,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml = <kml xmlns="http://www.opengis.net/kml/2.2">
       <Document>
         <name>MA - Boston NE: Historic New England Railroads</name>
-        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>
+        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
         <Style id="icon-22-nodesc-normal">
           <IconStyle>
             <scale>1.1</scale>
@@ -3631,7 +3631,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             document.containerData.featureData match {
               case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, styleSelectors) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
-                maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/"))
+                maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
                 maybeOpen shouldBe None
                 styleSelectors.size shouldBe 0
@@ -3809,74 +3809,79 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                            _ = println(s"$kml => $ks")
                            } yield ks
               }
-              ksy should matchPattern { case Success(_ :: Nil) => }
+            ksy should matchPattern { case Success(_ :: Nil) => }
           case Failure(x) => fail(x)
       }
   }
 
-    case class StringWriter(sb: StringBuilder) extends Writer {
-        def size: Int = sb.size
+  private val filenameXmlOutputKml = "xmlOutput.kml"
 
-        override def toString: String = sb.toString()
+  case class StringWriter(sb: StringBuilder) extends Writer {
+    def size: Int = sb.size
 
-        def write(cbuf: Array[Char], off: Int, len: Int): Unit = {
-            sb.appendAll(cbuf, off, len)
+    override def toString: String = sb.toString()
+
+    def write(cbuf: Array[Char], off: Int, len: Int): Unit = {
+      sb.appendAll(cbuf, off, len)
+    }
+
+    def flush(): Unit = ()
+
+    def close(): Unit = ()
+  }
+
+  object StringWriter {
+    def apply(): StringWriter = new StringWriter(new StringBuilder())
+  }
+
+  // FIXME Issue #10
+  ignore should "extract and render output kml" in {
+    val renderer = implicitly[Renderable[KML_Binding]]
+    val xml: Elem = XML.loadFile(filenameXmlOutputKml)
+
+    extract[KML_Binding](xml) match {
+      case Success(k@KML_Binding(kml, binding)) =>
+
+        val stringWriter = StringWriter()
+        val ksy: Try[Seq[KML]] = TryUsing(stringWriter) {
+          fw =>
+            fw.write(
+              """<?xml version="1.0" encoding="UTF-8"?>
+                |""".stripMargin)
+            for {w <- renderer.render(k, FormatXML(0), StateR().setName("kml"))
+                 _ = fw.write(w)
+                 ks <- extractMulti[Seq[KML]](parseUnparsed(w))
+                 } yield ks
         }
-
-        def flush(): Unit = ()
-
-        def close(): Unit = ()
-    }
-
-    object StringWriter {
-        def apply(): StringWriter = new StringWriter(new StringBuilder())
-    }
-
-    it should "extract and render output kml" in {
-        val renderer = implicitly[Renderable[KML_Binding]]
-        val xml: Elem = XML.loadFile("xmlOutput.kml")
-
-        extract[KML_Binding](xml) match {
-            case Success(k@KML_Binding(kml, binding)) =>
-
-                val stringWriter = StringWriter()
-                val ksy: Try[Seq[KML]] = TryUsing(stringWriter) {
-                    fw =>
-                        fw.write(
-                            """<?xml version="1.0" encoding="UTF-8"?>
-                              |""".stripMargin)
-                        for {w <- renderer.render(k, FormatXML(0), StateR().setName("kml"))
-                             _ = fw.write(w)
-                             ks <- extractMulti[Seq[KML]](parseUnparsed(w))
-                             } yield ks
-                }
-                ksy should matchPattern { case Success(_ :: Nil) => }
-                println(stringWriter)
-                stringWriter.size > 100 shouldBe true
+        ksy should matchPattern { case Success(_ :: Nil) => }
+        println(stringWriter)
+        stringWriter.size > 100 shouldBe true
             case Failure(x) => fail(x)
         }
     }
 
-  // FIXME
-  ignore should "extract and render sample kml as XML from Google sample" in {
+  it should "extract and render sample kml as XML from Google sample" in {
     val renderer = implicitly[Renderable[KML_Binding]]
-    val url = KML.getClass.getResource("/KML_Samples.kml")
+    val sampleGoogle = "/KML_Samples.kml"
+    val url = KML.getClass.getResource(sampleGoogle)
     val xml: Elem = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = KML_Binding(ks.head, xml.scope)
-        val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
-//        val filename = "xmlOutput.kml"
-//        val fw = new FileWriter(filename)
-//        fw.write(
-//          """<?xml version="1.0" encoding="UTF-8"?>
-//            |""".stripMargin)
-//        fw.write(w)
-//        fw.close()
-//        val copy: Elem = parseUnparsed(w)
-//        val ksy: Try[scala.Seq[KML]] = extractMulti[Seq[KML]](copy)
-//        ksy should matchPattern { case Success(_ :: Nil) => }
+        val filename = filenameXmlOutputKml
+        val fw = new FileWriter(filename)
+        fw.write(
+          """<?xml version="1.0" encoding="UTF-8"?>
+            |""".stripMargin)
+        renderer.render(kml, FormatXML(0), StateR().setName("kml")) map {
+          w =>
+            fw.write(w)
+            fw.close()
+            val copy: Elem = parseUnparsed(w)
+            val ksy: Try[scala.Seq[KML]] = extractMulti[Seq[KML]](copy)
+            ksy should matchPattern { case Success(_ :: Nil) => }
+        }
       case Failure(x) => fail(x)
     }
   }
