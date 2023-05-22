@@ -63,7 +63,7 @@ trait Extractors {
     /**
      * Method to yield an Extractor which can choose from (two) alternative extractors.
      *
-     * FIXME this doesn't work properly: the order of P0 and P1 is significant: it shouldn't be.
+     * TODO this doesn't work properly: the order of P0 and P1 is significant: it shouldn't be.
      *
      * @tparam R  result type.
      * @tparam P0 first extractor type.
@@ -1138,7 +1138,6 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      */
     private def extractorPartial1[P, B, T <: Product : ClassTag](elementExtractor: ElementExtractor[P], construct: P => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
         (node: Node) =>
-
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member :: Nil =>
                     logger.debug(s"extractorPartial1: $member ${renderNode(node)}")
@@ -1381,19 +1380,6 @@ object Extractors extends Extractors {
      */
     def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
         sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
-
-
-    /**
-     * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
-     * Note that fields takes precedence and ClassTag[T] is ignored if fields is used.
-     *
-     * TODO understand why this no longer seems to be used. It SHOULD be used. Sometimes we should be specifying false.
-     *
-     * @param fields a list of field names which, if not empty, is to be used instead of the reflected fields of T (defaults to Nil).
-     * @tparam T the type (typically a case class) from which we will use reflection to get the field names (referred to only if fields is Nil)
-     * @return the field names to be used.
-     */
-    private def fieldNames[T: ClassTag](fields: Seq[String]) = Extractors.fieldNamesMaybeDropLast(fields)
 
     /**
      * Return the field names as Seq[String], from either the fields parameter or by reflection into T.

@@ -314,7 +314,7 @@ trait ElementExtractor[T] extends (String => Extractor[T]) {
 /**
  * Object to manage translation of a name to a Seq of names.
  *
- * CONSIDER removing this altogether because there is another mechanism which does something similar.
+ * CONSIDER removing this altogether because there is another mechanism (Feature.multiExtractor) which does something similar.
  *
  */
 object ChildNames {

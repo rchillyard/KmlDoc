@@ -561,11 +561,21 @@ object Coordinates extends Extractors with Renderers {
     def parse(w: String): Coordinates = Coordinates((for (line <- Source.fromString(w).getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
 }
 
+/**
+ * Case class Coordinate to represent a three-dimensional point.
+ *
+ * @param long longitude.
+ * @param lat  latitude.
+ * @param alt  altitude.
+ */
 case class Coordinate(long: String, lat: String, alt: String)
 
+/**
+ * Companion object to Coordinate.
+ */
 object Coordinate {
 
-    private val longLatAlt: Regex = """\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)""".r
+    private val longLatAlt: Regex = """^\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)\s*$""".r
 
     def apply(w: String): Coordinate = w match {
         case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)

@@ -3813,8 +3813,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  // FIXME
-  ignore should "extract and render sample kml as XML from Google sample" in {
+  it should "extract and render sample kml as XML from Google sample" in {
     val renderer = implicitly[Renderable[KML_Binding]]
     val url = KML.getClass.getResource("/KML_Samples.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -3822,17 +3821,19 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ks) =>
         ks.size shouldBe 1
         val kml = KML_Binding(ks.head, xml.scope)
-        val w = renderer.render(kml, FormatXML(0), StateR().setName("kml"))
-//        val filename = "xmlOutput.kml"
-//        val fw = new FileWriter(filename)
-//        fw.write(
-//          """<?xml version="1.0" encoding="UTF-8"?>
-//            |""".stripMargin)
-//        fw.write(w)
-//        fw.close()
-//        val copy: Elem = parseUnparsed(w)
-//        val ksy: Try[scala.Seq[KML]] = extractMulti[Seq[KML]](copy)
-//        ksy should matchPattern { case Success(_ :: Nil) => }
+        val filename = "KML_Samples_output.kml"
+        val fw = new FileWriter(filename)
+        fw.write(
+          """<?xml version="1.0" encoding="UTF-8"?>
+            |""".stripMargin)
+        renderer.render(kml, FormatXML(0), StateR().setName("kml")).map {
+          w =>
+            fw.write(w)
+            fw.close()
+            val copy: Elem = parseUnparsed(w)
+            val ksy: Try[scala.Seq[KML]] = extractMulti[Seq[KML]](copy)
+            ksy should matchPattern { case Success(_ :: Nil) => }
+        }
       case Failure(x) => fail(x)
     }
   }
