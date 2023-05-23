@@ -179,7 +179,7 @@ trait StyleSelector extends KmlObject
  */
 object StyleSelector extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[StyleSelector]] =
-        multiExtractor2[StyleSelector, (Style, StyleMap), Style, StyleMap]((s, m) => (s, m), Seq("Style", "StyleMap")) ^^ "multiExtractorStyleSelector"
+        multiExtractor2[StyleSelector, (StyleMap, Style), StyleMap, Style]((s, m) => (s, m), Seq("StyleMap", "Style")) ^^ "multiExtractorStyleSelector"
     implicit val renderer: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
     implicit val rendererSeq: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^^ "rendererStyleSelectors"
 }
@@ -206,6 +206,19 @@ object StyleSelectorData extends Extractors with Renderers {
  * See [[https://developers.google.com/kml/documentation/kmlreference KML]]
  */
 trait SubStyle extends KmlObject
+
+/**
+ * Companion object to SubStyle.
+ */
+object SubStyle extends Extractors with Renderers {
+    // CONSIDER invoking ColorStyle
+    implicit val extractorSeq: MultiExtractor[Seq[SubStyle]] =
+        multiExtractor6[SubStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle](
+            (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
+        ) ^^ "multiExtractorSubStyle"
+    implicit val renderer: Renderable[SubStyle] = rendererSuper6[SubStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererSubStyle"
+    implicit val rendererSeq: Renderable[Seq[SubStyle]] = sequenceRenderer[SubStyle] ^^ "rendererSubStyles"
+}
 
 case class SubStyleData(kmlData: KmlData)
 
@@ -317,7 +330,7 @@ object LineString extends Extractors with Renderers {
  * @param Styles a set of different types of Style.
  *               CONSIDER constraining this set to be distinct.
  */
-case class Style(Styles: Seq[ColorStyle])(val styleSelectorData: StyleSelectorData) extends StyleSelector
+case class Style(Styles: Seq[SubStyle])(val styleSelectorData: StyleSelectorData) extends StyleSelector
 
 object Style extends Extractors with Renderers {
     val extractorPartial: Extractor[StyleSelectorData => Style] = extractorPartial01(apply) ^^ "extractorSSD2Style"
@@ -406,6 +419,7 @@ trait ColorStyle extends SubStyle
  * Companion object to ColorStyle.
  */
 object ColorStyle extends Extractors with Renderers {
+    // TODO BalloonStyle and ListStyle don't belong here. ColorStyle is a sub-class of SubStyle.
     implicit val extractorSeq: MultiExtractor[Seq[ColorStyle]] =
         multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle](
             (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
