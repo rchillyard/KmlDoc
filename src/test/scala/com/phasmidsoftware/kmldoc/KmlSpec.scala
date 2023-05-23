@@ -542,10 +542,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Style"
 
-  private val styleText = "<Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\" ></hotSpot></IconStyle><LabelStyle><scale>0.0</scale></LabelStyle><BalloonStyle><text>\n            <h3>$[name]</h3>\n          </text></BalloonStyle></Style>".stripMargin
-  private val iconStyleText = "<IconStyle ><scale >1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\" ></hotSpot></IconStyle>".stripMargin
-  private val balloonStyleText = "<BalloonStyle><text>\n            <h3>$[name]</h3>\n          </text></BalloonStyle>".stripMargin
-  private val labelStyleText = "<LabelStyle><scale>0.0</scale></LabelStyle>".stripMargin
+  private val iconStyleText = "<IconStyle ><scale >1.1</scale><Icon><href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href></Icon><hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\" ></hotSpot></IconStyle>"
+  private val balloonStyleText = "<BalloonStyle ><text>\n            <h3>$[name]</h3>\n          </text></BalloonStyle>"
+  private val labelStyleText = "<LabelStyle ><scale >0.0</scale></LabelStyle>"
+  private val stylesText = s"\n    $labelStyleText\n    $iconStyleText\n    $balloonStyleText\n    \n    "
+  private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
 
   it should "extract IconStyle" in {
     val xml = <xml>
@@ -656,11 +657,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             }
             styles(2) match {
               case x@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
-                val text_text =
+                text shouldBe Text(
                   """
                     |            <h3>$[name]</h3>
-                    |          """.stripMargin
-                text shouldBe Text(text_text)
+                    |          """.stripMargin)
                 maybeBgColor shouldBe None
                 maybeTextColor shouldBe None
                 maybeDisplayMode shouldBe None
@@ -754,6 +754,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             pairs.size shouldBe 2
             pairs.head shouldBe Pair("normal", "#icon-22-nodesc-normal")
         }
+        val wy = TryUsing(StateR())(sr => Renderable.render[StyleSelector](styleSelector, FormatXML(0), sr))
+        wy.isSuccess shouldBe true
+        wy.get shouldBe styleText
       case Failure(x) => fail(x)
     }
   }

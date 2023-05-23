@@ -488,6 +488,8 @@ object Document extends Extractors with Renderers {
  * Case class LineStyle which extends ColorStyle.
  * See [[https://developers.google.com/kml/documentation/kmlreference#linestyle Line Style]]
  *
+ * NOTE: the width is optional but I can't actually find an instance of LineStyle that doesn't have a width.
+ *
  * @param maybeWidth     optional width of the line.
  * @param colorStyleData other properties.
  */
