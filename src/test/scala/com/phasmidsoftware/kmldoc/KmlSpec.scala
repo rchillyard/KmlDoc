@@ -752,7 +752,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             }
           case StyleMap(pairs) =>
             pairs.size shouldBe 2
-            pairs.head shouldBe Pair("normal", "#icon-22-nodesc-normal")
+            pairs.head shouldBe Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal"))
         }
         val wy = TryUsing(StateR())(sr => Renderable.render[StyleSelector](styleSelector, FormatXML(0), sr))
         wy.isSuccess shouldBe true
@@ -780,10 +780,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ss) =>
         ss.size shouldBe 1
         val styleMap: StyleMap = ss.head
-        styleMap shouldBe StyleMap(List(Pair("normal", "#icon-22-nodesc-normal"), Pair("highlight", "#icon-22-nodesc-highlight")))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
+        styleMap shouldBe StyleMap(List(Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal")), Pair(Key("highlight"), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
         val wy = TryUsing(StateR())(sr => Renderable.render[StyleMap](styleMap, FormatXML(0), sr))
         wy.isSuccess shouldBe true
-        wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n    <Pair>key=\"normal\"styleUrl=\"#icon-22-nodesc-normal\"</Pair>\n    <Pair>key=\"highlight\"styleUrl=\"#icon-22-nodesc-highlight\"</Pair>\n    \n    </StyleMap>"
+        wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n    <Pair><key>normal</key><styleUrl>#icon-22-nodesc-normal</styleUrl></Pair>\n    <Pair><key>highlight</key><styleUrl>#icon-22-nodesc-highlight</styleUrl></Pair>\n    \n    </StyleMap>"
       case Failure(x) => fail(x)
     }
   }

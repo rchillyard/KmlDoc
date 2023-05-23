@@ -419,7 +419,7 @@ trait ColorStyle extends SubStyle
  * Companion object to ColorStyle.
  */
 object ColorStyle extends Extractors with Renderers {
-    // TODO BalloonStyle and ListStyle don't belong here. ColorStyle is a sub-class of SubStyle.
+    // TODO BalloonStyle and ListStyle don't belong here according to the KML Reference. ColorStyle is a sub-class of SubStyle.
     implicit val extractorSeq: MultiExtractor[Seq[ColorStyle]] =
         multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle](
             (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
@@ -805,14 +805,12 @@ object Color extends Extractors with Renderers {
 case class ColorMode($: String)
 
 object ColorMode extends Extractors with Renderers {
-
     import Renderers._
 
     implicit val extractor: Extractor[ColorMode] = extractor10(apply) ^^ "extractorColorMode"
     implicit val extractorOpt: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
     implicit val renderer: Renderable[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
     implicit val rendererOpt: Renderable[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
-
 }
 
 case class Width($: Double)
@@ -825,11 +823,30 @@ object Width extends Extractors with Renderers {
     implicit val renderer: Renderable[Width] = renderer1(apply) ^^ "rendererWidth"
 }
 
-case class Pair(key: String, styleUrl: String)
+case class Key($: String)
 
-object Pair extends Extractors with Renderers {
+object Key extends Extractors with Renderers {
 
     import Renderers._
+
+    implicit val extractor: Extractor[Key] = extractor10(apply) ^^ "extractorKey"
+    implicit val renderer: Renderable[Key] = renderer1(apply) ^^ "rendererKey"
+}
+
+case class StyleURL($: String)
+
+
+object StyleURL extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[StyleURL] = extractor10(apply) ^^ "extractorStyleURL"
+    implicit val renderer: Renderable[StyleURL] = renderer1(apply) ^^ "rendererStyleURL"
+}
+
+case class Pair(key: Key, styleUrl: StyleURL)
+
+object Pair extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
     implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair] ^^ "multiExtractorPair"
