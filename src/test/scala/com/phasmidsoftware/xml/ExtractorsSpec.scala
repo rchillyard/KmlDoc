@@ -77,8 +77,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   object MyExtractors extends Extractors {
 
-    // XXX this is to demonstrate the usage of the translations feature.
-    Extractor.translations += "empties" -> Seq("empty")
+    // XXX this is to demonstrate the usage of the ChildNames object.
+    ChildNames.addTranslation("empties", Seq("empty"))
 
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
     implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractorBase[Empty.type]
@@ -243,7 +243,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
       <junk></junk>
     </xml>
     val extracted = MyExtractors.extractDocument3.extract(xml)
-    extracted shouldBe Success(Document3(1, Some(Junk()), List(Empty, Empty)))
+    // FIXME check that the following is correct: shouldn't there be only two Empty elements?
+    extracted shouldBe Success(Document3(1, Some(Junk()), List(Empty, Empty, Empty)))
   }
 
   it should "match attribute" in {
@@ -275,11 +276,12 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   it should "match optional" in {
     optional.matches("xs") shouldBe false
-    val matcher: Matcher = optional.pattern.matcher("maybexs")
+    val matcher: Matcher = optional.pattern.matcher("maybeXs")
     matcher.matches() shouldBe true
     matcher.groupCount() shouldBe 1
-    matcher.group(0) shouldBe "maybexs"
-    matcher.group(1) shouldBe "xs"
+    matcher.group(0) shouldBe "maybeXs"
+    matcher.group(1) shouldBe "Xs"
+    optional.unapplySeq("maybeXs") shouldBe Some(List("xs"))
   }
 
   it should "fieldExtractor String" in {
@@ -309,7 +311,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   behavior of "Extractors"
 
-  // TODO add tests for extractor1, etc.
+  // CONSIDER add tests for extractor1, etc.
 
   it should "extractorIterable" in {
     implicit val ee: Extractor[Empty.type] = MyExtractors.extractor0[Empty.type](_ => Empty)

@@ -1,9 +1,9 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
-import com.phasmidsoftware.core.XmlException
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
+import com.phasmidsoftware.core.{LowerCaseInitialRegex, XmlException}
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractors.extractOptional
+import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
 import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
@@ -68,13 +68,11 @@ object Extractor {
      * Method to create an Extractor[T] from a Node => Try[T] function.
      * Note that this isn't strictly necessary because of the SAM conversion mechanism which turns a Node => Try[T] function into an Extractor[T].
      *
-     * @param f a Node => Try[T] function.
+     * @param extractorFunc a Node => Try[T] function.
      * @tparam T the underlying type of the resulting Extractor.
      * @return an Extractor[T].
      */
-    def apply[T](f: Node => Try[T]): Extractor[T] = new Extractor[T] {
-        def extract(node: Node): Try[T] = /* "Extractor.apply(f)" !? */ f(node)
-    } ^^ "Extractor.apply(f)"
+    def apply[T](extractorFunc: Node => Try[T]): Extractor[T] = (node: Node) => extractorFunc(node)
 
     /**
      * Method to create an Extractor[T] such that the result of the extraction is always a constant, regardless of what's in the node provided.
@@ -84,19 +82,6 @@ object Extractor {
      * @return an Extractor[T] which always produces ty when extract is invoked on it.
      */
     def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty) ^^ s"Extractor.apply($ty)"
-
-    /**
-     * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
-     * The purpose of this method is to break the infinite recursion caused when implicit values are defined recursively.
-     * See the Play JSON library method in JsPath called lazyRead.
-     *
-     * TESTME
-     *
-     * @param te an Extractor[T].
-     * @tparam T the underlying type of the input and output Extractors.
-     * @return an Extractor[T].
-     */
-    def createLazy[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
 
     /**
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
@@ -168,7 +153,7 @@ object Extractor {
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
      *
-     * NOTE: Plural members should use extractChildrenDeprecated and not fieldExtractor.
+     * NOTE: Plural members should use extractChildren and not extractField.
      *
      * NOTE: ideally, this should be private but is used for testing and the private method tester is struggling.
      *
@@ -197,9 +182,8 @@ object Extractor {
 
     /**
      * Method to extract child elements from a node.
-     * It is acceptable
      *
-     * This method is deprecated because specifying member here is counter-productive.
+     * CONSIDER using extractAll instead of this method.
      *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
@@ -207,20 +191,30 @@ object Extractor {
      *           Required: implicit evidence of type MultiExtractor[P].
      * @return a Try[P].
      */
-    @deprecated
-    def extractChildrenDeprecated[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-        // TODO use Flog logging
-        val ts = translateMemberNames(member)
-        logger.debug(s"extractChildrenDeprecated(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-        if (ts.isEmpty) logger.warn(s"extractChildrenDeprecated: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-        val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-        if (nodeSeq.nonEmpty) {
-            logger.info(s"extractChildrenDeprecated extracting ${nodeSeq.size} nodes for ($member)")
-            extractMulti(nodeSeq)
-        }
-        else {
-            logger.info(s"extractChildrenDeprecated: no children matched any of $ts in ${renderNode(node)}")
-            Try(Nil.asInstanceOf[P])
+    def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
+        // CONSIDER this has ended up being a bit of a hack and needs work!! There are three ways to get a result.
+        val explicitChildren: NodeSeq = node / member
+        if (explicitChildren.nonEmpty) extractMulti(explicitChildren)
+        else extractAll(node) match {
+            case Success(Nil) =>
+                // CONSIDER use Flog logging
+                val ts = ChildNames.translate(member)
+                logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+                if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+                val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
+                if (nodeSeq.nonEmpty) {
+                    logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+                    extractMulti(nodeSeq)
+                }
+                else {
+                    logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+                    Try(Nil.asInstanceOf[P])
+                }
+            case Failure(x) =>
+                Failure(x)
+            case Success(x) =>
+                logger.info(s"extractChildren extracted $x using extractAll")
+                Success(x)
         }
     }
 
@@ -243,20 +237,6 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
-
-    // CONSIDER removing this as it appears to be useless.
-    // TODO make this immutable.
-    val translations: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
-
-    def expandTranslations(labels: Seq[String]): Seq[String] = for (label <- labels; z <- translateMemberNames(label)) yield z
-
-    private def translateMemberNames(member: String): Seq[String] =
-        translations.getOrElse(member,
-            member match {
-                case plural(x) => Seq(x)
-                case _ => translations.getOrElse(member, Seq(member))
-            })
-
     private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
         field match {
             // NOTE special name for the (text) content of a node.
@@ -265,13 +245,11 @@ object Extractor {
             case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
             case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
             case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-            // NOTE child nodes are extracted using extractChildrenDeprecated, not here.
-            case plural(x) => s"plural:" -> Failure(XmlException(s"fieldExtractor: incorrect usage for plural field: $x. Use extractChildrenDeprecated instead."))
+            // NOTE child nodes are extracted using extractChildren, not here.
+            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
             // NOTE optional members such that the name begins with "maybe"
-            case optional(x) =>
-                val y = x.head.toLower + x.tail
-                s"optional: $y" -> extractOptional[P](node / y)
-            // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildrenDeprecated).
+            case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
+            // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
             case x => s"singleton: $x" -> extractSingleton[P](node / x)
         }
 
@@ -301,9 +279,9 @@ object Extractor {
     /**
      * Regular expression to match an optional name, viz. maybe....
      *
-     * TODO set the first character that is matched to lower case here.
+     * NOTE that the initial character of the result will have been set to lower case.
      */
-    val optional: Regex = """maybe(\w+)""".r
+    val optional: Regex = new LowerCaseInitialRegex("""maybe(\w+)""")
 
     private def extractText[P: Extractor](node: Node): Try[P] = Extractor.extract[P](node)
 
@@ -436,4 +414,25 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
  */
 class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
     def extract(node: Node): Try[Seq[T]] = sequence(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
+}
+
+/**
+ * Object to manage translation of a name to a Seq of names.
+ *
+ * CONSIDER removing this altogether because there is another mechanism (Feature.multiExtractor) which does something similar.
+ *
+ */
+object ChildNames {
+    // CONSIDER make this immutable.
+    val map: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
+
+    def addTranslation(key: String, value: Seq[String]): Unit = map += key -> value
+
+    def translate(member: String): Seq[String] =
+        map.getOrElse(member,
+            member match {
+                case Extractor.plural(x) => Seq(x)
+                case _ => map.getOrElse(member, Seq(member))
+            })
+
 }

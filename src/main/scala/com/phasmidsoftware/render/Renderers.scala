@@ -349,7 +349,7 @@ trait Renderers {
             ro match {
                 case Some(r) =>
                     val wo = stateR.maybeName match {
-                        case Some(Extractor.optional(x)) => Some(x.head.toLower + x.tail)
+                        case Some(Extractor.optional(x)) => Some(x)
                         case Some(x) => Some(x)
                         case None => None
                     }
@@ -629,6 +629,8 @@ object Renderers {
         (t: Double, _: Format, stateR: StateR) =>
             renderAttribute(t.toString, stateR.maybeName)
     } ^^ "doubleRenderer"
+
+    implicit lazy val rendererOptionDouble: Renderable[Option[Double]] = optionRenderer[Double]
 
     implicit lazy val longRenderer: Renderable[Long] = Renderable {
         (t: Long, _: Format, stateR: StateR) =>

@@ -1,9 +1,9 @@
 package com.phasmidsoftware.core
 
 import com.phasmidsoftware.xml.{Extractor, Extractors}
-
 import scala.collection.mutable
 import scala.util.Try
+import scala.util.matching.Regex
 import scala.xml.{Elem, Node, NodeSeq}
 
 object Utilities {
@@ -100,6 +100,13 @@ object Text extends Extractors {
     implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]
 
 }
+
+class MappableRegex(r: String, f: List[String] => List[String]) extends Regex(r) {
+    override def unapplySeq(s: CharSequence): Option[List[String]] =
+        super.unapplySeq(s) map f
+}
+
+class LowerCaseInitialRegex(r: String) extends MappableRegex(r, ws => ws map { w => w.head.toLower + w.tail })
 
 case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
 
