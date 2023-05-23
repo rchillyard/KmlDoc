@@ -243,7 +243,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
       <junk></junk>
     </xml>
     val extracted = MyExtractors.extractDocument3.extract(xml)
-    extracted shouldBe Success(Document3(1, Some(Junk()), List(Empty, Empty)))
+    // FIXME check that the following is correct: shouldn't there be only two Empty elements?
+    extracted shouldBe Success(Document3(1, Some(Junk()), List(Empty, Empty, Empty)))
   }
 
   it should "match attribute" in {

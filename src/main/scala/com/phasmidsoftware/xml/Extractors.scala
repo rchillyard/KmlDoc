@@ -143,7 +143,14 @@ trait Extractors {
      */
     def multiExtractorBase[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
-    def multiExtractor[P](f: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = (nodeSeq: NodeSeq) => f(nodeSeq)
+    /**
+     * Method to create a new MultiEzxtractor from a function which takes a NodeSeq and returns a Try of Seq[P].
+     *
+     * @param function of type NodeSeq => Try of [Seq[P]
+     * @tparam P the underlying type of the resulting MultiExtractor.
+     * @return a MultiExtractor of Seq[P].
+     */
+    def multiExtractor[P](function: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = (nodeSeq: NodeSeq) => function(nodeSeq)
 
     /**
      * Method to yield an ElementExtractor[P] which in turns invokes extractField with the given tag.
@@ -1340,10 +1347,18 @@ object Extractors extends Extractors {
      */
     implicit object LongMultiExtractor extends MultiExtractorBase[Long]
 
+    /**
+     * Optional Int extractor.
+     */
     implicit lazy val extractOptionalInt: Extractor[Option[Int]] = extractorOption[Int]
 
     /**
-     * Optional string extractor.
+     * Optional Double extractor.
+     */
+    implicit lazy val extractOptionalDouble: Extractor[Option[Double]] = extractorOption[Double]
+
+    /**
+     * Optional String extractor.
      */
     implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[String]
 

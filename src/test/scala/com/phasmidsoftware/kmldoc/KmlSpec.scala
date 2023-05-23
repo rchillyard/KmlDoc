@@ -325,6 +325,196 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  it should "extract Document" in {
+    val xml = <xml>
+      <Document>
+        <name>MA - Boston NE: Historic New England Railroads</name>
+        <description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>
+        <Style id="icon-22-nodesc-normal">
+          <IconStyle>
+            <scale>1.1</scale>
+            <Icon>
+              <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+            </Icon>
+            <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+          </IconStyle>
+          <LabelStyle>
+            <scale>0</scale>
+          </LabelStyle>
+          <BalloonStyle>
+            <text>
+              <![CDATA[<h3>$[name]</h3>]]>
+            </text>
+          </BalloonStyle>
+        </Style>
+        <StyleMap id="line-006600-5000">
+          <Pair>
+            <key>normal</key>
+            <styleUrl>#line-006600-5000-normal</styleUrl>
+          </Pair>
+          <Pair>
+            <key>highlight</key>
+            <styleUrl>#line-006600-5000-highlight</styleUrl>
+          </Pair>
+        </StyleMap>
+        <Folder>
+          <name>Untitled layer</name>
+          <Placemark>
+            <name>Stoneham Branch</name>
+            <description>
+              <![CDATA[K405<br>RDK1: 51B]]>
+            </description>
+            <styleUrl>#line-FF0000-5000</styleUrl>
+            <LineString>
+              <tessellate>1</tessellate>
+              <coordinates>
+                -71.126508,42.477003,0
+                -71.126368,42.477585,0
+                -71.126282,42.477779,0
+                -71.126186,42.477949,0
+                -71.126046,42.478139,0
+                -71.125896,42.478305,0
+                -71.125724,42.478471,0
+                -71.125542,42.47861,0
+                -71.125301,42.478776,0
+                -71.125059,42.478902,0
+                -71.124802,42.479013,0
+                -71.124523,42.479108,0
+                -71.124206,42.479175,0
+                -71.1239,42.47923,0
+                -71.1236,42.47925,0
+                -71.1233,42.47925,0
+                -71.122988,42.479223,0
+                -71.12269,42.47918,0
+                -71.121615,42.479005,0
+                -71.120526,42.478823,0
+                -71.118702,42.478534,0
+                -71.118144,42.478447,0
+                -71.117683,42.478396,0
+                -71.117195,42.478368,0
+                -71.116712,42.47838,0
+                -71.116331,42.478416,0
+                -71.115226,42.478534,0
+                -71.114593,42.478602,0
+                -71.114298,42.478633,0
+                -71.114025,42.478645,0
+                -71.113601,42.478645,0
+                -71.112898,42.478625,0
+                -71.112319,42.478625,0
+                -71.111718,42.478641,0
+                -71.111353,42.478673,0
+                -71.110967,42.478728,0
+                -71.110699,42.478784,0
+                -71.11042,42.478855,0
+                -71.110017,42.47897,0
+                -71.109615,42.479108,0
+                -71.10932,42.479231,0
+                -71.109046,42.479365,0
+                -71.108783,42.479512,0
+                -71.108558,42.479666,0
+                -71.107909,42.480125,0
+                -71.105672,42.481691,0
+                -71.10512,42.482095,0
+                -71.104556,42.48253,0
+                -71.104159,42.482803,0
+                -71.103961,42.482957,0
+                -71.103725,42.483167,0
+                -71.10351,42.483397,0
+                -71.103296,42.483638,0
+                -71.103103,42.483875,0
+                -71.102024,42.485106,0
+                -71.101826,42.485295,0
+                -71.101643,42.485462,0
+                -71.101434,42.485604,0
+                -71.101198,42.485758,0
+                -71.100892,42.485901,0
+                -71.100565,42.486023,0
+                -71.100297,42.486103,0
+                -71.100007,42.48617,0
+                -71.099734,42.486221,0
+                -71.09944,42.48627,0
+                -71.0992403,42.4862899,0
+                -71.0990166,42.4862938,0
+                -71.0987616,42.4862828,0
+                -71.0985082,42.4862587,0
+                -71.0981516,42.4861877,0
+                -71.0977833,42.4860848,0
+                -71.097507,42.485972,0
+                -71.097229,42.485849,0
+                -71.096896,42.485683,0
+                -71.096574,42.485462,0
+                -71.096268,42.485197,0
+                -71.09592,42.484852,0
+                -71.095571,42.484453,0
+                -71.095233,42.484053,0
+                -71.095056,42.483788,0
+                -71.094906,42.483531,0
+                -71.09482,42.483353,0
+                -71.094734,42.483151,0
+                -71.094659,42.482918,0
+                -71.094605,42.482704,0
+                -71.094589,42.482459,0
+                -71.094584,42.48217,0
+                -71.0946,42.481949,0
+                -71.094659,42.481707,0
+                -71.094761,42.48145,0
+                -71.094906,42.481205,0
+                -71.095292,42.480651,0
+                -71.095694,42.480145,0
+                -71.09744,42.47812,0
+              </coordinates>
+            </LineString>
+          </Placemark>
+          <Placemark>
+            <name>Passenger Depot</name>
+            <styleUrl>#icon-22-nodesc</styleUrl>
+            <Point>
+              <coordinates>
+                -71.475409,42.590934,0
+              </coordinates>
+            </Point>
+          </Placemark>
+        </Folder>
+      </Document>
+    </xml>
+    println("Begin extract Container/Document")
+    extractAll[Seq[Container]](xml) match {
+      case Success(containers) =>
+        println(s"extract Container/Document: container(s): $containers")
+        containers.size shouldBe 1
+        containers.head match {
+          case document@Document(fs) =>
+            fs.size shouldBe 1
+            document.containerData.featureData.name shouldBe Text("MA - Boston NE: Historic New England Railroads")
+            val feature = fs.head
+            feature match {
+              case placemark: Placemark =>
+                placemark.featureData.name shouldBe Text("Stoneham Branch")
+                placemark.featureData.maybeDescription shouldBe Text(
+                  """
+    K405<br>RDK1: 51B
+  """)
+                val ls: scala.Seq[Geometry] = placemark.Geometry
+                ls.size shouldBe 1
+                val geometry: Geometry = ls.head
+                val coordinates: scala.Seq[Coordinates] = geometry match {
+                  case lineString: LineString => lineString.coordinates
+                  case _ => fail("first geometrys is not a LineString")
+                }
+                coordinates.size shouldBe 1
+                val coordinate = coordinates.head
+                coordinate.coordinates.size shouldBe 94
+                val wy = TryUsing(StateR())(sr => Renderable.render[Document](document, FormatXML(0), sr))
+                wy.isSuccess shouldBe true
+                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
+              case _: Folder =>
+            }
+        }
+      case Failure(x) => fail(x)
+    }
+    println("End extract Container/Document")
+  }
+
   behavior of "HotSpot"
 
   it should "extract HotSpot" in {
@@ -368,10 +558,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     extract[IconStyle](iconStyle) match {
       case Success(is) =>
         is match {
-          case x@IconStyle(scale, icon, hotSpot, maybeHeading) =>
-            scale shouldBe Scale(1.1)(KmlData.nemo)
+          case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
+            maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
             icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
-            hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
+            maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
             maybeHeading shouldBe None
             x.colorStyleData match {
               case c@ColorStyleData(maybeColor, maybeColorMode) =>
@@ -3634,7 +3824,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
                 maybeOpen shouldBe None
-                styleSelectors.size shouldBe 0
+                styleSelectors.size shouldBe 30
             }
             features.size shouldBe 1
             features.head match {
@@ -3695,7 +3885,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW).  Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
                 maybeOpen shouldBe None
-                styleSelectors.size shouldBe 0
+                styleSelectors.size shouldBe 30
             }
             features.size shouldBe 1
             features.head match {

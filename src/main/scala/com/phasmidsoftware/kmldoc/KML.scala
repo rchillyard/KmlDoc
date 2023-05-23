@@ -160,7 +160,9 @@ object Scale extends Extractors with Renderers {
 
     val partialExtractor: Extractor[KmlData => Scale] = extractorPartial10(apply) ^^ "extractorKD2Scale"
     implicit val extractor: Extractor[Scale] = extractorPartial[KmlData, Scale](partialExtractor)
+    implicit val optExtractor: Extractor[Option[Scale]] = extractorOption[Scale] ^^ "extractMaybeScale"
     implicit val renderer: Renderable[Scale] = renderer1Super(apply)(_.kmlData) ^^ "rendererScale"
+    implicit val optRenderer: Renderable[Option[Scale]] = optionRenderer[Scale] ^^ "rendererOptionScale"
 
     def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
 }
@@ -283,7 +285,7 @@ object Point extends Extractors with Renderers {
     implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
     implicit val extractorMulti: MultiExtractor[Seq[Point]] = multiExtractorBase[Point]
     implicit val renderer: Renderable[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
-    implicit val rendererPoints: Renderable[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
+    implicit val rendererSeq: Renderable[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
 }
 
 /**
@@ -353,13 +355,13 @@ object StyleMap extends Extractors {
  * NOTE Use of the color element has been deprecated (use bgColor instead.)
  * NOTE According to the current KML reference, this object extends SubStyle or ColorStyle (it's not clear which).
  *
- * @param text           the balloon text.
- * @param maybeBgColor   optional background color (maybe it isn't optional if there's no color element).
- * @param maybeTextColor optional text color.
- * @param displayMode    the display mode.
- * @param colorStyleData the (auxiliary) color style properties.
+ * @param text             the balloon text.
+ * @param maybeBgColor     optional background color (maybe it isn't optional if there's no color element).
+ * @param maybeTextColor   optional text color.
+ * @param maybeDisplayMode optional display mode.
+ * @param colorStyleData   the (auxiliary) color style properties.
  */
-case class BalloonStyle(text: Text, maybeBgColor: Option[BgColor], maybeTextColor: Option[TextColor], displayMode: DisplayMode)(val colorStyleData: ColorStyleData) extends ColorStyle
+case class BalloonStyle(text: Text, maybeBgColor: Option[BgColor], maybeTextColor: Option[TextColor], maybeDisplayMode: Option[DisplayMode])(val colorStyleData: ColorStyleData) extends ColorStyle
 
 object BalloonStyle extends Extractors with Renderers {
 
@@ -472,13 +474,14 @@ object Document extends Extractors with Renderers {
  * Case class LineStyle which extends ColorStyle.
  * See [[https://developers.google.com/kml/documentation/kmlreference#linestyle Line Style]]
  *
- * @param width          the width of the line.
+ * @param maybeWidth     optional width of the line.
  * @param colorStyleData other properties.
  */
-case class LineStyle(width: Double)(val colorStyleData: ColorStyleData) extends ColorStyle
+case class LineStyle(maybeWidth: Option[Double])(val colorStyleData: ColorStyleData) extends ColorStyle
 
 object LineStyle extends Extractors with Renderers {
 
+    import Extractors._
     import Renderers._
 
     lazy val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
@@ -491,11 +494,11 @@ object LineStyle extends Extractors with Renderers {
  * Case class PolyStyle which extends ColorStyle.
  * See [[https://developers.google.com/kml/documentation/kmlreference#polystyle Poly Style]]
  *
- * @param fill           the value of fill.
- * @param outline        the value of outline.
+ * @param maybeFill      optional value of fill.
+ * @param maybeOutline   optional value of outline.
  * @param colorStyleData the (auxiliary) color style properties.
  */
-case class PolyStyle(fill: Fill, outline: Outline)(val colorStyleData: ColorStyleData) extends ColorStyle
+case class PolyStyle(maybeFill: Option[Fill], maybeOutline: Option[Outline])(val colorStyleData: ColorStyleData) extends ColorStyle
 
 object PolyStyle extends Extractors with Renderers {
     lazy val extractorPartial: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(apply) ^^ "extractorCSD2PolyStyle"
@@ -507,13 +510,13 @@ object PolyStyle extends Extractors with Renderers {
  * Case class to model IconStyle.
  * See [[https://developers.google.com/kml/documentation/kmlreference#iconstyle IconStyle]]
  *
- * @param scale          the Scale.
+ * @param maybeScale     optional Scale.
  * @param Icon           the Icon.
- * @param hotSpot        the HotSpot
+ * @param maybeHotSpot   optional HotSpot
  * @param maybeHeading   an optional Heading.
  * @param colorStyleData the (auxiliary) color style properties.
  */
-case class IconStyle(scale: Scale, Icon: Icon, hotSpot: HotSpot, maybeHeading: Option[Heading])(val colorStyleData: ColorStyleData) extends ColorStyle
+case class IconStyle(maybeScale: Option[Scale], Icon: Icon, maybeHotSpot: Option[HotSpot], maybeHeading: Option[Heading])(val colorStyleData: ColorStyleData) extends ColorStyle
 
 object IconStyle extends Extractors with Renderers {
     lazy val extractorPartial: Extractor[ColorStyleData => IconStyle] = extractorPartial40(apply) ^^ "extractorCSP2IconStyle"
@@ -599,7 +602,9 @@ object Fill extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Fill] = extractor10(apply) ^^ "extractorFill"
+    implicit val optionExtractor: Extractor[Option[Fill]] = extractorOption[Fill] ^^ "extractMaybeFill"
     implicit val renderer: Renderable[Fill] = renderer1(apply) ^^ "rendererFill"
+    implicit val optRenderer: Renderable[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
 }
 
 /**
@@ -615,7 +620,9 @@ object Outline extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Outline] = extractor10(apply) ^^ "extractorOutline"
+    implicit val optionExtractor: Extractor[Option[Outline]] = extractorOption[Outline] ^^ "extractMaybeOutline"
     implicit val renderer: Renderable[Outline] = renderer1(apply) ^^ "rendererOutline"
+    implicit val optRenderer: Renderable[Option[Outline]] = optionRenderer[Outline] ^^ "rendererOptionOutline"
 }
 
 /**
@@ -662,7 +669,7 @@ object TextColor extends Extractors with Renderers {
     implicit val extractor: Extractor[TextColor] = extractor10(apply) ^^ "extractorTextColor"
     implicit val optExtractor: Extractor[Option[TextColor]] = extractorOption[TextColor] ^^ "extractMaybeTextColor"
     implicit val renderer: Renderable[TextColor] = renderer1(apply) ^^ "rendererTextColor"
-    implicit val seqRenderer: Renderable[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
+    implicit val optRenderer: Renderable[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
 }
 
 /**
@@ -678,7 +685,9 @@ object DisplayMode extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[DisplayMode] = extractor10(apply) ^^ "extractorDisplayMode"
+    implicit val optExtractor: Extractor[Option[DisplayMode]] = extractorOption[DisplayMode] ^^ "extractMaybeDisplayMode"
     implicit val renderer: Renderable[DisplayMode] = renderer1(apply) ^^ "rendererDisplayMode"
+    implicit val optRenderer: Renderable[Option[DisplayMode]] = optionRenderer[DisplayMode] ^^ "rendererOptionDisplayMode"
 }
 
 /**
@@ -748,7 +757,9 @@ object HotSpot extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[HotSpot] = extractor40(apply) ^^ "extractorHotspot"
+    implicit val optExtractor: Extractor[Option[HotSpot]] = extractorOption[HotSpot] ^^ "extractMaybeHotSpot"
     implicit val renderer: Renderable[HotSpot] = renderer4(apply) ^^ "rendererHotSpot"
+    implicit val optRenderer: Renderable[Option[HotSpot]] = optionRenderer[HotSpot] ^^ "rendererOptionHotSpot"
 }
 
 /**

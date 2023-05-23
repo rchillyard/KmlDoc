@@ -630,6 +630,8 @@ object Renderers {
             renderAttribute(t.toString, stateR.maybeName)
     } ^^ "doubleRenderer"
 
+    implicit lazy val rendererOptionDouble: Renderable[Option[Double]] = optionRenderer[Double]
+
     implicit lazy val longRenderer: Renderable[Long] = Renderable {
         (t: Long, _: Format, stateR: StateR) =>
             renderAttribute(t.toString, stateR.maybeName)

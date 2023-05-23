@@ -67,13 +67,11 @@ object Extractor {
      * Method to create an Extractor[T] from a Node => Try[T] function.
      * Note that this isn't strictly necessary because of the SAM conversion mechanism which turns a Node => Try[T] function into an Extractor[T].
      *
-     * @param f a Node => Try[T] function.
+     * @param extractorFunc a Node => Try[T] function.
      * @tparam T the underlying type of the resulting Extractor.
      * @return an Extractor[T].
      */
-    def apply[T](f: Node => Try[T]): Extractor[T] = new Extractor[T] {
-        def extract(node: Node): Try[T] = /* "Extractor.apply(f)" !? */ f(node)
-    } ^^ "Extractor.apply(f)"
+    def apply[T](extractorFunc: Node => Try[T]): Extractor[T] = (node: Node) => extractorFunc(node)
 
     /**
      * Method to create an Extractor[T] such that the result of the extraction is always a constant, regardless of what's in the node provided.
@@ -136,6 +134,8 @@ object Extractor {
     def extractField[P: Extractor](field: String)(node: Node): Try[P] = doExtractField[P](field, node) match {
         case _ -> Success(p) => //s"extractField($field)(${renderNode(node)})(${name[Extractor[P]]})" !?
             Success(p)
+//         TODO check this and generalize it if possible (this is only a problem in ExtractorsSpec3)
+//        case "singleton: kmlData" -> Failure(x) => Success(KmlData.nemo.asInstanceOf[P])
         case m -> Failure(x) =>
             x match {
                 case _: NoSuchFieldException => Success(None.asInstanceOf[P])
@@ -157,18 +157,29 @@ object Extractor {
      * @return a Try[P].
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-        // CONSIDER use Flog logging
-        val ts = ChildNames.translate(member)
-        logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-        if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-        val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-        if (nodeSeq.nonEmpty) {
-            logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
-            extractMulti(nodeSeq)
-        }
-        else {
-            logger.info(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-            Try(Nil.asInstanceOf[P])
+        // CONSIDER this has ended up being a bit of a hack and needs work!! There are three ways to get a result.
+        val explicitChildren: NodeSeq = node / member
+        if (explicitChildren.nonEmpty) extractMulti(explicitChildren)
+        else extractAll(node) match {
+            case Success(Nil) =>
+                // CONSIDER use Flog logging
+                val ts = ChildNames.translate(member)
+                logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+                if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+                val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
+                if (nodeSeq.nonEmpty) {
+                    logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+                    extractMulti(nodeSeq)
+                }
+                else {
+                    logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+                    Try(Nil.asInstanceOf[P])
+                }
+            case Failure(x) =>
+                Failure(x)
+            case Success(x) =>
+                logger.info(s"extractChildren extracted $x using extractAll")
+                Success(x)
         }
     }
 
