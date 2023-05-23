@@ -70,6 +70,8 @@ object Feature extends Extractors with Renderers {
 /**
  * Properties of a Feature (and therefore all its sub-types).
  *
+ * CONSIDER use StyleURL type for maybeStyleURL.
+ *
  * @param name             the name (a Text).
  * @param maybeDescription an optional description: Option[Text].
  * @param maybeStyleUrl    an optional style URL: Option[String].
@@ -594,11 +596,11 @@ case class Coordinate(long: String, lat: String, alt: String)
  */
 object Coordinate {
 
-    private val longLatAlt: Regex = """^\s*([\d\-\.]+),([\d\-\.]+),([\d\-\.]+)\s*$""".r
+    private val longLatAlt: Regex = """^\s*([\d\-\.]+),\s*([\d\-\.]+),\s*([\d\-\.]+)\s*$""".r
 
     def apply(w: String): Coordinate = w match {
         case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)
-        case _ => throw XmlException(s"bad coordinate string: $w")
+        case _ => throw XmlException(s"""bad coordinate string: "$w" """)
     }
 
     implicit val renderer: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long}, ${t.lat}, ${t.alt}") } ^^ "rendererCoordinate"
@@ -834,7 +836,6 @@ object Key extends Extractors with Renderers {
 }
 
 case class StyleURL($: String)
-
 
 object StyleURL extends Extractors with Renderers {
 
