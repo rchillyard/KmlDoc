@@ -13,8 +13,9 @@ import scala.util.Try
  * @tparam T the type of the object.
  */
 trait Renderer[T] extends NamedFunction[Renderer[T]] {
+
   /**
-   * This is the method which renders an object t of type T as a String, given three other parameters.
+   * This is the method which renders an object t of type T as a String, given two other parameters.
    *
    * @param t      the object to be rendered.
    * @param format the format to render the object in.
@@ -60,7 +61,6 @@ object Renderer {
    * @return a Renderer[T].
    */
   def createLazy[T](tr: => Renderer[T]): Renderer[T] = (t: T, format: Format, stateR: StateR) => tr.render(t, format, stateR)
-
 
   def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
     r.productElementName(index) match {
@@ -148,12 +148,13 @@ case class StateR(maybeName: Option[String], private val attributes: mutable.Str
 object StateR {
   def apply(maybeName: Option[String]): StateR = new StateR(maybeName, new mutable.StringBuilder(""), interior = false)
 
-  def apply(interior: Boolean): StateR = new StateR(None, new mutable.StringBuilder(""), interior)
-
   def apply(): StateR = apply(None)
 }
 
 trait Format {
+  // set this format to be flat.
+  def flatten: Format
+
   def indent: Format
 
   val indents: Int
@@ -170,16 +171,21 @@ trait Format {
 abstract class BaseFormat(indents: Int) extends Format {
   val name: String
 
+  def flatten: Format = this
+
   private val tab = "  "
 
   def newline: String = "\n" + (tab * indents)
 
+  // CONSIDER making this an instance method of StateR.
   protected def getClassName[T: ClassTag](stateR: StateR): String = stateR.maybeName.getOrElse(implicitly[ClassTag[T]].runtimeClass.getSimpleName)
 }
 
-case class FormatXML(indents: Int) extends BaseFormat(indents) {
+case class FormatXML(indents: Int, flat: Boolean = false) extends BaseFormat(indents) {
 
   val name: String = "FormatXML"
+
+  override def flatten: Format = copy(flat = true)
 
   def indent: Format = copy(indents = indents + 1)
 
@@ -188,13 +194,22 @@ case class FormatXML(indents: Int) extends BaseFormat(indents) {
   def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = {
     val name = getClassName(stateR)
     open match {
-      case Some(true) => s"<$name"
-      case Some(false) => s"</$name>"
+      case Some(true) => (if (indents > 0) newline else "") + s"<$name"
+      case Some(false) => (if (flat) "" else newline) + s"</$name>"
       case None => ">"
     }
   }
 
-  def sequencer(open: Option[Boolean]): String = newline
+  def sequencer(open: Option[Boolean]): String = open match {
+    case Some(_) => ""
+    case _ => "\n"
+  }
+}
+
+object FormatXML {
+  def apply(indents: Int): FormatXML = new FormatXML(indents)
+
+  def apply(): FormatXML = apply(0)
 }
 
 case class FormatText(indents: Int) extends BaseFormat(indents) {

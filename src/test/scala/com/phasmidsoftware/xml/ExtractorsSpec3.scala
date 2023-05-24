@@ -416,7 +416,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                 }
-            //                val wy = TryUsing(StateR())(sr => KmlRenderers.rendererGeometrys.render(gs, FormatXML(0), sr))
+            //                val wy = TryUsing(StateR())(sr => KmlRenderers.rendererGeometrys.render(gs, FormatXML(), sr))
             //                wy.isSuccess shouldBe true
             //                println(wy.get)
             //                // TODO fix the rendering of Point: the following line is how it really SHOULD be:
@@ -472,7 +472,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                                 println(s"maybeDescription: $maybeDescription")
                             case _ => println(s"$featureData did not match the expected result")
                         }
-                    //                        val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(0), sr))
+                    //                        val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
                     //                        wy.isSuccess shouldBe true
                     //                        trimWhiteSpace(wy.get) shouldBe trimWhiteSpace("<Placemark ><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>" +
                     //                            "<styleUrl>#line-006600-5000</styleUrl>\n    " +
@@ -491,7 +491,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
     //        val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
     //        val featureData: FeatureData = FeatureData(Text("Hello"), None, None, None, Nil)(KmlData.nemo)
     //        val placemark = Placemark(Seq(point))(featureData)
-    ////        val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(0), sr))
+    ////        val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
     ////        wy shouldBe Success("<Placemark ><name>Hello</name>\n      \n      \n      \n    <Point >\n        <coordinates>\n          -72, 0, 0\n          </coordinates>\n        \n        </Point>\n    \n    </Placemark>".stripMargin)
     //    }
 
@@ -550,7 +550,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                                 val coordinate = coordinates.head
                                 coordinate.coordinates.size shouldBe 8
 //                                println(implicitly[Renderer[Folder]])
-//                                val wy = TryUsing(StateR())(sr => Renderer.render[Folder](f, FormatXML(0), sr))
+//                                val wy = TryUsing(StateR())(sr => Renderer.render[Folder](f, FormatXML(), sr))
 //                                wy.isSuccess shouldBe true
 //                                trimWhiteSpace(wy.get) shouldBe trimWhiteSpace("<Folder ><name>Untitled layer</name>\n  <Placemark><name>Wakefield Branch of Eastern RR</name><description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description><styleUrl>#line-006600-5000</styleUrl>\n      <LineString><tessellate>1</tessellate>\n        <coordinates>\n          -71.06992, 42.49424, 0\n          -71.07018, 42.49512, 0\n          -71.07021, 42.49549, 0\n          -71.07008, 42.49648, 0\n          -71.069849, 42.497415, 0\n          -71.06954, 42.49833, 0\n          -70.9257614, 42.5264001, 0\n          -70.9254345, 42.5262817, 0\n          </coordinates>\n        \n        </LineString>\n      \n      \n    \n    \n    </Placemark>\n  \n  </Folder>")
                         }
@@ -703,7 +703,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                                 coordinates.size shouldBe 1
                                 val coordinate = coordinates.head
                                 coordinate.coordinates.size shouldBe 94
-//                                val wy = TryUsing(StateR())(sr => Renderer.render[Document](document, FormatXML(0), sr))
+//                                val wy = TryUsing(StateR())(sr => Renderer.render[Document](document, FormatXML(), sr))
 //                                wy.isSuccess shouldBe true
 //                                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
                         }
@@ -894,7 +894,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                                 coordinates.size shouldBe 1
                                 val coordinate = coordinates.head
                                 coordinate.coordinates.size shouldBe 94
-//                                val wy = TryUsing(StateR())(sr => Renderer.render[Document](document, FormatXML(0), sr))
+//                                val wy = TryUsing(StateR())(sr => Renderer.render[Document](document, FormatXML(), sr))
 //                                wy.isSuccess shouldBe true
 //                                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
                             case _: Folder =>
@@ -3555,7 +3555,7 @@ class ExtractorsSpec3 extends AnyFlatSpec with should.Matchers with PrivateMetho
                                 coordinates.size shouldBe 1
                                 val coordinate = coordinates.head
                                 coordinate.coordinates.size shouldBe 94
-//                                val wy = TryUsing(StateR())(sr => Renderer.render[Document](document, FormatXML(0), sr))
+//                                val wy = TryUsing(StateR())(sr => Renderer.render[Document](document, FormatXML(), sr))
 //                                wy.isSuccess shouldBe true
 //                                wy.get.startsWith("<Document><name>MA - Boston NE: Historic New England Railroads</name><description>See description of Historic New England Railroads (MA - Boston NW). Full index: http://www.rubecula.com/RRMaps/</description>\n    <Style id=\"icon-22-nodesc-normal\"><IconStyle><scale>1.1</scale><Icon>".stripMargin) shouldBe true
                             case _: Folder =>

@@ -250,6 +250,19 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
+
+    /**
+     * Method to determine, from the name of a property, whether it's an attribute or an element.
+     *
+     * @param name the member (property) name.
+     * @return Some(true) if it's an optional attribute; Some(false) if it's a required attribute; else None.
+     */
+    def inferAttributeType(name: String): Option[Boolean] = name match {
+        case optionalAttribute(_) => Some(true)
+        case attribute(_) => Some(false)
+        case _ => None
+    }
+
     private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
         field match {
             // NOTE special name for the (text) content of a node.

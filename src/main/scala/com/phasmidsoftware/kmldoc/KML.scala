@@ -576,7 +576,7 @@ object Coordinates extends Extractors with Renderers {
     implicit val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
     implicit val extractorSeq: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates] ^^ "multiExtractorCoordinates"
     implicit val renderer: Renderer[Coordinates] = renderer1(apply) ^^ "rendererCoordinates"
-    implicit val rendererSeq: Renderer[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML) ^^ "rendererCoordinates_s"
+    implicit val rendererSeq: Renderer[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML(_)) ^^ "rendererCoordinates_s"
 
     def parse(w: String): Coordinates = Coordinates((for (line <- Source.fromString(w).getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
 }
@@ -596,9 +596,8 @@ case class Coordinate(long: String, lat: String, alt: String)
 object Coordinate {
 
     // CONSIDER using Parser-combinators here.
-//    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
-
     private val longLatAlt: Regex = """^\s*([\d\-\.]+),\s*([\d\-\.]+),\s*([\d\-\.]+)\s*$""".r
+//    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
 
     def apply(w: String): Coordinate = w match {
         case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)
@@ -857,7 +856,7 @@ object Pair extends Extractors with Renderers {
     implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
     implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair] ^^ "multiExtractorPair"
     implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
-    implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererSequencePair"
+    implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
 }
 
 /**
@@ -894,16 +893,19 @@ object KmlRenderers extends Renderers {
     case class FormatCoordinate(indents: Int) extends BaseFormat(indents) {
       val name: String = "formatCoordinate"
 
-      def indent: Format = copy(indents = indents + 1)
+        def indent: Format = this
 
       def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = open match {
-          case Some(true) => newline
-          case _ => ""
+          case Some(true) =>
+              ""
+          case _ =>
+              ""
       }
 
       def sequencer(open: Option[Boolean]): String = open match {
+          case Some(true) => newline
           case Some(false) => ""
-          case _ => newline
+          case _ => "\n"
       }
   }
 

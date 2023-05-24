@@ -137,7 +137,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object MyRenderers extends Renderers {
       val rendererGreeting: Renderer[Greeting] = renderer1(Greeting)
     }
-    val wy = TryUsing(StateR())(sr => MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatXML(), sr))
     wy shouldBe Success("<Greeting>Hello</Greeting>")
   }
 
@@ -149,7 +149,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val renderer: Renderer[Scale] = renderer1Super(Scale.apply)(_.kmlData)
     }
     import MyRenderers._
-    val wy = TryUsing(StateR())(sr => implicitly[Renderer[Scale]].render(Scale.nemo(math.Pi), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => implicitly[Renderer[Scale]].render(Scale.nemo(math.Pi), FormatXML(), sr))
     wy shouldBe Success("""<Scale >3.141592653589793</Scale>""")
   }
 
@@ -158,22 +158,22 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererMyJunk: Renderer[MyJunk.type] = renderer0
     }
     import MyRenderers._
-    val wy = TryUsing(StateR())(sr => rendererMyJunk.render(MyJunk, FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => rendererMyJunk.render(MyJunk, FormatXML(), sr))
       wy shouldBe Success("<MyJunk$></MyJunk$>")
   }
 
   it should "intRenderer" in {
-    val wy = TryUsing(StateR())(sr => Renderers.intRenderer.render(1, FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => Renderers.intRenderer.render(1, FormatXML(), sr))
     wy shouldBe Success("1")
   }
 
   it should "stringRenderer" in {
-    val wy = TryUsing(StateR())(sr => Renderers.stringRenderer.render("Hello", FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => Renderers.stringRenderer.render("Hello", FormatXML(), sr))
     wy shouldBe Success("Hello")
   }
 
   it should "booleanRenderer" in {
-    val wy = TryUsing(StateR())(sr => Renderers.booleanRenderer.render(true, FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => Renderers.booleanRenderer.render(true, FormatXML(), sr))
     wy shouldBe Success("true")
   }
 
@@ -181,7 +181,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object ComplexRenderers extends Renderers {
       val rendererComplex: Renderer[Complex] = renderer2(Complex)
     }
-    val wy = TryUsing(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(), sr))
     wy shouldBe Success("<Complex r=\"1.0\" i=\"-1.0\" ></Complex>")
   }
 
@@ -189,7 +189,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVRenderers extends Renderers {
       val rendererKV: Renderer[KV] = renderer2(KV)
     }
-    val wy = TryUsing(StateR())(sr => KVRenderers.rendererKV.render(KV("a", -1), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => KVRenderers.rendererKV.render(KV("a", -1), FormatXML(), sr))
     wy shouldBe Success("""<KV k="a" v="-1" ></KV>""")
   }
 
@@ -197,12 +197,12 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderer[KVVV] = renderer4(KVVV)
     }
-    val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(), sr))
     wy shouldBe Success("""<KVVV k="a" v="-1" b="false" x="3.141592653589793" ></KVVV>""")
   }
 
   it should "doubleRenderer" in {
-    val wy = TryUsing(StateR())(sr => Renderers.doubleRenderer.render(math.Pi, FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => Renderers.doubleRenderer.render(math.Pi, FormatXML(), sr))
     wy shouldBe Success("3.141592653589793")
   }
 
@@ -211,7 +211,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererIntSeq: Renderer[Seq[Int]] = sequenceRenderer[Int]
     }
     import MyRenderers._
-    val wy = TryUsing(StateR())(sr => rendererIntSeq.render(Seq(42, 99, 1), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => rendererIntSeq.render(Seq(42, 99, 1), FormatXML(), sr))
     wy shouldBe Success(
       """
         |42
@@ -225,7 +225,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVVRenderers extends Renderers {
       val rendererKVVV: Renderer[KVVVV] = renderer5(KVVVV)
     }
-    val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(), sr))
     wy shouldBe Success("""<KVVVV k="a" v="-1" b="false" x="3.141592653589793" l="42" ></KVVVV>""")
   }
 
@@ -234,12 +234,12 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val rendererIntOption: Renderer[Option[Int]] = optionRenderer[Int]
     }
     import MyRenderers._
-    val wy = TryUsing(StateR())(sr => rendererIntOption.render(Some(42), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => rendererIntOption.render(Some(42), FormatXML(), sr))
     wy shouldBe Success("42")
   }
 
   it should "longRenderer" in {
-    val wy = TryUsing(StateR())(sr => Renderers.longRenderer.render(42L, FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => Renderers.longRenderer.render(42L, FormatXML(), sr))
     wy shouldBe Success("42")
   }
 
@@ -247,7 +247,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     object KVVRenderers extends Renderers {
       val rendererKVV: Renderer[KVV] = renderer3(KVV)
     }
-    val wy = TryUsing(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(0), sr))
+    val wy = TryUsing(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(), sr))
     wy shouldBe Success("""<KVV k="a" v="-1" b="false" ></KVV>""")
   }
 }
