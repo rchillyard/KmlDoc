@@ -1,9 +1,9 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
 import com.phasmidsoftware.core.{LowerCaseInitialRegex, XmlException}
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractors.{extractOptional, extractSingleton}
+import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable

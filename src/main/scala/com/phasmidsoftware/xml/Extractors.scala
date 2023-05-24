@@ -2,9 +2,9 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.{renderNode, sequence}
-import com.phasmidsoftware.core.{Reflection, XmlException}
+import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, extractField, logger, none}
+import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, logger, none}
 import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.{ClassTag, classTag}
@@ -167,7 +167,7 @@ trait Extractors {
     def multiExtractorBase[P: Extractor]: MultiExtractor[Seq[P]] = new MultiExtractorBase[P]()
 
     /**
-     * Method to create a new MultiEzxtractor from a function which takes a NodeSeq and returns a Try of Seq[P].
+     * Method to create a new MultiExtractor from a function which takes a NodeSeq and returns a Try of Seq[P].
      *
      * @param function of type NodeSeq => Try of [Seq[P]
      * @tparam P the underlying type of the resulting MultiExtractor.
@@ -189,7 +189,7 @@ trait Extractors {
      * @tparam P the underlying (MultiExtractor) type of the result.
      * @return an TagToExtractorFunc[P] based on fieldExtractor.
      */
-    private def childrenExtractor[P: MultiExtractor]: ElementExtractor[P] = (tag: String) => extractChildren[P](tag)
+    private def childrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] = (tag: String) => extractChildren[P](tag)
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
@@ -267,28 +267,13 @@ trait Extractors {
 def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     multiExtractor[T]{
         nodeSeq =>
-            println(s"multiExtractor2: ${implicitly[ClassTag[T]]} from ${implicitly[ClassTag[P0]]}, ${implicitly[ClassTag[P1]]} with labels: $labels")
-
-            val extractors = new Extractors{}
-            println(extractors)
-            expandTranslations(labels) match {
+            labels match {
                 case label :: fs =>
                     val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
                     val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs)(implicitly[Extractor[P1]], classTag).extract(nodeSeq)
                     for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
             }
-
-    /**
-     * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
-     *
-     * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
-     * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.
-     * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
-     * @tparam U  a tuple whose only purpose is type inference.
-     * @tparam P0 the first (Extractor) sub-type of T.
-     * @return MultiExtractor of Seq[T].
-     */
-    def subclassExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag](construct: (P0, P1) => U, labels: Seq[String]): SubclassExtractor[T] = new SubclassExtractor[T](labels)(multiExtractor2(construct, labels))
+    }
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of three P-types.
@@ -452,7 +437,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      */
     def extractor01[P0: MultiExtractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
         (node: Node) =>
-            extractorPartial1[P0, Unit, T](deprecatedChildrenExtractor[P0], m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
+            extractorPartial1[P0, Unit, T](childrenExtractor[P0], m0 => _ => construct(m0), dropLast = false, fields).extract(node) map (z => z())
     }
 //
 //    /**

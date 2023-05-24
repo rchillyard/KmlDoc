@@ -10,7 +10,7 @@ import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
 import scala.reflect.ClassTag
-import scala.util.Success
+import scala.util._
 import scala.util.matching.Regex
 import scala.xml.{Elem, NamespaceBinding, XML}
 
@@ -63,10 +63,10 @@ trait Feature extends KmlObject
  */
 object Feature extends Extractors with Renderers {
 // Old stuff
-    private val labels: Seq[String] = Seq("Folder", "Document", "Placemark")
-    implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
-        MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), labels) ^^ "multiExtractorFeature")
-    implicit val seqExtractor: Extractor[Seq[Feature]] = seqExtractorByTag("features", labels)
+//    private val labels: Seq[String] = Seq("Folder", "Document", "Placemark")
+//    implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
+//        MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), labels) ^^ "multiExtractorFeature")
+//    implicit val seqExtractor: Extractor[Seq[Feature]] = seqExtractorByTag("features", labels)
 
     implicit val extractorSeq: MultiExtractor[Seq[Feature]] =
         lazyMultiExtractor(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
