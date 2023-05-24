@@ -84,6 +84,19 @@ object Extractor {
     def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty) ^^ s"Extractor.apply($ty)"
 
     /**
+     * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
+     * The purpose of this method is to break the infinite recursion caused when implicit values are defined recursively.
+     * See the Play JSON library method in JsPath called lazyRead.
+     *
+     * TESTME
+     *
+     * @param te an Extractor[T].
+     * @tparam T the underlying type of the input and output Extractors.
+     * @return an Extractor[T].
+     */
+    def createLazy[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
+
+    /**
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
      *
      * @param node the node on which the extractor will work.
@@ -408,11 +421,19 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
 /**
  * Class which extends an Extractor of Seq[T].
  *
+ * NOTE: used by subclassExtractor1 method (itself unused).
+ *
  * @param labels a set of labels (tags)
  * @param tsm    an (implicit) MultiExtractor of Seq[T].
  * @tparam T the type to be constructed.
  */
 class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
+    /**
+     * TESTME
+     *
+     * @param node a Node.
+     * @return a Try[T].
+     */
     def extract(node: Node): Try[Seq[T]] = sequence(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
 }
 

@@ -17,30 +17,6 @@ import scala.xml.{Node, NodeSeq}
 trait Extractors {
 
     /**
-     * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
-     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
-     * recursively.
-     * See the Play JSON library method in JsPath called lazyRead.
-     *
-     * @param te an Extractor[T].
-     * @tparam T the underlying type of the Extractor required.
-     * @return an Extractor[T].
-     */
-    def lazyExtractor[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
-
-    /**
-     * Method to create a lazy MultiExtractor[T] from an explicit MultiExtractor[T] which is call-by-name.
-     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
-     * recursively.
-     * See the Play JSON library method in JsPath called lazyRead.
-     *
-     * @param tm a MultiExtractor[T].
-     * @tparam T the underlying type of the MultiExtractor required.
-     * @return a MultiExtractor[T].
-     */
-    def lazyMultiExtractor[T](tm: => MultiExtractor[T]): MultiExtractor[T] = (nodes: NodeSeq) => tm.extract(nodes)
-
-    /**
      * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
      * This is generally used in conjunction with naming a case class member as "maybe"name.
      *
@@ -242,6 +218,8 @@ trait Extractors {
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
+     *
+     * TESTME
      *
      * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
      * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.

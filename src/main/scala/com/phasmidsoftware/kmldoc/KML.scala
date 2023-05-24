@@ -62,14 +62,9 @@ trait Feature extends KmlObject
  * Companion object to Feature.
  */
 object Feature extends Extractors with Renderers {
-// Old stuff
-//    private val labels: Seq[String] = Seq("Folder", "Document", "Placemark")
-//    implicit val multiExtractor: MultiExtractor[Seq[Feature]] =
-//        MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), labels) ^^ "multiExtractorFeature")
-//    implicit val seqExtractor: Extractor[Seq[Feature]] = seqExtractorByTag("features", labels)
 
     implicit val extractorSeq: MultiExtractor[Seq[Feature]] =
-        lazyMultiExtractor(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
+        MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
     implicit val renderer: Renderable[Feature] = new Renderers {}.lazyRenderer(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
     implicit val rendererSeq: Renderable[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
 }
@@ -502,12 +497,9 @@ object Document extends Extractors with Renderers {
  * @param maybeWidth     optional width of the line.
  * @param colorStyleData other properties.
  */
-case class LineStyle(maybeWidth: Option[Double])(val colorStyleData: ColorStyleData) extends ColorStyle
+case class LineStyle(maybeWidth: Option[Width])(val colorStyleData: ColorStyleData) extends ColorStyle
 
 object LineStyle extends Extractors with Renderers {
-
-    import Extractors._
-    import Renderers._
 
     val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
     implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorPartial) ^^ "extractorLineStyle"
@@ -833,7 +825,9 @@ object Width extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Width] = extractor10(apply) ^^ "extractorWidth"
+    implicit val extractorOpt: Extractor[Option[Width]] = extractorOption[Width] ^^ "extractMaybeWidth"
     implicit val renderer: Renderable[Width] = renderer1(apply) ^^ "rendererWidth"
+    implicit val rendererOpt: Renderable[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
 }
 
 case class Key($: String)
