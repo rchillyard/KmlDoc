@@ -44,7 +44,7 @@ object KmlData extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[KmlData] = extractor10(apply) ^^ "extractorKmlData"
-    implicit val renderer: Renderable[KmlData] = renderer1(apply) ^^ "rendererKmlData"
+    implicit val renderer: Renderer[KmlData] = renderer1(apply) ^^ "rendererKmlData"
 
     ////  implicit object loggableKmlData extends LoggableAny[KmlData]
 }
@@ -65,8 +65,8 @@ object Feature extends Extractors with Renderers {
 
     implicit val extractorSeq: MultiExtractor[Seq[Feature]] =
         MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
-    implicit val renderer: Renderable[Feature] = new Renderers {}.lazyRenderer(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
-    implicit val rendererSeq: Renderable[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
+    implicit val renderer: Renderer[Feature] = new Renderers {}.lazyRenderer(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
+    implicit val rendererSeq: Renderer[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
 }
 
 /**
@@ -93,7 +93,7 @@ object FeatureData extends Extractors with Renderers {
 
     val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial41(apply)
     implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial) ^^ "extractorFeatureData"
-    implicit val renderer: Renderable[FeatureData] = renderer5Super(apply)(_.kmlData) ^^ "rendererFeatureData"
+    implicit val renderer: Renderer[FeatureData] = renderer5Super(apply)(_.kmlData) ^^ "rendererFeatureData"
 }
 
 /**
@@ -109,8 +109,8 @@ trait Geometry extends KmlObject
 object Geometry extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[Geometry]] =
         multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^ "multiExtractorGeometry"
-    implicit val renderer: Renderable[Geometry] = rendererSuper2[Geometry, Point, LineString] ^^ "rendererGeometry"
-    implicit val rendererSeq: Renderable[Seq[Geometry]] = sequenceRenderer[Geometry] ^^ "rendererGeometrys"
+    implicit val renderer: Renderer[Geometry] = rendererSuper2[Geometry, Point, LineString] ^^ "rendererGeometry"
+    implicit val rendererSeq: Renderer[Seq[Geometry]] = sequenceRenderer[Geometry] ^^ "rendererGeometrys"
 }
 
 /**
@@ -126,7 +126,7 @@ object GeometryData extends Extractors with Renderers {
     val applyFunction: KmlData => GeometryData = new GeometryData(_)
     val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](applyFunction)
     implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial)
-    implicit val renderer: Renderable[GeometryData] = renderer0Super(apply)(_.kmlData) ^^ "rendererGeometryData"
+    implicit val renderer: Renderer[GeometryData] = renderer0Super(apply)(_.kmlData) ^^ "rendererGeometryData"
 }
 
 /**
@@ -143,7 +143,7 @@ object Icon extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Icon] = extractor10(apply) ^^ "extractorIcon"
-    implicit val renderer: Renderable[Icon] = renderer1(apply) ^^ "rendererIcon"
+    implicit val renderer: Renderer[Icon] = renderer1(apply) ^^ "rendererIcon"
 }
 
 /**
@@ -165,8 +165,8 @@ object Scale extends Extractors with Renderers {
     val extractorPartial: Extractor[KmlData => Scale] = extractorPartial10(apply) ^^ "extractorKD2Scale"
     implicit val extractor: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorPartial)
     implicit val extractorOpt: Extractor[Option[Scale]] = extractorOption[Scale] ^^ "extractMaybeScale"
-    implicit val renderer: Renderable[Scale] = renderer1Super(apply)(_.kmlData) ^^ "rendererScale"
-    implicit val rendererOpt: Renderable[Option[Scale]] = optionRenderer[Scale] ^^ "rendererOptionScale"
+    implicit val renderer: Renderer[Scale] = renderer1Super(apply)(_.kmlData) ^^ "rendererScale"
+    implicit val rendererOpt: Renderer[Option[Scale]] = optionRenderer[Scale] ^^ "rendererOptionScale"
 
     def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
 }
@@ -184,8 +184,8 @@ trait StyleSelector extends KmlObject
 object StyleSelector extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[StyleSelector]] =
         multiExtractor2[StyleSelector, (StyleMap, Style), StyleMap, Style]((s, m) => (s, m), Seq("StyleMap", "Style")) ^^ "multiExtractorStyleSelector"
-    implicit val renderer: Renderable[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
-    implicit val rendererSeq: Renderable[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^^ "rendererStyleSelectors"
+    implicit val renderer: Renderer[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
+    implicit val rendererSeq: Renderer[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^^ "rendererStyleSelectors"
 }
 
 /**
@@ -201,7 +201,7 @@ object StyleSelectorData extends Extractors with Renderers {
     val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
     val extractorPartial: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](applyFunction) ^^ "extractorKD2StyleSelectorData"
     implicit val extractor: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorPartial) ^^ "extractorStyleSelectorData"
-    implicit val renderer: Renderable[StyleSelectorData] = renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
+    implicit val renderer: Renderer[StyleSelectorData] = renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
 }
 
 /**
@@ -220,8 +220,8 @@ object SubStyle extends Extractors with Renderers {
         multiExtractor6[SubStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle](
             (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
         ) ^^ "multiExtractorSubStyle"
-    implicit val renderer: Renderable[SubStyle] = rendererSuper6[SubStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererSubStyle"
-    implicit val rendererSeq: Renderable[Seq[SubStyle]] = sequenceRenderer[SubStyle] ^^ "rendererSubStyles"
+    implicit val renderer: Renderer[SubStyle] = rendererSuper6[SubStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererSubStyle"
+    implicit val rendererSeq: Renderer[Seq[SubStyle]] = sequenceRenderer[SubStyle] ^^ "rendererSubStyles"
 }
 
 case class SubStyleData(kmlData: KmlData)
@@ -230,7 +230,7 @@ object SubStyleData extends Extractors with Renderers {
     val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
     val extractorPartial: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](applyFunction)
     implicit val extractor: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorPartial) ^^ "extractorSubStyleData"
-    implicit val renderer: Renderable[SubStyleData] = renderer0Super(apply)(_.kmlData) ^^ "rendererSubStyleData"
+    implicit val renderer: Renderer[SubStyleData] = renderer0Super(apply)(_.kmlData) ^^ "rendererSubStyleData"
 }
 
 /**
@@ -248,8 +248,8 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
 object Placemark extends Extractors with Renderers {
     val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
     implicit val extractor: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorPartial) ^^ "extractorPlacemark"
-    implicit val renderer: Renderable[Placemark] = renderer1Super(apply)(_.featureData) ^^ "rendererPlacemark"
-    implicit val rendererSeq: Renderable[Seq[Placemark]] = sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
+    implicit val renderer: Renderer[Placemark] = renderer1Super(apply)(_.featureData) ^^ "rendererPlacemark"
+    implicit val rendererSeq: Renderer[Seq[Placemark]] = sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
 }
 
 /**
@@ -267,7 +267,7 @@ trait Container extends Feature
 object Container extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[Container]] =
         multiExtractor2[Container, (Folder, Document), Folder, Document]((f, d) => (f, d), Seq("Folder", "Document")) ^^ "multiExtractorContainer"
-    implicit val renderer: Renderable[Container] = rendererSuper2[Container, Folder, Document] ^^ "rendererContainer"
+    implicit val renderer: Renderer[Container] = rendererSuper2[Container, Folder, Document] ^^ "rendererContainer"
 }
 
 /**
@@ -284,7 +284,7 @@ object ContainerData extends Extractors with Renderers {
     val applyFunction: FeatureData => ContainerData = new ContainerData(_)
     val extractorPartial: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](applyFunction) ^^ "extractorFD2ContainerData"
     implicit val extractor: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorPartial) ^^ "extractorContainerData"
-    implicit val renderer: Renderable[ContainerData] = renderer0Super(applyFunction)(_.featureData) ^^ "rendererContainerData"
+    implicit val renderer: Renderer[ContainerData] = renderer0Super(applyFunction)(_.featureData) ^^ "rendererContainerData"
 }
 
 /**
@@ -301,8 +301,8 @@ object Point extends Extractors with Renderers {
     val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
     implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
     implicit val extractorSeq: MultiExtractor[Seq[Point]] = multiExtractorBase[Point]
-    implicit val renderer: Renderable[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
-    implicit val rendererSeq: Renderable[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
+    implicit val renderer: Renderer[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
+    implicit val rendererSeq: Renderer[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
 }
 
 /**
@@ -319,8 +319,8 @@ case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates]) ext
 
 object LineString extends Extractors with Renderers {
     implicit val extractor: Extractor[LineString] = extractor11(apply) ^^ "extractorLineString"
-    implicit val renderer: Renderable[LineString] = renderer2(apply) ^^ "rendererLineString"
-    implicit val rendererSeq: Renderable[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
+    implicit val renderer: Renderer[LineString] = renderer2(apply) ^^ "rendererLineString"
+    implicit val rendererSeq: Renderer[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
 }
 
 /**
@@ -339,8 +339,8 @@ case class Style(Styles: Seq[SubStyle])(val styleSelectorData: StyleSelectorData
 object Style extends Extractors with Renderers {
     val extractorPartial: Extractor[StyleSelectorData => Style] = extractorPartial01(apply) ^^ "extractorSSD2Style"
     implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorPartial) ^^ "extractorStyle"
-    implicit val renderer: Renderable[Style] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyle"
-    implicit val rendererSeq: Renderable[Seq[Style]] = sequenceRenderer[Style] ^^ "rendererStyles"
+    implicit val renderer: Renderer[Style] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyle"
+    implicit val rendererSeq: Renderer[Seq[Style]] = sequenceRenderer[Style] ^^ "rendererStyles"
 }
 
 
@@ -360,8 +360,8 @@ object StyleMap extends Extractors {
     val extractorPartial: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply) ^^ "extractorSSD2StyleMap"
     implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorPartial) ^^ "extractorStyleMap"
     implicit val extractorSeq: MultiExtractor[Seq[StyleMap]] = multiExtractorBase[StyleMap] ^^ "multiExtractorStyleMap"
-    implicit val renderer: Renderable[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyleMap"
-    implicit val rendererSeq: Renderable[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
+    implicit val renderer: Renderer[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyleMap"
+    implicit val rendererSeq: Renderer[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
 }
 
 /**
@@ -386,8 +386,8 @@ object BalloonStyle extends Extractors with Renderers {
 
     val extractorPartial: Extractor[ColorStyleData => BalloonStyle] = extractorPartial40(apply) ^^ "extractorCSD2BalloonStyle"
     implicit val extractor: Extractor[BalloonStyle] = extractorPartial[ColorStyleData, BalloonStyle](extractorPartial) ^^ "extractorBalloonStyle"
-    implicit val renderer: Renderable[BalloonStyle] = renderer4Super(apply)(_.colorStyleData) ^^ "rendererBalloonStyle"
-    implicit val rendererOpt: Renderable[Option[BalloonStyle]] = optionRenderer[BalloonStyle] ^^ "rendererOptionBalloonStyle"
+    implicit val renderer: Renderer[BalloonStyle] = renderer4Super(apply)(_.colorStyleData) ^^ "rendererBalloonStyle"
+    implicit val rendererOpt: Renderer[Option[BalloonStyle]] = optionRenderer[BalloonStyle] ^^ "rendererOptionBalloonStyle"
 }
 
 /**
@@ -407,7 +407,7 @@ case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], 
 object ListStyle extends Extractors with Renderers {
     val extractorPartial: Extractor[ColorStyleData => ListStyle] = extractorPartial30(apply) ^^ "extractorCSD2ListStyle"
     implicit val extractor: Extractor[ListStyle] = extractorPartial[ColorStyleData, ListStyle](extractorPartial) ^^ "extractorListStyle"
-    implicit val renderer: Renderable[ListStyle] = renderer3Super(apply)(_.colorStyleData) ^^ "rendererListStyle"
+    implicit val renderer: Renderer[ListStyle] = renderer3Super(apply)(_.colorStyleData) ^^ "rendererListStyle"
 }
 
 /**
@@ -428,8 +428,8 @@ object ColorStyle extends Extractors with Renderers {
         multiExtractor6[ColorStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle](
             (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
         ) ^^ "multiExtractorColorStyle"
-    implicit val renderer: Renderable[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererColorStyle"
-    implicit val rendererSeq: Renderable[Seq[ColorStyle]] = sequenceRenderer[ColorStyle] ^^ "rendererColorStyles"
+    implicit val renderer: Renderer[ColorStyle] = rendererSuper6[ColorStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererColorStyle"
+    implicit val rendererSeq: Renderer[Seq[ColorStyle]] = sequenceRenderer[ColorStyle] ^^ "rendererColorStyles"
 }
 
 /**
@@ -445,7 +445,7 @@ object ColorStyleData extends Extractors with Renderers {
 
     val extractorPartial: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(apply) ^^ "extractorSSD2ColorStyleData"
     implicit val extractor: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorPartial) ^^ "extractorColorStyleData"
-    implicit val renderer: Renderable[ColorStyleData] = renderer2Super(apply)(x => x.subStyleData) ^^ "rendererColorStyleData"
+    implicit val renderer: Renderer[ColorStyleData] = renderer2Super(apply)(x => x.subStyleData) ^^ "rendererColorStyleData"
 }
 
 /**
@@ -463,8 +463,8 @@ case class Folder(features: Seq[Feature])(val containerData: ContainerData) exte
 object Folder extends Extractors with Renderers {
     val extractorPartial: Extractor[ContainerData => Folder] = extractorPartial01(apply) ^^ "extractorCD2Folder"
     implicit val extractor: Extractor[Folder] = extractorPartial(extractorPartial) ^^ "extractorFolder"
-    implicit val renderer: Renderable[Folder] = renderer1Super(apply)(_.containerData) ^^ "rendererFolder"
-    implicit val rendererSeq: Renderable[Seq[Folder]] = sequenceRenderer[Folder] ^^ "rendererFolders"
+    implicit val renderer: Renderer[Folder] = renderer1Super(apply)(_.containerData) ^^ "rendererFolder"
+    implicit val rendererSeq: Renderer[Seq[Folder]] = sequenceRenderer[Folder] ^^ "rendererFolders"
 }
 
 /**
@@ -484,8 +484,8 @@ case class Document(features: Seq[Feature])(val containerData: ContainerData) ex
 object Document extends Extractors with Renderers {
     val extractorPartial: Extractor[ContainerData => Document] = extractorPartial01(apply) ^^ "extractorCD2Document"
     implicit val extractor: Extractor[Document] = extractorPartial(extractorPartial) ^^ "extractorDocument"
-    implicit val renderer: Renderable[Document] = renderer1Super(apply)(_.containerData) ^^ "rendererDocument"
-    implicit val rendererSeq: Renderable[Seq[Document]] = sequenceRenderer[Document] ^^ "rendererDocuments"
+    implicit val renderer: Renderer[Document] = renderer1Super(apply)(_.containerData) ^^ "rendererDocument"
+    implicit val rendererSeq: Renderer[Seq[Document]] = sequenceRenderer[Document] ^^ "rendererDocuments"
 }
 
 /**
@@ -503,8 +503,8 @@ object LineStyle extends Extractors with Renderers {
 
     val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
     implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorPartial) ^^ "extractorLineStyle"
-    implicit val renderer: Renderable[LineStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLineStyle"
-    implicit val rendererOpt: Renderable[Option[LineStyle]] = optionRenderer[LineStyle] ^^ "rendererOptionLineStyle"
+    implicit val renderer: Renderer[LineStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLineStyle"
+    implicit val rendererOpt: Renderer[Option[LineStyle]] = optionRenderer[LineStyle] ^^ "rendererOptionLineStyle"
 }
 
 /**
@@ -520,7 +520,7 @@ case class PolyStyle(maybeFill: Option[Fill], maybeOutline: Option[Outline])(val
 object PolyStyle extends Extractors with Renderers {
     val extractorPartial: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(apply) ^^ "extractorCSD2PolyStyle"
     implicit val extractor: Extractor[PolyStyle] = extractorPartial[ColorStyleData, PolyStyle](extractorPartial) ^^ "extractorPolyStyle"
-    implicit val renderer: Renderable[PolyStyle] = renderer2Super(apply)(_.colorStyleData) ^^ "rendererPolyStyle"
+    implicit val renderer: Renderer[PolyStyle] = renderer2Super(apply)(_.colorStyleData) ^^ "rendererPolyStyle"
 }
 
 /**
@@ -538,8 +538,8 @@ case class IconStyle(maybeScale: Option[Scale], Icon: Icon, maybeHotSpot: Option
 object IconStyle extends Extractors with Renderers {
     val extractorPartial: Extractor[ColorStyleData => IconStyle] = extractorPartial40(apply) ^^ "extractorCSP2IconStyle"
     implicit val extractor: Extractor[IconStyle] = extractorPartial[ColorStyleData, IconStyle](extractorPartial) ^^ "extractorIconStyle"
-    implicit val renderer: Renderable[IconStyle] = renderer4Super(apply)(x => x.colorStyleData) ^^ "rendererIconStyle"
-    implicit val rendererOpt: Renderable[Option[IconStyle]] = optionRenderer[IconStyle] ^^ "rendererOptionIconStyle"
+    implicit val renderer: Renderer[IconStyle] = renderer4Super(apply)(x => x.colorStyleData) ^^ "rendererIconStyle"
+    implicit val rendererOpt: Renderer[Option[IconStyle]] = optionRenderer[IconStyle] ^^ "rendererOptionIconStyle"
 }
 
 /**
@@ -554,8 +554,8 @@ case class LabelStyle(scale: Scale)(val colorStyleData: ColorStyleData) extends 
 object LabelStyle extends Extractors with Renderers {
     val extractorPartial: Extractor[ColorStyleData => LabelStyle] = extractorPartial10(apply) ^^ "extractorCSD2LabelStyle"
     implicit val extractor: Extractor[LabelStyle] = extractorPartial[ColorStyleData, LabelStyle](extractorPartial) ^^ "extractorLabelStyle"
-    implicit val renderer: Renderable[LabelStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLabelStyle"
-    implicit val rendererOpt: Renderable[Option[LabelStyle]] = optionRenderer[LabelStyle] ^^ "rendererOptionLabelStyle"
+    implicit val renderer: Renderer[LabelStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLabelStyle"
+    implicit val rendererOpt: Renderer[Option[LabelStyle]] = optionRenderer[LabelStyle] ^^ "rendererOptionLabelStyle"
 }
 
 //================Classes which do not appear at top level of KML Reference================================================
@@ -567,7 +567,7 @@ object Tessellate extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
-    implicit val renderer: Renderable[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
+    implicit val renderer: Renderer[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
 }
 
 case class Coordinates(coordinates: Seq[Coordinate])
@@ -575,8 +575,8 @@ case class Coordinates(coordinates: Seq[Coordinate])
 object Coordinates extends Extractors with Renderers {
     implicit val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
     implicit val extractorSeq: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates] ^^ "multiExtractorCoordinates"
-    implicit val renderer: Renderable[Coordinates] = renderer1(apply) ^^ "rendererCoordinates"
-    implicit val rendererSeq: Renderable[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML) ^^ "rendererCoordinates_s"
+    implicit val renderer: Renderer[Coordinates] = renderer1(apply) ^^ "rendererCoordinates"
+    implicit val rendererSeq: Renderer[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML) ^^ "rendererCoordinates_s"
 
     def parse(w: String): Coordinates = Coordinates((for (line <- Source.fromString(w).getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
 }
@@ -605,8 +605,8 @@ object Coordinate {
         case _ => throw XmlException(s"""bad coordinate string: "$w" """)
     }
 
-    implicit val renderer: Renderable[Coordinate] = Renderable { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long}, ${t.lat}, ${t.alt}") } ^^ "rendererCoordinate"
-    implicit val rendererSeq: Renderable[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](KmlRenderers.FormatCoordinate) ^^ "rendererCoordinates1"
+    implicit val renderer: Renderer[Coordinate] = Renderer { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long}, ${t.lat}, ${t.alt}") } ^^ "rendererCoordinate"
+    implicit val rendererSeq: Renderer[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](KmlRenderers.FormatCoordinate) ^^ "rendererCoordinates1"
 }
 
 /**
@@ -623,8 +623,8 @@ object Fill extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Fill] = extractor10(apply) ^^ "extractorFill"
     implicit val extractorOpt: Extractor[Option[Fill]] = extractorOption[Fill] ^^ "extractMaybeFill"
-    implicit val renderer: Renderable[Fill] = renderer1(apply) ^^ "rendererFill"
-    implicit val rendererOpt: Renderable[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
+    implicit val renderer: Renderer[Fill] = renderer1(apply) ^^ "rendererFill"
+    implicit val rendererOpt: Renderer[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
 }
 
 /**
@@ -641,8 +641,8 @@ object Outline extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Outline] = extractor10(apply) ^^ "extractorOutline"
     implicit val extractorOpt: Extractor[Option[Outline]] = extractorOption[Outline] ^^ "extractMaybeOutline"
-    implicit val renderer: Renderable[Outline] = renderer1(apply) ^^ "rendererOutline"
-    implicit val rendererOpt: Renderable[Option[Outline]] = optionRenderer[Outline] ^^ "rendererOptionOutline"
+    implicit val renderer: Renderer[Outline] = renderer1(apply) ^^ "rendererOutline"
+    implicit val rendererOpt: Renderer[Option[Outline]] = optionRenderer[Outline] ^^ "rendererOptionOutline"
 }
 
 /**
@@ -658,8 +658,8 @@ object Heading extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Heading] = extractor10(apply) ^^ "extractorHeading"
     implicit val extractorOpt: Extractor[Option[Heading]] = extractorOption[Heading] ^^ "extractMaybeHeading"
-    implicit val renderer: Renderable[Heading] = renderer1(apply) ^^ "rendererHeading"
-    implicit val rendererOpt: Renderable[Option[Heading]] = optionRenderer[Heading] ^^ "rendererOptionHeading"
+    implicit val renderer: Renderer[Heading] = renderer1(apply) ^^ "rendererHeading"
+    implicit val rendererOpt: Renderer[Option[Heading]] = optionRenderer[Heading] ^^ "rendererOptionHeading"
 }
 
 case class BgColor($: String)
@@ -670,8 +670,8 @@ object BgColor extends Extractors with Renderers {
 
     implicit val extractor: Extractor[BgColor] = extractor10(apply) ^^ "extractorBgColor"
     implicit val extractorOpt: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
-    implicit val renderer: Renderable[BgColor] = renderer1(apply) ^^ "rendererBgColor"
-    implicit val rendererOpt: Renderable[Option[BgColor]] = optionRenderer[BgColor] ^^ "rendererOptionBgColor"
+    implicit val renderer: Renderer[BgColor] = renderer1(apply) ^^ "rendererBgColor"
+    implicit val rendererOpt: Renderer[Option[BgColor]] = optionRenderer[BgColor] ^^ "rendererOptionBgColor"
 }
 
 /**
@@ -688,8 +688,8 @@ object TextColor extends Extractors with Renderers {
 
     implicit val extractor: Extractor[TextColor] = extractor10(apply) ^^ "extractorTextColor"
     implicit val extractorOpt: Extractor[Option[TextColor]] = extractorOption[TextColor] ^^ "extractMaybeTextColor"
-    implicit val renderer: Renderable[TextColor] = renderer1(apply) ^^ "rendererTextColor"
-    implicit val rendererOpt: Renderable[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
+    implicit val renderer: Renderer[TextColor] = renderer1(apply) ^^ "rendererTextColor"
+    implicit val rendererOpt: Renderer[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
 }
 
 /**
@@ -706,8 +706,8 @@ object DisplayMode extends Extractors with Renderers {
 
     implicit val extractor: Extractor[DisplayMode] = extractor10(apply) ^^ "extractorDisplayMode"
     implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractorOption[DisplayMode] ^^ "extractMaybeDisplayMode"
-    implicit val renderer: Renderable[DisplayMode] = renderer1(apply) ^^ "rendererDisplayMode"
-    implicit val rendererOpt: Renderable[Option[DisplayMode]] = optionRenderer[DisplayMode] ^^ "rendererOptionDisplayMode"
+    implicit val renderer: Renderer[DisplayMode] = renderer1(apply) ^^ "rendererDisplayMode"
+    implicit val rendererOpt: Renderer[Option[DisplayMode]] = optionRenderer[DisplayMode] ^^ "rendererOptionDisplayMode"
 }
 
 /**
@@ -724,8 +724,8 @@ object ListItemType extends Extractors with Renderers {
 
     implicit val extractor: Extractor[ListItemType] = extractor10(apply) ^^ "extractorListItemType"
     implicit val extractorOpt: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
-    implicit val renderer: Renderable[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
-    implicit val rendererOpt: Renderable[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
+    implicit val renderer: Renderer[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
+    implicit val rendererOpt: Renderer[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
 }
 
 /**
@@ -741,8 +741,8 @@ object State extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[State] = extractor10(apply) ^^ "extractorState"
-    implicit val renderer: Renderable[State] = renderer1(apply) ^^ "rendererState"
-    implicit val rendererOpt: Renderable[Option[State]] = optionRenderer[State] ^^ "rendererOptionState"
+    implicit val renderer: Renderer[State] = renderer1(apply) ^^ "rendererState"
+    implicit val rendererOpt: Renderer[Option[State]] = optionRenderer[State] ^^ "rendererOptionState"
 }
 
 /**
@@ -758,8 +758,8 @@ object ItemIcon extends Extractors with Renderers {
 
     implicit val extractor: Extractor[ItemIcon] = extractor20(apply) ^^ "extractorItemIcon"
     implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
-    implicit val renderer: Renderable[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
-    implicit val rendererOpt: Renderable[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
+    implicit val renderer: Renderer[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
+    implicit val rendererOpt: Renderer[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
 }
 
 /**
@@ -778,8 +778,8 @@ object HotSpot extends Extractors with Renderers {
 
     implicit val extractor: Extractor[HotSpot] = extractor40(apply) ^^ "extractorHotspot"
     implicit val extractorOpt: Extractor[Option[HotSpot]] = extractorOption[HotSpot] ^^ "extractMaybeHotSpot"
-    implicit val renderer: Renderable[HotSpot] = renderer4(apply) ^^ "rendererHotSpot"
-    implicit val rendererOpt: Renderable[Option[HotSpot]] = optionRenderer[HotSpot] ^^ "rendererOptionHotSpot"
+    implicit val renderer: Renderer[HotSpot] = renderer4(apply) ^^ "rendererHotSpot"
+    implicit val rendererOpt: Renderer[Option[HotSpot]] = optionRenderer[HotSpot] ^^ "rendererOptionHotSpot"
 }
 
 /**
@@ -796,8 +796,8 @@ object Color extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractorColor"
     implicit val extractorOpt: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
-    implicit val renderer: Renderable[Color] = renderer1(apply) ^^ "rendererColor"
-    implicit val rendererOpt: Renderable[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
+    implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
+    implicit val rendererOpt: Renderer[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
 }
 
 /**
@@ -814,8 +814,8 @@ object ColorMode extends Extractors with Renderers {
 
     implicit val extractor: Extractor[ColorMode] = extractor10(apply) ^^ "extractorColorMode"
     implicit val extractorOpt: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
-    implicit val renderer: Renderable[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
-    implicit val rendererOpt: Renderable[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
+    implicit val renderer: Renderer[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
+    implicit val rendererOpt: Renderer[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
 }
 
 case class Width($: Double)
@@ -826,8 +826,8 @@ object Width extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Width] = extractor10(apply) ^^ "extractorWidth"
     implicit val extractorOpt: Extractor[Option[Width]] = extractorOption[Width] ^^ "extractMaybeWidth"
-    implicit val renderer: Renderable[Width] = renderer1(apply) ^^ "rendererWidth"
-    implicit val rendererOpt: Renderable[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
+    implicit val renderer: Renderer[Width] = renderer1(apply) ^^ "rendererWidth"
+    implicit val rendererOpt: Renderer[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
 }
 
 case class Key($: String)
@@ -837,7 +837,7 @@ object Key extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Key] = extractor10(apply) ^^ "extractorKey"
-    implicit val renderer: Renderable[Key] = renderer1(apply) ^^ "rendererKey"
+    implicit val renderer: Renderer[Key] = renderer1(apply) ^^ "rendererKey"
 }
 
 case class StyleURL($: String)
@@ -847,7 +847,7 @@ object StyleURL extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[StyleURL] = extractor10(apply) ^^ "extractorStyleURL"
-    implicit val renderer: Renderable[StyleURL] = renderer1(apply) ^^ "rendererStyleURL"
+    implicit val renderer: Renderer[StyleURL] = renderer1(apply) ^^ "rendererStyleURL"
 }
 
 case class Pair(key: Key, styleUrl: StyleURL)
@@ -856,8 +856,8 @@ object Pair extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
     implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair] ^^ "multiExtractorPair"
-    implicit val renderer: Renderable[Pair] = renderer2(apply) ^^ "rendererPair"
-    implicit val rendererSeq: Renderable[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererSequencePair"
+    implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
+    implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererSequencePair"
 }
 
 /**
@@ -873,7 +873,7 @@ case class KML(features: Seq[Feature])
 object KML extends Extractors with Renderers {
     implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
     implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML] ^^ "multiExtractorKml"
-    implicit val renderer: Renderable[KML] = renderer1(apply) ^^ "rendererKml"
+    implicit val renderer: Renderer[KML] = renderer1(apply) ^^ "rendererKml"
 }
 
 case class KML_Binding(kml: KML, binding: NamespaceBinding)
@@ -883,9 +883,9 @@ object KML_Binding {
         node =>
             implicitly[Extractor[KML]].extract(node) map (KML_Binding(_, node.scope))
     }
-    implicit val renderer: Renderable[KML_Binding] = Renderable {
+    implicit val renderer: Renderer[KML_Binding] = Renderer {
         (t: KML_Binding, format: Format, stateR: StateR) =>
-            TryUsing(stateR.addAttribute(s"""${t.binding}"""))(rs => implicitly[Renderable[KML]].render(t.kml, format, rs))
+            TryUsing(stateR.addAttribute(s"""${t.binding}"""))(rs => implicitly[Renderer[KML]].render(t.kml, format, rs))
     } ^^ "rendererKml_Binding"
 }
 

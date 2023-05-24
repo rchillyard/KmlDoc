@@ -12,7 +12,7 @@ import scala.util.Try
  *
  * @tparam T the type of the object.
  */
-trait Renderable[T] extends NamedFunction[Renderable[T]] {
+trait Renderer[T] extends NamedFunction[Renderer[T]] {
   /**
    * This is the method which renders an object t of type T as a String, given three other parameters.
    *
@@ -24,20 +24,20 @@ trait Renderable[T] extends NamedFunction[Renderable[T]] {
   def render(t: T, format: Format, stateR: StateR): Try[String]
 }
 
-object Renderable {
+object Renderer {
 //    val flog: Flog = Flog[Renderers]
 
   /**
-   * Method which allows us to wrap a function as a Renderable.
+   * Method which allows us to wrap a function as a Renderer.
    *
    * @param function the function to be wrapped. It has the same signature as this apply method so it is simply a syntactic convenience.
    * @tparam T the type to be rendered.
-   * @return a Renderable[T].
+   * @return a Renderer[T].
    */
-  def apply[T](function: (T, Format, StateR) => Try[String]): Renderable[T] = (t, f, s) => function(t, f, s)
+  def apply[T](function: (T, Format, StateR) => Try[String]): Renderer[T] = (t, f, s) => function(t, f, s)
 
   /**
-   * Render the T value using the implicitly found Renderable[T].
+   * Render the T value using the implicitly found Renderer[T].
    * Debug-log the renderer and its result.
    *
    * @param t      the value to be rendered.
@@ -46,8 +46,8 @@ object Renderable {
    * @tparam T the type of t.
    * @return a String.
    */
-  def render[T: Renderable](t: T, format: Format, stateR: StateR): Try[String] =
-    implicitly[Renderable[T]].render(t, format, stateR)
+  def render[T: Renderer](t: T, format: Format, stateR: StateR): Try[String] =
+    implicitly[Renderer[T]].render(t, format, stateR)
 }
 
 trait Format {
