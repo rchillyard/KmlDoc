@@ -1414,12 +1414,12 @@ object Extractors extends Extractors {
     /**
      * Optional Int extractor.
      */
-    implicit lazy val extractOptionalInt: Extractor[Option[Int]] = extractorOption[Int]
+    implicit val extractOptionalInt: Extractor[Option[Int]] = extractorOption[Int]
 
     /**
      * Optional Double extractor.
      */
-    implicit lazy val extractOptionalDouble: Extractor[Option[Double]] = extractorOption[Double]
+    implicit val extractOptionalDouble: Extractor[Option[Double]] = extractorOption[Double]
 
     /**
      * Optional String extractor.

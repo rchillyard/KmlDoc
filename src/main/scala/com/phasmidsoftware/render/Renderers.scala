@@ -3,8 +3,8 @@ package com.phasmidsoftware.render
 import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
-//import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
+import com.phasmidsoftware.render.Renderer.renderAttribute
 import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
@@ -20,18 +20,6 @@ import scala.util.{Failure, Success, Try}
 trait Renderers {
 
 //    val flog: Flog = Flog[Renderers]
-
-    /**
-     * Method to create a lazy Renderer[T] from an explicit Renderer[T] which is call-by-name.
-     * The purpose of this method is to break the infinite recursion caused when implicit values are defined
-     * recursively.
-     * See the Play JSON library method in JsPath called lazyRead.
-     *
-     * @param tr a Renderer[T].
-     * @tparam T the underlying type of the Renderer required.
-     * @return a Renderer[T].
-     */
-    def lazyRenderer[T](tr: => Renderer[T]): Renderer[T] = (t: T, format: Format, stateR: StateR) => tr.render(t, format, stateR)
 
     /**
      * Method to create a renderer fpr a case class with no members, or a case object.
@@ -598,7 +586,7 @@ object Renderers {
 
     private val cdata: Regex = """.*([<&>]).*""".r
 
-    implicit lazy val stringRenderer: Renderer[String] = Renderer {
+    implicit val stringRenderer: Renderer[String] = Renderer {
         (t: String, _: Format, stateR: StateR) =>
             renderAttribute(
                 t match {
@@ -608,50 +596,32 @@ object Renderers {
     } ^^ "stringRenderer"
 
     // CONSIDER why do we not get this from Renderers
-    implicit lazy val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+    implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
 
-    implicit lazy val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
+    implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
 
-    implicit lazy val intRenderer: Renderer[Int] = Renderer {
-        (t: Int, _: Format, stateR: StateR) =>
-            renderAttribute(t.toString, stateR.maybeName)
+    implicit val intRenderer: Renderer[Int] = Renderer {
+        (t: Int, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
     } ^^ "intRenderer"
 
-    implicit lazy val rendererOptionInt: Renderer[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
+    implicit val rendererOptionInt: Renderer[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 
-    implicit lazy val booleanRenderer: Renderer[Boolean] = Renderer { (t: Boolean, _: Format, stateR: StateR) =>
-        renderAttribute(t.toString, stateR.maybeName)
+    implicit val booleanRenderer: Renderer[Boolean] = Renderer {
+        (t: Boolean, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
     } ^^ "booleanRenderer"
-    implicit lazy val rendererOptionBoolean: Renderer[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
+    implicit val rendererOptionBoolean: Renderer[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
 
-    implicit lazy val doubleRenderer: Renderer[Double] = Renderer {
-        (t: Double, _: Format, stateR: StateR) =>
-            renderAttribute(t.toString, stateR.maybeName)
+    implicit val doubleRenderer: Renderer[Double] = Renderer {
+        (t: Double, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
     } ^^ "doubleRenderer"
 
-    implicit lazy val rendererOptionDouble: Renderer[Option[Double]] = optionRenderer[Double]
+    implicit val rendererOptionDouble: Renderer[Option[Double]] = optionRenderer[Double]
 
-    implicit lazy val longRenderer: Renderer[Long] = Renderer {
-        (t: Long, _: Format, stateR: StateR) =>
-            renderAttribute(t.toString, stateR.maybeName)
+    implicit val longRenderer: Renderer[Long] = Renderer {
+        (t: Long, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
     } ^^ "longRenderer"
 
     private val renderers = new Renderers {}
-    implicit lazy val rendererText: Renderer[Text] = renderers.renderer1(Text.apply)
-    implicit lazy val rendererOptionText: Renderer[Option[Text]] = renderers.optionRenderer[Text]
-
-    def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
-        r.productElementName(index) match {
-            case "$" => None
-            case Extractor.optionalAttribute(x) => Some(x)
-            case Extractor.attribute(x) => Some(x)
-            case x => if (useName) Some(x) else None
-        }
-
-    private def renderAttribute(w: String, maybeName: Option[String]): Try[String] = Try {
-        maybeName match {
-            case Some(name) => s"""$name="$w""""
-            case None => w
-        }
-    }
+    implicit val rendererText: Renderer[Text] = renderers.renderer1(Text.apply)
+    implicit val rendererOptionText: Renderer[Option[Text]] = renderers.optionRenderer[Text]
 }

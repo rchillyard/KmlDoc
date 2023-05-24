@@ -1,8 +1,8 @@
 package com.phasmidsoftware.render
-//import com.phasmidsoftware.flog.Flog
 
+import com.phasmidsoftware.render.Renderer.maybeAttributeName
 import com.phasmidsoftware.render.Renderers.logger
-import com.phasmidsoftware.xml.NamedFunction
+import com.phasmidsoftware.xml.{Extractor, NamedFunction}
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -25,7 +25,7 @@ trait Renderer[T] extends NamedFunction[Renderer[T]] {
 }
 
 object Renderer {
-//    val flog: Flog = Flog[Renderers]
+//    val flog: Flog = Flog[Renderer]
 
   /**
    * Method which allows us to wrap a function as a Renderer.
@@ -48,6 +48,109 @@ object Renderer {
    */
   def render[T: Renderer](t: T, format: Format, stateR: StateR): Try[String] =
     implicitly[Renderer[T]].render(t, format, stateR)
+
+  /**
+   * Method to create a lazy Renderer[T] from an explicit Renderer[T] which is call-by-name.
+   * The purpose of this method is to break the infinite recursion caused when implicit values are defined
+   * recursively.
+   * See the Play JSON library method in JsPath called lazyRead.
+   *
+   * @param tr a Renderer[T].
+   * @tparam T the underlying type of the Renderer required.
+   * @return a Renderer[T].
+   */
+  def createLazy[T](tr: => Renderer[T]): Renderer[T] = (t: T, format: Format, stateR: StateR) => tr.render(t, format, stateR)
+
+
+  def maybeAttributeName[R <: Product](r: R, index: Int, useName: Boolean = false): Option[String] =
+    r.productElementName(index) match {
+      case "$" => None
+      case Extractor.optionalAttribute(x) => Some(x)
+      case Extractor.attribute(x) => Some(x)
+      case x => if (useName) Some(x) else None
+    }
+
+  def renderAttribute(w: String, maybeName: Option[String]): Try[String] = Try {
+    maybeName match {
+      case Some(name) => s"""$name="$w""""
+      case None => w
+    }
+  }
+}
+
+/**
+ * Case class intended to take care of the state of rendering.
+ * Rendering is complex for several reasons:
+ * (1) a method such as render5 invokes render4, render3, etc. in order to process all of the members of a Product.
+ * (2) attributes are special and need to be rendered within the opening tag of the top-level element.
+ *
+ * NOTE: attributes is mutable (it's a StringBuilder). It is retained as we do operations such as setName, recurse.
+ * However, we must be careful to ensure that no attribute gets left behind.
+ *
+ * @param maybeName  an optional String.
+ * @param attributes a (private) StringBuilder: accessible via addAttribute or getAttributes.
+ * @param interior   false if we are at the top level of an element; false if we have been invoked from above.
+ */
+case class StateR(maybeName: Option[String], private val attributes: mutable.StringBuilder, interior: Boolean) extends AutoCloseable {
+
+  /**
+   * Method to create a new StateR with a different name.
+   *
+   * @param name the new name.
+   * @return a new StateR.
+   */
+  def setName(name: String): StateR = maybeName match {
+    case Some(_) => this
+    case None => copy(maybeName = Some(name))
+  }
+
+  /**
+   * Method to create a new StateR with interior set to true.
+   *
+   * @return a new StateR.
+   */
+  def recurse: StateR = copy(interior = true)
+
+  /**
+   * Mutating method to create a this StateR but with attrString appended to the attributes.
+   * CONSIDER why is this a mutating method?
+   *
+   * @param attrString an attribute to add to this StateR.
+   * @return a mutated version of this StateR.
+   */
+  def addAttribute(attrString: String): StateR = {
+    attributes.append(" " + attrString)
+    this
+  }
+
+  /**
+   * Mutating method to retrieve the attributes of this StateR and to clear the attributes at the same time.
+   *
+   * @return the attributes originally stored in this StateR.
+   */
+  def getAttributes: String = {
+    val result = attributes.toString()
+    attributes.clear()
+    result
+  }
+
+  def setName[R <: Product](r: R, index: Int): StateR = copy(maybeName = maybeAttributeName(r, index, useName = true))
+
+  def isInternal: Boolean = interior
+
+  def close(): Unit = {
+    if (attributes.toString().trim.nonEmpty) {
+      logger.warn(s"StateR.close: attributes not empty: '$attributes'")
+    }
+  }
+}
+
+object StateR {
+  def apply(maybeName: Option[String]): StateR = new StateR(maybeName, new mutable.StringBuilder(""), interior = false)
+
+  def apply(interior: Boolean): StateR = new StateR(None, new mutable.StringBuilder(""), interior)
+
+  def apply(): StateR = apply(None)
 }
 
 trait Format {
@@ -132,56 +235,4 @@ case class FormatIndented(indents: Int) extends BaseFormat(indents) {
     case Some(false) => "]"
     case None => ", "
   }
-}
-
-/**
- * Case class intended to take care of the state of rendering.
- * Rendering is complex for several reasons:
- * (1) a method such as render5 invokes render4, render3, etc. in order to process all of the members of a Product.
- * (2) attributes are special and need to be rendered within the opening tag of the top-level element.
- *
- * NOTE: attributes is mutable (it's a StringBuilder). It is retained as we do operations such as setName, recurse.
- * However, we must be careful to ensure that no attribute gets left behind.
- *
- * @param maybeName  an optional String.
- * @param attributes a (private) StringBuilder: accessible via addAttribute or getAttributes.
- * @param interior   false if we are at the top level of an element; false if we have been invoked from above.
- */
-case class StateR(maybeName: Option[String], private val attributes: mutable.StringBuilder, interior: Boolean) extends AutoCloseable {
-
-  def setName(name: String): StateR = maybeName match {
-    case Some(_) => this
-    case None => copy(maybeName = Some(name))
-  }
-
-  def recurse: StateR = copy(interior = true)
-
-  def addAttribute(attrString: String): StateR = {
-    attributes.append(" " + attrString)
-    this
-  }
-
-  def getAttributes: String = {
-    val result = attributes.toString()
-    attributes.clear()
-    result
-  }
-
-  def setName[R <: Product](r: R, index: Int): StateR = copy(maybeName = Renderers.maybeAttributeName(r, index, useName = true))
-
-  def isInternal: Boolean = interior
-
-  def close(): Unit = {
-    if (attributes.toString().trim.nonEmpty) {
-      logger.warn(s"StateR.close: attributes not empty: '$attributes'")
-    }
-  }
-}
-
-object StateR {
-  def apply(maybeName: Option[String]): StateR = new StateR(maybeName, new mutable.StringBuilder(""), interior = false)
-
-  def apply(interior: Boolean): StateR = new StateR(None, new mutable.StringBuilder(""), interior)
-
-  def apply(): StateR = apply(None)
 }

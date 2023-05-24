@@ -65,7 +65,7 @@ object Feature extends Extractors with Renderers {
 
     implicit val extractorSeq: MultiExtractor[Seq[Feature]] =
         MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
-    implicit val renderer: Renderer[Feature] = new Renderers {}.lazyRenderer(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
+    implicit val renderer: Renderer[Feature] = Renderer.createLazy(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
     implicit val rendererSeq: Renderer[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
 }
 
