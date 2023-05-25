@@ -34,9 +34,19 @@ class SmartBufferSpec extends AnyFlatSpec with Matchers {
         target.result shouldBe "Hello"
     }
 
+    it should "appendPadded 4" in {
+        val target = SmartBuffer().appendPadded("Hello    ").appendPadded("\n ")
+        target.result shouldBe "Hello\n "
+    }
+
     it should "append" in {
         SmartBuffer().result shouldBe ""
         SmartBuffer().append(" ").result shouldBe " "
+    }
+
+    it should "trim" in {
+        val target = SmartBuffer().append("Hello    ")
+        target.trim.result shouldBe "Hello"
     }
 
     it should "clear" in {

@@ -23,7 +23,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
     wy.isSuccess shouldBe true
     // TODO eliminate the fudge
-    val fudge = "        "
+    val fudge = ""
     wy.get shouldBe s"<Placemark>\n  $fudge<name>Hello</name>\n  <Point>\n    <coordinates>\n      -72, 0, 0\n      -71, 1, 1000\n    </coordinates>\n  </Point>\n</Placemark>"
   }
 
@@ -37,7 +37,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val folder = Folder(Seq(placemark))(containerData)
     val wy = TryUsing(StateR())(sr => Renderer.render[Folder](folder, FormatXML(), sr))
     // TODO remove the extra padding in front of the <name> tags
-    wy shouldBe Success("<Folder>\n          <name>Goodbye</name>\n  <Placemark>\n            <name>Hello</name>\n    <Point>\n      <coordinates>\n        -72, 0, 0\n      </coordinates>\n    </Point>\n  </Placemark>\n</Folder>")
+    wy shouldBe Success("<Folder>\n  <name>Goodbye</name>\n  <Placemark>\n    <name>Hello</name>\n    <Point>\n      <coordinates>\n        -72, 0, 0\n      </coordinates>\n    </Point>\n  </Placemark>\n</Folder>")
   }
 
   behavior of "KmlObject"
@@ -131,7 +131,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val wy = TryUsing(StateR())(sr => Renderer.render(gs, FormatXML(), sr))
         wy.isSuccess shouldBe true
         // TODO remove fudge
-        val fudge = "  "
+        val fudge = ""
         val expected = s"<LineString>\n$fudge  <tessellate>1</tessellate>\n  <coordinates>\n    -71.06992, 42.49424, 0\n    -71.07018, 42.49512, 0\n    -71.07021, 42.49549, 0\n    -71.07008, 42.49648, 0\n    -71.069849, 42.497415, 0\n    -71.06954, 42.49833, 0\n    -71.069173, 42.49933, 0\n    -71.06879, 42.50028, 0\n    -71.068121, 42.501386, 0\n    -71.067713, 42.501964, 0\n    -71.067327, 42.502462, 0\n    -71.06634, 42.503459, 0\n    -71.065825, 42.503933, 0\n    -71.0653, 42.504384, 0\n    -71.064742, 42.504819, 0\n    -71.064205, 42.505207, 0\n    -71.063637, 42.505594, 0\n    -70.9254345, 42.5262817, 0\n  </coordinates>\n</LineString>"
         wy.get shouldBe expected
       case Failure(x) => fail(x)
@@ -204,9 +204,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Feature"
 
-  private def trimWhiteSpace(w: String) =
-    w.replace("\n", "").replace(" >", ">").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
-
   it should "extract Placemark" in {
     val xml: Elem = <xml>
       <Placemark>
@@ -255,7 +252,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             wy.isSuccess shouldBe true
             // TODO remove fudge spaces
             val fudge = "  "
-            wy.get shouldBe s"<Placemark>\n  ${fudge * 4}<name>Wakefield Branch of Eastern RR</name>\n  ${fudge * 3}<description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n  ${fudge * 2}<styleUrl>#line-006600-5000</styleUrl>\n  <LineString>\n      <tessellate>1</tessellate>\n    <coordinates>\n      -71.06992, 42.49424, 0\n      -71.07018, 42.49512, 0\n      -71.07021, 42.49549, 0\n      -71.07008, 42.49648, 0\n      -71.069849, 42.497415, 0\n      -71.06954, 42.49833, 0\n      -70.9257614, 42.5264001, 0\n      -70.9254345, 42.5262817, 0\n    </coordinates>\n  </LineString>\n</Placemark>"
+            wy.get shouldBe s"<Placemark>\n  ${fudge * 0}<name>Wakefield Branch of Eastern RR</name>\n  ${fudge * 0}<description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n  ${fudge * 0}<styleUrl>#line-006600-5000</styleUrl>\n  <LineString>\n    <tessellate>1</tessellate>\n    <coordinates>\n      -71.06992, 42.49424, 0\n      -71.07018, 42.49512, 0\n      -71.07021, 42.49549, 0\n      -71.07008, 42.49648, 0\n      -71.069849, 42.497415, 0\n      -71.06954, 42.49833, 0\n      -70.9257614, 42.5264001, 0\n      -70.9254345, 42.5262817, 0\n    </coordinates>\n  </LineString>\n</Placemark>"
         }
       case Failure(x) => fail(x)
     }
@@ -319,7 +316,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 val wy = TryUsing(StateR())(sr => Renderer.render[Folder](f, FormatXML(), sr))
                 wy.isSuccess shouldBe true
                 val fudge = "  " // TODO eliminate fudge
-                wy.get shouldBe s"<Folder>\n  ${fudge * 4}<name>Untitled layer</name>\n  <Placemark>\n  ${fudge * 5}<name>Wakefield Branch of Eastern RR</name>\n  ${fudge * 4}<description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n  ${fudge * 3}<styleUrl>#line-006600-5000</styleUrl>\n    <LineString>\n        <tessellate>1</tessellate>\n      <coordinates>\n        -71.06992, 42.49424, 0\n        -71.07018, 42.49512, 0\n        -71.07021, 42.49549, 0\n        -71.07008, 42.49648, 0\n        -71.069849, 42.497415, 0\n        -71.06954, 42.49833, 0\n        -70.9257614, 42.5264001, 0\n        -70.9254345, 42.5262817, 0\n      </coordinates>\n    </LineString>\n  </Placemark>\n</Folder>"
+                wy.get shouldBe s"<Folder>\n  ${fudge * 0}<name>Untitled layer</name>\n  <Placemark>\n    <name>Wakefield Branch of Eastern RR</name>\n    <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n    <styleUrl>#line-006600-5000</styleUrl>\n    <LineString>\n      <tessellate>1</tessellate>\n      <coordinates>\n        -71.06992, 42.49424, 0\n        -71.07018, 42.49512, 0\n        -71.07021, 42.49549, 0\n        -71.07008, 42.49648, 0\n        -71.069849, 42.497415, 0\n        -71.06954, 42.49833, 0\n        -70.9257614, 42.5264001, 0\n        -70.9254345, 42.5262817, 0\n      </coordinates>\n    </LineString>\n  </Placemark>\n</Folder>"
             }
         }
       case Failure(x) => fail(x)
@@ -546,16 +543,16 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   // TODO resolve spacing issues
   private val iconStyleText1 =
     """<IconStyle>
-      |        <scale>1.1</scale>
-      |      <Icon>
-      |        <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
-      |      </Icon>
-      |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+      |  <scale>1.1</scale>
+      |  <Icon>
+      |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+      |  </Icon>
+      |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
       |</IconStyle>""".stripMargin
-  private val iconStyleText = "<IconStyle>\n          <scale>1.1</scale>\n        <Icon>\n          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n        </Icon>\n      <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>"
-  private val balloonStyleText = "<BalloonStyle>\n          <text>\n            <h3>$[name]</h3>\n          </text>\n  </BalloonStyle>"
+  private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>"
+  private val balloonStyleText = "<BalloonStyle>\n    <text>\n            <h3>$[name]</h3>\n          </text>\n  </BalloonStyle>"
   private val labelStyleText = "<LabelStyle>\n    <scale>0.0</scale>\n  </LabelStyle>"
-  private val stylesText = s"\n  $labelStyleText\n    \n  $iconStyleText\n    \n  $balloonStyleText\n"
+  private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
 
   it should "extract IconStyle" in {
@@ -589,11 +586,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val fudge = "  " // TODO eliminate fudge
         wy shouldBe Success(
           s"""<IconStyle>
-             |  ${fudge * 3}<scale>1.1</scale>
-             |  ${fudge * 2}<Icon>
-             |    ${fudge * 2}<href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
-             |  ${fudge * 2}</Icon>
-             |  $fudge<hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+             |  <scale>1.1</scale>
+             |  <Icon>
+             |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+             |  </Icon>
+             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
              |</IconStyle>""".stripMargin)
       case Failure(x) => fail(x)
     }
@@ -690,7 +687,24 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             val wy = TryUsing(StateR())(sr => Renderer.render[Style](s, FormatXML(), sr))
             wy.isSuccess shouldBe true
             // TODO Fix up the spacing.
-            wy.get shouldBe "<Style id=\"icon-22-nodesc-normal\">\n  <LabelStyle>\n    <scale>0.0</scale>\n  </LabelStyle>\n    \n  <IconStyle>\n          <scale>1.1</scale>\n        <Icon>\n          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n        </Icon>\n      <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>\n    \n  <BalloonStyle>\n          <text>\n            <h3>$[name]</h3>\n          </text>\n  </BalloonStyle>\n</Style>"
+            wy.get shouldBe
+                    """<Style id="icon-22-nodesc-normal">
+                      |  <LabelStyle>
+                      |    <scale>0.0</scale>
+                      |  </LabelStyle>
+                      |  <IconStyle>
+                      |    <scale>1.1</scale>
+                      |    <Icon>
+                      |      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+                      |    </Icon>
+                      |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+                      |  </IconStyle>
+                      |  <BalloonStyle>
+                      |    <text>
+                      |            <h3>$[name]</h3>
+                      |          </text>
+                      |  </BalloonStyle>
+                      |</Style>""".stripMargin
           case m@StyleMap(pairs) =>
             pairs.size shouldBe 2
             pairs.head match {
@@ -802,7 +816,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         styleMap shouldBe StyleMap(List(Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal")), Pair(Key("highlight"), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
         wy.isSuccess shouldBe true
-        wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n  <Pair>\n      <key>normal</key>\n    <styleUrl>#icon-22-nodesc-normal</styleUrl>\n  </Pair>\n    \n  <Pair>\n      <key>highlight</key>\n    <styleUrl>#icon-22-nodesc-highlight</styleUrl>\n  </Pair>\n</StyleMap>"
+        wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n  <Pair>\n    <key>normal</key>\n    <styleUrl>#icon-22-nodesc-normal</styleUrl>\n  </Pair>\n  <Pair>\n    <key>highlight</key>\n    <styleUrl>#icon-22-nodesc-highlight</styleUrl>\n  </Pair>\n</StyleMap>"
       case Failure(x) => fail(x)
     }
   }

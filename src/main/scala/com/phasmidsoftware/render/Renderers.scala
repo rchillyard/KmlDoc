@@ -103,7 +103,7 @@ trait Renderers {
             val objectOuter = r.productElement(1).asInstanceOf[P1]
             val constructorInner: P0 => R = construct(_, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0])
-            for {wInner <- renderer1(constructorInner).render(objectInner, format.indent, stateR.recurse)
+            for {wInner <- renderer1(constructorInner).render(objectInner, format, stateR.recurse)
                  wOuter <- renderOuter(r, objectOuter, 1, format.indent)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
                  } yield result
@@ -146,7 +146,7 @@ trait Renderers {
             val objectOuter = r.productElement(2).asInstanceOf[P2]
             val constructorInner: (P0, P1) => R = construct(_, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
-            for {wInner <- renderer2(constructorInner).render(objectInner, format.indent, stateR.recurse)
+            for {wInner <- renderer2(constructorInner).render(objectInner, format, stateR.recurse)
                  wOuter <- renderOuter(r, objectOuter, 2, format.indent)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
                  } yield result
@@ -192,7 +192,7 @@ trait Renderers {
             val objectOuter = r.productElement(3).asInstanceOf[P3]
             val constructorInner: (P0, P1, P2) => R = construct(_, _, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
-            for {wInner <- renderer3(constructorInner).render(objectInner, format.indent, stateR.recurse)
+            for {wInner <- renderer3(constructorInner).render(objectInner, format, stateR.recurse)
                  wOuter <- renderOuter(r, objectOuter, 3, format.indent)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
                  } yield result
@@ -240,7 +240,7 @@ trait Renderers {
             val objectOuter = r.productElement(4).asInstanceOf[P4]
             val constructorInner: (P0, P1, P2, P3) => R = construct(_, _, _, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3])
-            for {wInner <- renderer4(constructorInner).render(objectInner, format.indent, stateR.recurse)
+            for {wInner <- renderer4(constructorInner).render(objectInner, format, stateR.recurse)
                  wOuter <- renderOuter(r, objectOuter, 4, format.indent)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
                  } yield result
@@ -291,7 +291,7 @@ trait Renderers {
             val objectOuter = r.productElement(5).asInstanceOf[P5]
             val constructorInner: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3], r.productElement(4).asInstanceOf[P4])
-            for {wInner <- renderer5(constructorInner).render(objectInner, format.indent, stateR.recurse)
+            for {wInner <- renderer5(constructorInner).render(objectInner, format, stateR.recurse)
                  wOuter <- renderOuter(r, objectOuter, 4, format.indent)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(5))
                  } yield result
@@ -552,13 +552,18 @@ trait Renderers {
     private def doRenderSequence[R: Renderer](rs: Seq[R], format: Format, maybeName: Option[String]): Try[String] = {
         val formatIndented = format.indent
         val separator = format.sequencer(None)
-        val sep = if (separator == "\n") formatIndented.newline else separator
+        val sep = if (separator == "\n") format.newline else separator
 
-        def renderElements = rs map (renderR(_)(format, StateR(maybeName)))
+        def trim(sy: Try[String]): Try[String] = sy map (_.trim)
 
         def formatSequence(ws: Seq[String]) = ws.mkString(formatIndented.sequencer(Some(true)), sep, format.sequencer(Some(false)))
 
-        sequence(renderElements) map formatSequence
+        // If the separator is newline, and if the elements generated from rs is non-empty then we trim all elements except for the first.
+        val elements = (separator, rs map (renderR(_)(format, StateR(maybeName)))) match {
+            case ("\n", h :: t) => h :: (t map trim)
+            case (_, x) => x
+        }
+        sequence(elements) map formatSequence
     }
 
     private def renderR[R: Renderer](r: R)(format: Format, stateR: StateR) = TryUsing(stateR) {
