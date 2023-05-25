@@ -354,7 +354,6 @@ trait Renderers {
      * @return a Renderer[T].
      */
     def rendererSuper1[T: ClassTag, R0 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
-
         (t: T, format: Format, stateR: StateR) =>
             t match {
                 case r: R0 =>
@@ -518,7 +517,7 @@ trait Renderers {
      *
      * CONSIDER Moving this into Renderer.
      *
-     * @param format        the format in which the Product should be rendered.
+     * @param formatIn      the format in which the Product should be rendered.
      * @param stateR        the state of the rendition.
      * @param wInner        a string based on the first n-1 members of the n-ary Product being rendered.
      * @param wOuter        a string based on the last (nth) member of the n-ary Product being rendered.
