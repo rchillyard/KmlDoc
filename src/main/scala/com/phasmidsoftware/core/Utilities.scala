@@ -47,6 +47,7 @@ object Utilities {
     private def renderNodeBrief(node: Node): String = node.label
 
     def renderNode(node: Node, deep: Boolean = false): String = {
+        // CONSIDER use SmartBuffer
         val result = new mutable.StringBuilder("node: ")
         result.append(s"label=${node.label}, ")
         result.append(s"length=${node.length}, ")

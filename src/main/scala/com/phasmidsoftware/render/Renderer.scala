@@ -1,9 +1,9 @@
 package com.phasmidsoftware.render
 
+import com.phasmidsoftware.core.SmartBuffer
 import com.phasmidsoftware.render.Renderer.maybeAttributeName
 import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractor, NamedFunction}
-import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -84,14 +84,14 @@ object Renderer {
  * (1) a method such as render5 invokes render4, render3, etc. in order to process all of the members of a Product.
  * (2) attributes are special and need to be rendered within the opening tag of the top-level element.
  *
- * NOTE: attributes is mutable (it's a StringBuilder). It is retained as we do operations such as setName, recurse.
+ * NOTE: attributes is mutable (it's a SmartBuffer). It is retained as we do operations such as setName, recurse.
  * However, we must be careful to ensure that no attribute gets left behind.
  *
  * @param maybeName  an optional String.
- * @param attributes a (private) StringBuilder: accessible via addAttribute or getAttributes.
+ * @param attributes a (private) SmartBuffer: accessible via addAttribute or getAttributes.
  * @param interior   false if we are at the top level of an element; false if we have been invoked from above.
  */
-case class StateR(maybeName: Option[String], private val attributes: mutable.StringBuilder, interior: Boolean) extends AutoCloseable {
+case class StateR(maybeName: Option[String], private val attributes: SmartBuffer, interior: Boolean) extends AutoCloseable {
 
   /**
    * Method to create a new StateR with a different name.
@@ -119,7 +119,7 @@ case class StateR(maybeName: Option[String], private val attributes: mutable.Str
    * @return a mutated version of this StateR.
    */
   def addAttribute(attrString: String): StateR = {
-    attributes.append(" " + attrString)
+    attributes.appendPadded(attrString)
     this
   }
 
@@ -128,25 +128,22 @@ case class StateR(maybeName: Option[String], private val attributes: mutable.Str
    *
    * @return the attributes originally stored in this StateR.
    */
-  def getAttributes: String = {
-    val result = attributes.toString()
-    attributes.clear()
-    result
-  }
+  def getAttributes: String = attributes.clear
 
   def setName[R <: Product](r: R, index: Int): StateR = copy(maybeName = maybeAttributeName(r, index, useName = true))
 
   def isInternal: Boolean = interior
 
   def close(): Unit = {
-    if (attributes.toString().trim.nonEmpty) {
+    // CONSIDER we shouldn't need to trim
+    if (attributes.result.trim.nonEmpty) {
       logger.warn(s"StateR.close: attributes not empty: '$attributes'")
     }
   }
 }
 
 object StateR {
-  def apply(maybeName: Option[String]): StateR = new StateR(maybeName, new mutable.StringBuilder(""), interior = false)
+  def apply(maybeName: Option[String]): StateR = new StateR(maybeName, SmartBuffer(), interior = false)
 
   def apply(): StateR = apply(None)
 }

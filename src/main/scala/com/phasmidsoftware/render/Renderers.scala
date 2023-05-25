@@ -2,13 +2,12 @@ package com.phasmidsoftware.render
 
 import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.Utilities.sequence
-import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
+import com.phasmidsoftware.core.{SmartBuffer, Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.renderAttribute
 import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
-import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -533,24 +532,21 @@ trait Renderers {
         //      (the exception being for the last attribute of an all-attribute element).
         if (maybeAttribute.isDefined)
             stateR.addAttribute(wOuter)
-        val sb = new mutable.StringBuilder()
+        val sb = SmartBuffer()
         if (!stateR.isInternal) {
-            sb.append(format.formatName(open = Some(true), stateR))
-            sb.append(stateR.getAttributes)
+            sb.appendPadded(format.formatName(open = Some(true), stateR))
+            sb.appendPadded(stateR.getAttributes)
             if (maybeAttribute.isEmpty) sb.append(format.formatName(open = None, stateR))
-            else sb.append(" ")
         }
-        // CONSIDER combining these two if clauses
-        if (maybeAttribute.isEmpty)
-            sb.append(wInner)
-        // CONSIDER appending format.delimiter
-        if (maybeAttribute.isEmpty)
-            sb.append(wOuter)
+        if (maybeAttribute.isEmpty) {
+            sb.appendPadded(wInner)
+            sb.appendPadded(wOuter)
+        }
         if (!stateR.isInternal) {
             if (maybeAttribute.isDefined) sb.append(format.formatName(open = None, stateR))
             sb.append(format.formatName(open = Some(false), stateR))
         }
-        Try(sb.toString())
+        Try(sb.result)
     }
 
     private def doRenderSequence[R: Renderer](rs: Seq[R], format: Format, maybeName: Option[String]): Try[String] = {
