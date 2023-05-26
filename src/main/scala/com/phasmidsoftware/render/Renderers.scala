@@ -9,7 +9,6 @@ import com.phasmidsoftware.xml.{CDATA, Extractor}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -579,8 +578,6 @@ object Renderers {
 
     val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
-    private val cdata: Regex = """.*([<&>]).*""".r
-
     implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
         (x: CharSequence, _: Format, stateR: StateR) =>
             renderAttribute(
@@ -611,7 +608,11 @@ object Renderers {
     implicit val rendererOptionBoolean: Renderer[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
 
     implicit val doubleRenderer: Renderer[Double] = Renderer {
-        (t: Double, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
+        (t: Double, _: Format, stateR: StateR) =>
+            val sb = new StringBuilder(t.toString)
+            while (sb.endsWith("0")) sb.setLength(sb.length() - 1)
+            if (sb.endsWith(".")) sb.setLength(sb.length() - 1)
+            renderAttribute(sb.toString, stateR.maybeName)
     } ^^ "doubleRenderer"
     implicit val rendererOptionDouble: Renderer[Option[Double]] = optionRenderer[Double]
 

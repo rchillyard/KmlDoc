@@ -48,7 +48,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererComplex: Renderer[Complex] = renderer2(Complex)
     }
     val wy = TryUsing(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatText(0), sr))
-      wy shouldBe Success("""Complex{r="1.0" i="-1.0"}""")
+      wy shouldBe Success("""Complex{r="1" i="-1"}""")
   }
 
   it should "renderer2B" in {
@@ -85,6 +85,11 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "doubleRenderer" in {
     val wy = TryUsing(StateR())(sr => Renderers.doubleRenderer.render(math.Pi, FormatText(0), sr))
     wy shouldBe Success("3.141592653589793")
+  }
+
+  it should "doubleRenderer (whole)" in {
+    val wy = TryUsing(StateR())(sr => Renderers.doubleRenderer.render(42, FormatText(0), sr))
+    wy shouldBe Success("42")
   }
 
   // CONSIDER eliminating this test
@@ -183,7 +188,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererComplex: Renderer[Complex] = renderer2(Complex)
     }
     val wy = TryUsing(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(), sr))
-    wy shouldBe Success("<Complex r=\"1.0\" i=\"-1.0\"></Complex>")
+    wy shouldBe Success("<Complex r=\"1\" i=\"-1\"></Complex>")
   }
 
   it should "renderer2B" in {
@@ -205,6 +210,11 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   it should "doubleRenderer" in {
     val wy = TryUsing(StateR())(sr => Renderers.doubleRenderer.render(math.Pi, FormatXML(), sr))
     wy shouldBe Success("3.141592653589793")
+  }
+
+  it should "doubleRenderer (whole)" in {
+    val wy = TryUsing(StateR())(sr => Renderers.doubleRenderer.render(42, FormatXML(), sr))
+    wy shouldBe Success("42")
   }
 
   // CONSIDER eliminating this test
