@@ -70,10 +70,10 @@ object Renderer {
       case x => if (useName) Some(x) else None
     }
 
-  def renderAttribute(w: String, maybeName: Option[String]): Try[String] = Try {
+  def renderAttribute(w: CharSequence, maybeName: Option[String]): Try[String] = Try {
     maybeName match {
       case Some(name) => s"""$name="$w""""
-      case None => w
+      case None => w.toString
     }
   }
 }

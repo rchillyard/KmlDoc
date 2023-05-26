@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.core.{Text, TryUsing}
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
-import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
+import com.phasmidsoftware.xml.{CDATA, Extractor, Extractors, RichXml}
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -220,7 +220,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml: Elem = <xml>
       <description>Hello</description>
     </xml>
-    val result: Try[String] = Extractor.fieldExtractor[String]("description").extract(xml)
+    val result: Try[CharSequence] = Extractor.fieldExtractor[CharSequence]("description").extract(xml)
     result shouldBe Success("Hello")
   }
   it should "extract as Text" in {
@@ -601,7 +601,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
       |</IconStyle>""".stripMargin
   private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>"
-  private val balloonStyleText = "<BalloonStyle>\n    <text><![CDATA[<h3>$[name]</h3>]]></text>\n  </BalloonStyle>"
+  private val balloonStyleText = "<BalloonStyle>\n    <text>\n<![CDATA[<h3>$[name]</h3>]]>\n</text>\n  </BalloonStyle>"
   private val labelStyleText = "<LabelStyle>\n    <scale>0.0</scale>\n  </LabelStyle>"
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
@@ -722,8 +722,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             }
             styles(2) match {
               case x@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
-                text shouldBe Text(
-                  """<h3>$[name]</h3>""".stripMargin)
+                println(s"text: $text")
+                val cdata = CDATA.wrapped("<h3>$[name]</h3>")
+                text.$ shouldBe cdata
                 maybeBgColor shouldBe None
                 maybeTextColor shouldBe None
                 maybeDisplayMode shouldBe None
@@ -732,24 +733,26 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                     println(c)
                 }
             }
+            val cdata = "\n<![CDATA[<h3>$[name]</h3>]]>\n"
             val wy = TryUsing(StateR())(sr => Renderer.render[Style](s, FormatXML(), sr))
             wy.isSuccess shouldBe true
-            wy.get shouldBe
-                    """<Style id="icon-22-nodesc-normal">
-                      |  <LabelStyle>
-                      |    <scale>0.0</scale>
-                      |  </LabelStyle>
-                      |  <IconStyle>
-                      |    <scale>1.1</scale>
-                      |    <Icon>
-                      |      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
-                      |    </Icon>
-                      |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
-                      |  </IconStyle>
-                      |  <BalloonStyle>
-                      |    <text><![CDATA[<h3>$[name]</h3>]]></text>
-                      |  </BalloonStyle>
-                      |</Style>""".stripMargin
+            val expected =
+              s"""<Style id="icon-22-nodesc-normal">
+                 |  <LabelStyle>
+                 |    <scale>0.0</scale>
+                 |  </LabelStyle>
+                 |  <IconStyle>
+                 |    <scale>1.1</scale>
+                 |    <Icon>
+                 |      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+                 |    </Icon>
+                 |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+                 |  </IconStyle>
+                 |  <BalloonStyle>
+                 |    <text>$cdata</text>
+                 |  </BalloonStyle>
+                 |</Style>""".stripMargin
+            wy.get shouldBe expected
           case m@StyleMap(pairs) =>
             pairs.size shouldBe 2
             pairs.head match {
@@ -3956,10 +3959,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 }
                 features.last match {
                   case placemark@Placemark(geometry) =>
-                    placemark.featureData.name shouldBe Text(
-                      """
-                        |              Saugus B&M connector
-                        |            """.stripMargin)
+                    val expected = Text(CDATA.wrapped("""Saugus B&M connector"""))
+                    placemark.featureData.name shouldBe expected
                     geometry.size shouldBe 1
                     geometry.head match {
                       case Point(cs) =>

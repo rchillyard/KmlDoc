@@ -12,7 +12,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   case class Simple1(id: Int)
 
-  case class Simple2(_id: String)
+  case class Simple2(_id: CharSequence)
 
   case class Simple3(__id: String = "Hello World!")
 
@@ -61,7 +61,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
    * This allows us to have more control over how we construct an instance of Document2A.
    */
   object Document2A {
-    def apply(id: String, empties: Seq[Empty.type]): Document2A = Document2A(id.toInt, empties)
+    def apply(id: CharSequence, empties: Seq[Empty.type]): Document2A = Document2A(id.toString.toInt, empties)
   }
 
   /**
@@ -86,7 +86,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument1: Extractor[Document1] = extractor01(Document1)
     implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractorBase[Document1]
-    val makeDocument2A: (String, Seq[Empty.type]) => Document2A = Document2A.apply _
+    val makeDocument2A: (CharSequence, Seq[Empty.type]) => Document2A = Document2A.apply _
     implicit val extractDocument2A: Extractor[Document2A] = extractor11(makeDocument2A)
     implicit val extractDocument2: Extractor[Document2] = extractor11(Document2)
     implicit val extractDocument3: Extractor[Document3] = extractor21(Document3)
@@ -96,32 +96,32 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   it should "extract normal attribute" in {
     val xml: Elem = <kml id="2.2"></kml>
-    import Extractor.stringExtractor
-    fieldExtractor[String]("_id").extract(xml) should matchPattern { case Success("2.2") => }
+    import Extractor.charSequenceExtractor
+    fieldExtractor[CharSequence]("_id").extract(xml) should matchPattern { case Success("2.2") => }
   }
 
   it should "extract absent normal attribute" in {
     val xml: Elem = <kml></kml>
-    import Extractor.stringExtractor
-    fieldExtractor[String]("_id").extract(xml) should matchPattern { case Failure(_) => }
+    import Extractor.charSequenceExtractor
+    fieldExtractor[CharSequence]("_id").extract(xml) should matchPattern { case Failure(_) => }
   }
 
   it should "extract normal optional attribute" in {
     val xml: Elem = <kml id="2.2"></kml>
-    import Extractor.stringExtractor
-    fieldExtractor[String]("__id").extract(xml) should matchPattern { case Success("2.2") => }
+    import Extractor.charSequenceExtractor
+    fieldExtractor[CharSequence]("__id").extract(xml) should matchPattern { case Success("2.2") => }
   }
 
   it should "extract absent optional attribute" in {
     val xml: Elem = <kml></kml>
-    import Extractor.stringExtractor
-    fieldExtractor[String]("__id").extract(xml) should matchPattern { case Success(None) => }
+    import Extractor.charSequenceExtractor
+    fieldExtractor[CharSequence]("__id").extract(xml) should matchPattern { case Success(None) => }
   }
 
   it should "not extract reserved attribute" in {
     val xml: Elem = <kml xmlns="http://www.opengis.net/kml/2.2"></kml>
-    import Extractor.stringExtractor
-    fieldExtractor[String]("_xmlns").extract(xml) should matchPattern { case Failure(_) => }
+    import Extractor.charSequenceExtractor
+    fieldExtractor[CharSequence]("_xmlns").extract(xml) should matchPattern { case Failure(_) => }
   }
 
   it should "not extract plural attribute" in {
@@ -146,7 +146,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
   it should "extractSingleton2" in {
     val xml: Elem = <xml id="A"></xml>
-    val extracted = extractSingleton[String](xml / "@id")
+    val extracted = extractSingleton[CharSequence](xml / "@id")
     extracted shouldBe Success("A")
   }
 
@@ -285,7 +285,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   it should "fieldExtractor String" in {
-    val we: Extractor[String] = fieldExtractor[String]("_id")
+    val we = fieldExtractor[CharSequence]("_id")
     we.extract(<xml id="xyz"></xml>) shouldBe Success("xyz")
   }
 

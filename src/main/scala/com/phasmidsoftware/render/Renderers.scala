@@ -5,7 +5,7 @@ import com.phasmidsoftware.core.Utilities.sequence
 import com.phasmidsoftware.core.{SmartBuffer, Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.renderAttribute
-import com.phasmidsoftware.xml.Extractor
+import com.phasmidsoftware.xml.{CDATA, Extractor}
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
 import scala.reflect.ClassTag
@@ -581,14 +581,19 @@ object Renderers {
 
     private val cdata: Regex = """.*([<&>]).*""".r
 
-    implicit val stringRenderer: Renderer[String] = Renderer {
-        (t: String, _: Format, stateR: StateR) =>
+    implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
+        (x: CharSequence, _: Format, stateR: StateR) =>
             renderAttribute(
-                t match {
-                    case cdata(_) => s"""<![CDATA[$t]]>"""
-                    case _ => t
+                x match {
+                    case CDATA(t, pre, post) => s"""$pre<![CDATA[$t]]>$post"""
+                    case _ => x.toString
                 }, stateR.maybeName)
-    } ^^ "stringRenderer"
+    } ^^ "charSequenceRenderer"
+
+    implicit val stringRenderer: Renderer[String] = Renderer {
+        (x: String, _: Format, stateR: StateR) =>
+            renderAttribute(x, stateR.maybeName)
+    }
 
     // CONSIDER why do we not get this from Renderers
     implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"

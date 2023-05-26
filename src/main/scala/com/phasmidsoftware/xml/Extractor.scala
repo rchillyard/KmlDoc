@@ -1,7 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
-import com.phasmidsoftware.core.{LowerCaseInitialRegex, XmlException}
+import com.phasmidsoftware.core.{LowerCaseInitialRegex, SmartBuffer, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Node, NodeSeq}
+import scala.xml.{Node, NodeSeq, PCData}
 
 /**
  * Trait to define the behavior of an extractor (parser) which can will take an XML Node
@@ -30,13 +30,22 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
     def extract(node: Node): Try[T]
 
     /**
-     * Method to transform this Extractor[T] into an Extractor[U].
+     * Method to map this Extractor[T] into an Extractor[U].
      *
      * @param f a T => U.
      * @tparam U the underlying type of the result.
      * @return an Extractor[U].
      */
     def map[U](f: T => U): Extractor[U] = (node: Node) => self.extract(node) map f
+
+    /**
+     * Method to flatMap this Extractor[T] into an Extractor[U].
+     *
+     * @param f a T => Try[U].
+     * @tparam U the underlying type of the result.
+     * @return an Extractor[U].
+     */
+    def flatMap[U](f: T => Try[U]): Extractor[U] = (node: Node) => self.extract(node) flatMap f
 
     /**
      * Method to create an Extractor[T] such that, if this Extractor[T] fails, then we invoke the (implicit) Extractor[P] instead.
@@ -317,37 +326,52 @@ object Extractor {
     implicit val unitExtractor: Extractor[Unit] = Extractor(Success())
 
     /**
-     * String extractor.
+     * CharSequence extractor.
      */
-    implicit object stringExtractor extends Extractor[String] {
-        def extract(node: Node): Try[String] = (node.label, node.child.size) match {
-            case ("text", 3) => Success(node.child(1).text)
-            case _ => Success(node.text)
+    implicit object charSequenceExtractor extends Extractor[CharSequence] {
+        def extract(node: Node): Try[CharSequence] = node match {
+            case x: xml.Text => Success(x.data)
+            case _ => node.child.toSeq match {
+                    case Seq(pre, PCData(x), post) => Success(CDATA(x, pre.text, post.text))
+                    case Seq(PCData(x)) => Success(CDATA(x))
+                    case Seq(x) => Success(x.text)
+                    case x => Failure(XmlException(s"charSequenceExtractor: cannot decode text node: $node: $x"))
+                }
         }
     }
 
     /**
      * Int extractor.
      */
-    implicit val intExtractor: Extractor[Int] = stringExtractor map (_.toInt)
+    implicit val intExtractor: Extractor[Int] = charSequenceExtractor flatMap {
+        case w: String => Success(w.toInt)
+        case x => Failure(XmlException(s"cannot convert $x to an Int"))
+    }
 
     /**
      * Boolean extractor.
      */
-    implicit val booleanExtractor: Extractor[Boolean] = stringExtractor map {
-        case "true" | "yes" | "T" | "Y" => true
-        case _ => false
+    implicit val booleanExtractor: Extractor[Boolean] = charSequenceExtractor flatMap {
+        case "true" | "yes" | "T" | "Y" => Success(true)
+        case _: String => Success(false)
+        case x => Failure(XmlException(s"cannot convert $x to a Boolean"))
     }
 
     /**
      * Double extractor.
      */
-    implicit val doubleExtractor: Extractor[Double] = stringExtractor map (_.toDouble)
+    implicit val doubleExtractor: Extractor[Double] = charSequenceExtractor flatMap {
+        case w: String => Success(w.toDouble)
+        case x => Failure(XmlException(s"cannot convert $x to a Double"))
+    }
 
     /**
      * Long extractor.
      */
-    implicit val longExtractor: Extractor[Long] = stringExtractor map (_.toLong)
+    implicit val longExtractor: Extractor[Long] = charSequenceExtractor flatMap {
+        case w: String => Success(w.toLong)
+        case x => Failure(XmlException(s"cannot convert $x to a Long"))
+    }
 
     val logger: Logger = LoggerFactory.getLogger(Extractor.getClass)
 }
@@ -471,5 +495,39 @@ object ChildNames {
                 case Extractor.plural(x) => Seq(x)
                 case _ => map.getOrElse(member, Seq(member))
             })
+
+}
+
+/**
+ * Case class to represent a CDATA node.
+ *
+ * @param content the payload of the CDATA node (will contain <, >, & characters).
+ * @param pre     the prefix (probably a newline).
+ * @param post    the postfix (probably a newline).
+ */
+case class CDATA(content: String, pre: String, post: String) extends CharSequence {
+    def length(): Int = content.length()
+
+    def charAt(index: Int): Char = content.charAt(index)
+
+    def subSequence(start: Int, end: Int): CharSequence = content.subSequence(start, end)
+
+    override def toString: String = s"$pre$content$post"
+}
+
+object CDATA {
+
+    def trimSpace(w: String): String = {
+        val sb = new StringBuilder(w)
+        SmartBuffer.trimStringBuilder(sb)
+        sb.toString()
+    }
+
+    def apply(x: String, pre: String, post: String): CDATA = new CDATA(x, trimSpace(pre), trimSpace(post))
+
+    def apply(x: String): CDATA = apply(x, "", "")
+
+    def wrapped(x: String): CDATA = apply(x, "\n", "\n")
+
 
 }

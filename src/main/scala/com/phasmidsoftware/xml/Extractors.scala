@@ -1379,11 +1379,6 @@ object Extractors extends Extractors {
     }
 
     /**
-     * String multi extractor.
-     */
-    implicit object stringMultiExtractor extends MultiExtractorBase[String]
-
-    /**
      * Int multi extractor.
      *
      * TESTME
@@ -1424,7 +1419,7 @@ object Extractors extends Extractors {
     /**
      * Optional String extractor.
      */
-    implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[String]
+    implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[CharSequence] flatMap (xo => Success(xo map (_.toString)))
 
     /**
      * Method to extract an optional value from a NodeSeq.

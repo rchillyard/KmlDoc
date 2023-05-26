@@ -81,7 +81,7 @@ object Utilities {
     def uncurry6[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = (t1, t2, t3, t4, t5, t6) => f(t1)(t2)(t3)(t4)(t5)(t6)
 }
 
-case class Text($: String) {
+case class Text($: CharSequence) {
     override def equals(obj: Any): Boolean = obj match {
         case text: Text => $ == text.$
         case _ => false
@@ -109,6 +109,12 @@ class MappableRegex(r: String, f: List[String] => List[String]) extends Regex(r)
 
 class LowerCaseInitialRegex(r: String) extends MappableRegex(r, ws => ws map { w => w.head.toLower + w.tail })
 
+/**
+ * CONSIDER renaming as ExtractorException.
+ *
+ * @param message the message.
+ * @param cause   the cause (or null).
+ */
 case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
 
 object XmlException {

@@ -28,8 +28,7 @@ case class SmartBuffer(sb: StringBuilder) {
     }
 
     def trim: SmartBuffer = {
-        // CONSIDER a faster way to do this
-        while (sb.endsWith(" ")) sb.setLength(sb.length() - 1)
+        SmartBuffer.trimStringBuilder(sb)
         this
     }
 
@@ -57,4 +56,12 @@ case class SmartBuffer(sb: StringBuilder) {
 
 object SmartBuffer {
     def apply(): SmartBuffer = new SmartBuffer(new StringBuilder())
+
+    /**
+     * CONSIDER a faster way to do this
+     */
+    def trimStringBuilder(sb: StringBuilder): Unit = {
+        while (sb.endsWith(" ")) sb.setLength(sb.length() - 1)
+    }
+
 }

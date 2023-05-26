@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
-import com.phasmidsoftware.xml.Extractor.{intExtractor, stringExtractor}
+import com.phasmidsoftware.xml.Extractor.intExtractor
 import com.phasmidsoftware.xml.{Extractors, _}
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
@@ -562,9 +562,11 @@ object LabelStyle extends Extractors with Renderers {
  *
  * CONSIDER making the member have type Int (but mean Boolean) rather than String.
  *
+ * TODO this (and similar case classes with "$") define the member as CharSequence. It should be String, unless we make a special KmlBoolean object.
+ *
  * @param $ the value.
  */
-case class Tessellate($: String)
+case class Tessellate($: CharSequence)
 
 object Tessellate extends Extractors with Renderers {
 
@@ -574,7 +576,7 @@ object Tessellate extends Extractors with Renderers {
     implicit val renderer: Renderer[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
 }
 
-case class Open($: String)
+case class Open($: CharSequence)
 
 object Open extends Extractors with Renderers {
 
@@ -586,7 +588,7 @@ object Open extends Extractors with Renderers {
     implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
 }
 
-case class Visibility($: String)
+case class Visibility($: CharSequence)
 
 object Visibility extends Extractors with Renderers {
 
@@ -705,7 +707,7 @@ object Heading extends Extractors with Renderers {
     implicit val rendererOpt: Renderer[Option[Heading]] = optionRenderer[Heading] ^^ "rendererOptionHeading"
 }
 
-case class BgColor($: String)
+case class BgColor($: CharSequence)
 
 object BgColor extends Extractors with Renderers {
 
@@ -723,7 +725,7 @@ object BgColor extends Extractors with Renderers {
  *
  * @param $ the color.
  */
-case class TextColor($: String)
+case class TextColor($: CharSequence)
 
 object TextColor extends Extractors with Renderers {
 
@@ -741,7 +743,7 @@ object TextColor extends Extractors with Renderers {
  *
  * @param $ the mode.
  */
-case class DisplayMode($: String)
+case class DisplayMode($: CharSequence)
 
 object DisplayMode extends Extractors with Renderers {
 
@@ -759,7 +761,7 @@ object DisplayMode extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class ListItemType($: String)
+case class ListItemType($: CharSequence)
 
 object ListItemType extends Extractors with Renderers {
 
@@ -777,7 +779,7 @@ object ListItemType extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class State($: String)
+case class State($: CharSequence)
 
 object State extends Extractors with Renderers {
 
@@ -808,12 +810,14 @@ object ItemIcon extends Extractors with Renderers {
 /**
  * Case class to model a HotSpot.
  *
- * @param _x optional x field.
+ * TODO change _xunits and _yunits to be of type String.
+ *
+ * @param _x      optional x field.
  * @param _xunits optional xunits field.
- * @param _y optional y field.
+ * @param _y      optional y field.
  * @param _yunits optional yunits field.
  */
-case class HotSpot(_x: Int, _xunits: String, _y: Int, _yunits: String)
+case class HotSpot(_x: Int, _xunits: CharSequence, _y: Int, _yunits: CharSequence)
 
 object HotSpot extends Extractors with Renderers {
 
@@ -831,7 +835,7 @@ object HotSpot extends Extractors with Renderers {
  *
  * @param $ the color as a hexadecimal string.
  */
-case class Color($: String)
+case class Color($: CharSequence)
 
 object Color extends Extractors with Renderers {
 
@@ -849,7 +853,7 @@ object Color extends Extractors with Renderers {
  *
  * @param $ the color mode as string: "normal" or "random."
  */
-case class ColorMode($: String)
+case class ColorMode($: CharSequence)
 
 object ColorMode extends Extractors with Renderers {
 
@@ -873,7 +877,7 @@ object Width extends Extractors with Renderers {
     implicit val rendererOpt: Renderer[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
 }
 
-case class Key($: String)
+case class Key($: CharSequence)
 
 object Key extends Extractors with Renderers {
 
@@ -883,7 +887,7 @@ object Key extends Extractors with Renderers {
     implicit val renderer: Renderer[Key] = renderer1(apply) ^^ "rendererKey"
 }
 
-case class StyleURL($: String)
+case class StyleURL($: CharSequence)
 
 object StyleURL extends Extractors with Renderers {
 
