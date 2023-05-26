@@ -104,7 +104,7 @@ object Extractor {
      *           Required: implicit evidence of an Extractor[T].
      * @return a Try[T].
      */
-    def extract[T: Extractor](node: Node): Try[T] =
+    def extract[T: Extractor](node: Node): Try[T] = // TODO remove logging
         s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
 
     /**
@@ -320,7 +320,10 @@ object Extractor {
      * String extractor.
      */
     implicit object stringExtractor extends Extractor[String] {
-        def extract(node: Node): Try[String] = Success(node.text)
+        def extract(node: Node): Try[String] = (node.label, node.child.size) match {
+            case ("text", 3) => Success(node.child(1).text)
+            case _ => Success(node.text)
+        }
     }
 
     /**

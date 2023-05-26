@@ -61,6 +61,57 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedScale.get.$ shouldBe 2.0
   }
 
+  behavior of "Style"
+
+  // FIXME Issue #10
+  ignore should "parse BalloonStyle" in {
+    val xml: Elem = <xml>
+      <Style id="noDrivingDirections">
+        <BalloonStyle>
+          <text>
+            <![CDATA[
+          <b>$[name]</b>
+          <br /><br />
+          $[description]
+        ]]>
+          </text>
+        </BalloonStyle>
+      </Style>
+    </xml>
+
+    extractAll[Seq[StyleSelector]](xml) match {
+      case Success(ss) =>
+        ss.size shouldBe 1
+        val style: StyleSelector = ss.head
+        println(style)
+        style match {
+          case Style(styles) =>
+            styles.size shouldBe 1
+            styles.head match {
+              case b@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
+                text.$ shouldBe
+                        """
+                          |          <b>$[name]</b>
+                          |          <br /><br />
+                          |          $[description]
+                          |        """.stripMargin
+                val wy = TryUsing(StateR())(sr => Renderer.render(b, FormatXML(), sr))
+                wy.isSuccess shouldBe true
+                wy.get shouldBe
+                        """<BalloonStyle>
+                          |  <text>
+                          |
+                          |          <b>$[name]</b>
+                          |          <br /><br />
+                          |          $[description]
+                          |
+                          |        </text>
+                          |</BalloonStyle>""".stripMargin
+            }
+        }
+    }
+  }
+
   behavior of "Coordinate"
 
   it should "parse Coordinate pair" in {
@@ -550,7 +601,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
       |</IconStyle>""".stripMargin
   private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>"
-  private val balloonStyleText = "<BalloonStyle>\n    <text>\n            <h3>$[name]</h3>\n          </text>\n  </BalloonStyle>"
+  private val balloonStyleText = "<BalloonStyle>\n    <text><![CDATA[<h3>$[name]</h3>]]></text>\n  </BalloonStyle>"
   private val labelStyleText = "<LabelStyle>\n    <scale>0.0</scale>\n  </LabelStyle>"
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
@@ -672,9 +723,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             styles(2) match {
               case x@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
                 text shouldBe Text(
-                  """
-                    |            <h3>$[name]</h3>
-                    |          """.stripMargin)
+                  """<h3>$[name]</h3>""".stripMargin)
                 maybeBgColor shouldBe None
                 maybeTextColor shouldBe None
                 maybeDisplayMode shouldBe None
@@ -685,7 +734,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             }
             val wy = TryUsing(StateR())(sr => Renderer.render[Style](s, FormatXML(), sr))
             wy.isSuccess shouldBe true
-            // TODO Fix up the spacing.
             wy.get shouldBe
                     """<Style id="icon-22-nodesc-normal">
                       |  <LabelStyle>
@@ -699,9 +747,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                       |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
                       |  </IconStyle>
                       |  <BalloonStyle>
-                      |    <text>
-                      |            <h3>$[name]</h3>
-                      |          </text>
+                      |    <text><![CDATA[<h3>$[name]</h3>]]></text>
                       |  </BalloonStyle>
                       |</Style>""".stripMargin
           case m@StyleMap(pairs) =>
