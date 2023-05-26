@@ -79,7 +79,7 @@ object Feature extends Extractors with Renderers {
  * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
  * @param kmlData          (auxiliary) member: KmlData.
  */
-case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
+case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
 /**
  * Companion object to Feature.
@@ -88,9 +88,9 @@ object FeatureData extends Extractors with Renderers {
 
     import Renderers._
 
-    val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial41(apply)
+    val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial51(apply)
     implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial) ^^ "extractorFeatureData"
-    implicit val renderer: Renderer[FeatureData] = renderer5Super(apply)(_.kmlData) ^^ "rendererFeatureData"
+    implicit val renderer: Renderer[FeatureData] = renderer6Super(apply)(_.kmlData) ^^ "rendererFeatureData"
 }
 
 /**
@@ -584,6 +584,18 @@ object Open extends Extractors with Renderers {
     implicit val extractorOpt: Extractor[Option[Open]] = extractorOption[Open]
     implicit val renderer: Renderer[Open] = renderer1(apply)
     implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
+}
+
+case class Visibility($: String)
+
+object Visibility extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Visibility] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Visibility]] = extractorOption[Visibility]
+    implicit val renderer: Renderer[Visibility] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Visibility]] = optionRenderer[Visibility]
 }
 
 //
