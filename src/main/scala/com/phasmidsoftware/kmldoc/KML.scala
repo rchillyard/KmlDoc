@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
-import com.phasmidsoftware.xml.Extractor.stringExtractor
+import com.phasmidsoftware.xml.Extractor.{intExtractor, stringExtractor}
 import com.phasmidsoftware.xml.{Extractors, _}
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
@@ -45,8 +45,6 @@ object KmlData extends Extractors with Renderers {
 
     implicit val extractor: Extractor[KmlData] = extractor10(apply) ^^ "extractorKmlData"
     implicit val renderer: Renderer[KmlData] = renderer1(apply) ^^ "rendererKmlData"
-
-    ////  implicit object loggableKmlData extends LoggableAny[KmlData]
 }
 
 /**
@@ -81,14 +79,13 @@ object Feature extends Extractors with Renderers {
  * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
  * @param kmlData          (auxiliary) member: KmlData.
  */
-case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Int], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
+case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
 
 /**
  * Companion object to Feature.
  */
 object FeatureData extends Extractors with Renderers {
 
-    import Extractors._
     import Renderers._
 
     val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial41(apply)
@@ -560,6 +557,13 @@ object LabelStyle extends Extractors with Renderers {
 
 //================Classes which do not appear at top level of KML Reference================================================
 
+/**
+ * Class Tessellate which is a Boolean.
+ *
+ * CONSIDER making the member have type Int (but mean Boolean) rather than String.
+ *
+ * @param $ the value.
+ */
 case class Tessellate($: String)
 
 object Tessellate extends Extractors with Renderers {
@@ -569,6 +573,34 @@ object Tessellate extends Extractors with Renderers {
     implicit val extractor: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
     implicit val renderer: Renderer[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
 }
+
+case class Open($: String)
+
+object Open extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Open] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Open]] = extractorOption[Open]
+    implicit val renderer: Renderer[Open] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
+}
+
+//
+//case class Open(b: Boolean) extends KmlBoolean(b) {
+//    def make(boolean: Boolean): KmlBoolean = Open(boolean)
+//}
+//
+//object Open {
+//    def create(x: Int): Open = Open(true).unit(x).asInstanceOf[Open]
+//
+//    import Renderers._
+//
+//    implicit val extractor: Extractor[Open] = intExtractor.map(x => create(x))
+//    implicit val extractorOpt: Extractor[Option[Open]] = extractorOption[Open]
+//    implicit val renderer: Renderer[Open] = renderer1(apply)
+//    implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
+//}
 
 case class Coordinates(coordinates: Seq[Coordinate])
 
@@ -940,3 +972,11 @@ object Test extends App {
     val kml: Try[Seq[Feature]] = KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
     kml foreach (fs => fs foreach (f => println(s"KML: $f")))
 }
+
+//abstract class KmlBoolean(b: Boolean) {
+//    override def toString: String = if (b) "1" else "0"
+//
+//    def make(boolean: Boolean): KmlBoolean
+//
+//    def unit(x: Int): KmlBoolean = make(x match {case 1 => true; case _ => false})
+//}
