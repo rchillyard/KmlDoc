@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, sequence}
 import com.phasmidsoftware.core.{LowerCaseInitialRegex, SmartBuffer, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
@@ -71,7 +71,8 @@ object Extractor {
 
     val flog: Flog = Flog[Extractors]
 
-    import flog._
+    // NOTE: this is needed if you enable logging (by uncommenting) in extract and extractMulti methods (below).
+//    import flog._
 
     /**
      * Method to create an Extractor[T] from a Node => Try[T] function.
@@ -113,8 +114,9 @@ object Extractor {
      *           Required: implicit evidence of an Extractor[T].
      * @return a Try[T].
      */
-    def extract[T: Extractor](node: Node): Try[T] = // TODO remove logging
-        s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
+    def extract[T: Extractor](node: Node): Try[T] =
+//    s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !?
+        implicitly[Extractor[T]].extract(node)
 
     /**
      * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -126,7 +128,7 @@ object Extractor {
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
+//        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
                 implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
