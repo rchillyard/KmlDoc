@@ -175,6 +175,14 @@ object FP {
     case Some(x) => Success(x)
     case None => Failure(new NoSuchElementException(s"tryNotNull: null: $msg"))
   }
+
+
+  /** Uncurrying for functions of arity 6.
+   */
+  def uncurried[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = {
+    (x1, x2, x3, x4, x5, x6) => f(x1)(x2)(x3)(x4)(x5)(x6)
+  }
+
 }
 
 object TryUsing {

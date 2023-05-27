@@ -72,6 +72,8 @@ object Feature extends Extractors with Renderers {
  *
  * CONSIDER use StyleURL type for maybeStyleURL.
  *
+ * CONSIDER redefining abstractView so that it can have only one optional AbstractView (according to KML spec.)
+ *
  * @param name             the name (a Text).
  * @param maybeDescription an optional description: Option[Text].
  * @param maybeStyleUrl    an optional style URL: Option[String].
@@ -79,7 +81,7 @@ object Feature extends Extractors with Renderers {
  * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
  * @param kmlData          (auxiliary) member: KmlData.
  */
-case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector])(val kmlData: KmlData)
+case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector], abstractView: Seq[AbstractView])(val kmlData: KmlData)
 
 /**
  * Companion object to Feature.
@@ -88,9 +90,9 @@ object FeatureData extends Extractors with Renderers {
 
     import Renderers._
 
-    val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial51(apply)
+    val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial52(apply)
     implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial) ^^ "extractorFeatureData"
-    implicit val renderer: Renderer[FeatureData] = renderer6Super(apply)(_.kmlData) ^^ "rendererFeatureData"
+    implicit val renderer: Renderer[FeatureData] = renderer7Super(apply)(_.kmlData) ^^ "rendererFeatureData"
 }
 
 /**
@@ -118,12 +120,73 @@ object Geometry extends Extractors with Renderers {
  * @param kmlData source of properties.
  */
 case class GeometryData(kmlData: KmlData)
+//case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option[AltitudeMode])(kmlData: KmlData)
 
 object GeometryData extends Extractors with Renderers {
-    val applyFunction: KmlData => GeometryData = new GeometryData(_)
+    private val applyFunction: KmlData => GeometryData = new GeometryData(_)
     val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](applyFunction)
     implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial)
     implicit val renderer: Renderer[GeometryData] = renderer0Super(apply)(_.kmlData) ^^ "rendererGeometryData"
+}
+
+/**
+ * Trait AbstractView: abstract sub-element of KmlObject.
+ * AbstractView is the super-type of Camera and LookAt.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#abstractview AbstractView]]
+ */
+trait AbstractView extends KmlObject
+
+/**
+ * Companion object to AbstractView.
+ */
+object AbstractView extends Extractors with Renderers {
+    implicit val extractorSeq: MultiExtractor[Seq[AbstractView]] =
+        multiExtractor2[AbstractView, (Camera, LookAt), Camera, LookAt]((l, p) => (l, p), Seq("Camera", "LookAt")) ^^ "multiExtractorAbstractView"
+    implicit val renderer: Renderer[AbstractView] = rendererSuper2[AbstractView, Camera, LookAt] ^^ "rendererAbstractView"
+    implicit val rendererSeq: Renderer[Seq[AbstractView]] = sequenceRenderer[AbstractView] ^^ "rendererAbstractViews"
+}
+
+/**
+ * Properties of AbstractView.
+ * There are no properties specific to AbstractView.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#abstractview AbstractView]]
+ *
+ * @param kmlData source of properties.
+ */
+case class AbstractViewData(kmlData: KmlData)
+
+object AbstractViewData extends Extractors with Renderers {
+    private val applyFunction: KmlData => AbstractViewData = new AbstractViewData(_)
+    val extractorPartial: Extractor[KmlData => AbstractViewData] = extractorPartial0[KmlData, AbstractViewData](applyFunction)
+    implicit val extractor: Extractor[AbstractViewData] = extractorPartial[KmlData, AbstractViewData](extractorPartial)
+    implicit val renderer: Renderer[AbstractViewData] = renderer0Super(apply)(_.kmlData) ^^ "rendererAbstractViewData"
+}
+
+/**
+ * [[https://developers.google.com/kml/documentation/kmlreference#lookat LookAt]]
+ */
+case class LookAt(longitude: Longitude, latitude: Latitude, maybeAltitude: Option[Altitude], heading: Heading, tilt: Tilt, range: Range, maybeAltitudeMode: Option[AltitudeMode])(val abstractViewData: AbstractViewData) extends AbstractView
+
+object LookAt extends Extractors with Renderers {
+
+    val extractorPartial: Extractor[AbstractViewData => LookAt] = extractorPartial70(apply)
+    implicit val extractor: Extractor[LookAt] = extractorPartial[AbstractViewData, LookAt](extractorPartial)
+    implicit val extractorOpt: Extractor[Option[LookAt]] = extractorOption[LookAt]
+    implicit val renderer: Renderer[LookAt] = renderer7Super(apply)(_.abstractViewData)
+    implicit val rendererOpt: Renderer[Option[LookAt]] = optionRenderer[LookAt]
+}
+
+/**
+ * [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
+ */
+case class Camera(long: Longitude, lat: Latitude, alt: Altitude, heading: Heading, tilt: Tilt, roll: Roll, maybeAltitudeMode: Option[AltitudeMode])(val abstractViewData: AbstractViewData) extends AbstractView
+
+object Camera extends Extractors with Renderers {
+
+    val extractorPartial: Extractor[AbstractViewData => Camera] = extractorPartial70(apply)
+    implicit val extractor: Extractor[Camera] = extractorPartial[AbstractViewData, Camera](extractorPartial)
+    implicit val renderer: Renderer[Camera] = renderer7Super(apply)(_.abstractViewData)
+    implicit val rendererOpt: Renderer[Option[Camera]] = optionRenderer[Camera]
 }
 
 /**
@@ -195,7 +258,7 @@ object StyleSelector extends Extractors with Renderers {
 case class StyleSelectorData(kmlData: KmlData)
 
 object StyleSelectorData extends Extractors with Renderers {
-    val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
+    private val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
     val extractorPartial: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](applyFunction) ^^ "extractorKD2StyleSelectorData"
     implicit val extractor: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorPartial) ^^ "extractorStyleSelectorData"
     implicit val renderer: Renderer[StyleSelectorData] = renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
@@ -224,7 +287,7 @@ object SubStyle extends Extractors with Renderers {
 case class SubStyleData(kmlData: KmlData)
 
 object SubStyleData extends Extractors with Renderers {
-    val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
+    private val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
     val extractorPartial: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](applyFunction)
     implicit val extractor: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorPartial) ^^ "extractorSubStyleData"
     implicit val renderer: Renderer[SubStyleData] = renderer0Super(apply)(_.kmlData) ^^ "rendererSubStyleData"
@@ -278,7 +341,7 @@ case class ContainerData(featureData: FeatureData)
  * Companion object to ContainerData.
  */
 object ContainerData extends Extractors with Renderers {
-    val applyFunction: FeatureData => ContainerData = new ContainerData(_)
+    private val applyFunction: FeatureData => ContainerData = new ContainerData(_)
     val extractorPartial: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](applyFunction) ^^ "extractorFD2ContainerData"
     implicit val extractor: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorPartial) ^^ "extractorContainerData"
     implicit val renderer: Renderer[ContainerData] = renderer0Super(applyFunction)(_.featureData) ^^ "rendererContainerData"
@@ -574,6 +637,25 @@ object Tessellate extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
     implicit val renderer: Renderer[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
+}
+
+/**
+ * Class Extrude which is a Boolean.
+ *
+ * Similar to Tessellate--and in fact they often go together.
+ *
+ * @param $ the value.
+ */
+case class Extrude($: CharSequence)
+
+object Extrude extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Extrude] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Extrude]] = extractorOption[Extrude]
+    implicit val renderer: Renderer[Extrude] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Extrude]] = optionRenderer[Extrude]
 }
 
 case class Open($: CharSequence)
@@ -905,6 +987,88 @@ object Pair extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair] ^^ "multiExtractorPair"
     implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
     implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
+}
+
+
+case class Longitude($: Double)
+
+object Longitude extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Longitude] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Longitude]] = extractorOption[Longitude]
+    implicit val renderer: Renderer[Longitude] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Longitude]] = optionRenderer[Longitude]
+}
+
+
+case class Latitude($: Double)
+
+object Latitude extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Latitude] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Latitude]] = extractorOption[Latitude]
+    implicit val renderer: Renderer[Latitude] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Latitude]] = optionRenderer[Latitude]
+}
+
+case class Altitude($: Double)
+
+object Altitude extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Altitude] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Altitude]] = extractorOption[Altitude]
+    implicit val renderer: Renderer[Altitude] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Altitude]] = optionRenderer[Altitude]
+}
+
+case class Tilt($: Double)
+
+object Tilt extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Tilt] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[Tilt]] = extractorOption[Tilt]
+    implicit val renderer: Renderer[Tilt] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[Tilt]] = optionRenderer[Tilt]
+}
+
+case class Range($: Double)
+
+object Range extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Range] = extractor10(apply)
+    implicit val renderer: Renderer[Range] = renderer1(apply)
+}
+
+case class Roll($: Double)
+
+object Roll extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[Roll] = extractor10(apply)
+    implicit val renderer: Renderer[Roll] = renderer1(apply)
+}
+
+case class AltitudeMode($: CharSequence)
+
+object AltitudeMode extends Extractors with Renderers {
+
+    import Renderers._
+
+    implicit val extractor: Extractor[AltitudeMode] = extractor10(apply)
+    implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractorOption[AltitudeMode]
+    implicit val renderer: Renderer[AltitudeMode] = renderer1(apply)
+    implicit val rendererOpt: Renderer[Option[AltitudeMode]] = optionRenderer[AltitudeMode]
 }
 
 /**

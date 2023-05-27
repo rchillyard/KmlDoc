@@ -15,17 +15,17 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "renderers"
 
-//  it should "render Open" in {
-//    val target = Open.create(1)
-//    val wy = TryUsing(StateR())(sr => Renderer.render[Open](target, FormatXML(), sr))
-//    wy.isSuccess shouldBe true
-//    wy.get shouldBe "<Open>1</Open>"
-//  }
+  it should "render Open" in {
+    val target = Open("1")
+    val wy = TryUsing(StateR())(sr => Renderer.render[Open](target, FormatXML(), sr))
+    wy.isSuccess shouldBe true
+    wy.get shouldBe "<Open>1</Open>"
+  }
 
   it should "render Placemark" in {
     val coordinates1 = Coordinates(Seq(Coordinate("-72", "0", "0"), Coordinate("-71", "1", "1000")))
     val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
-    val featureData: FeatureData = FeatureData(Text("Hello"), None, None, None, None, Nil)(KmlData.nemo)
+    val featureData: FeatureData = FeatureData(Text("Hello"), None, None, None, None, Nil, Nil)(KmlData.nemo)
     val placemark = Placemark(Seq(point))(featureData)
     val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
     wy.isSuccess shouldBe true
@@ -35,8 +35,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   it should "render Folder" in {
     val coordinates1 = Coordinates(Seq(Coordinate("-72", "0", "0")))
     val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
-    val featureData1: FeatureData = FeatureData(Text("Hello"), None, None, None, None, Nil)(KmlData.nemo)
-    val featureData2: FeatureData = FeatureData(Text("Goodbye"), None, None, None, None, Nil)(KmlData.nemo)
+    val featureData1: FeatureData = FeatureData(Text("Hello"), None, None, None, None, Nil, Nil)(KmlData.nemo)
+    val featureData2: FeatureData = FeatureData(Text("Goodbye"), None, None, None, None, Nil, Nil)(KmlData.nemo)
     val placemark = Placemark(Seq(point))(featureData1)
     val containerData: ContainerData = ContainerData(featureData2)
     val folder = Folder(Seq(placemark))(containerData)
@@ -64,7 +64,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "Style"
 
   // FIXME Issue #10
-  ignore should "parse BalloonStyle" in {
+  it should "parse BalloonStyle" in {
     val xml: Elem = <xml>
       <Style id="noDrivingDirections">
         <BalloonStyle>
@@ -89,24 +89,26 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             styles.size shouldBe 1
             styles.head match {
               case b@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
-                text.$ shouldBe
-                        """
-                          |          <b>$[name]</b>
-                          |          <br /><br />
-                          |          $[description]
-                          |        """.stripMargin
+                val expectedText =
+                  """
+                    |          <b>$[name]</b>
+                    |          <br /><br />
+                    |          $[description]
+                    |        """.stripMargin
+                text.$.asInstanceOf[CDATA].content shouldBe expectedText
                 val wy = TryUsing(StateR())(sr => Renderer.render(b, FormatXML(), sr))
                 wy.isSuccess shouldBe true
-                wy.get shouldBe
-                        """<BalloonStyle>
-                          |  <text>
-                          |
-                          |          <b>$[name]</b>
-                          |          <br /><br />
-                          |          $[description]
-                          |
-                          |        </text>
-                          |</BalloonStyle>""".stripMargin
+                val expectedBalloonStyle =
+                  """<BalloonStyle>
+                    |  <text>
+                    |<![CDATA[
+                    |          <b>$[name]</b>
+                    |          <br /><br />
+                    |          $[description]
+                    |        ]]>
+                    |</text>
+                    |</BalloonStyle>""".stripMargin
+                wy.get shouldBe expectedBalloonStyle
             }
         }
     }
@@ -258,6 +260,23 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Feature"
 
+  it should "extract LookAt" in {
+    val xml = <xml>
+      <LookAt>
+        <longitude>15.02468937557116</longitude>
+        <latitude>37.67395167941667</latitude>
+        <altitude>0</altitude>
+        <heading>-16.5581842842829</heading>
+        <tilt>58.31228652890705</tilt>
+        <range>30350.36838438907</range>
+      </LookAt>
+    </xml>
+    extractAll[Seq[AbstractView]](xml) match {
+      case x =>
+        println(x)
+        x.isSuccess shouldBe true
+    }
+  }
   it should "extract Placemark" in {
     val xml: Elem = <xml>
       <Placemark>
@@ -298,7 +317,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
             }
             featureData match {
-              case FeatureData(Text("Wakefield Branch of Eastern RR"), maybeDescription, _, _, _, Nil) =>
+              case FeatureData(Text("Wakefield Branch of Eastern RR"), maybeDescription, _, _, _, _, Nil) =>
                 println(s"maybeDescription: $maybeDescription")
               case _ => println(s"$featureData did not match the expected result")
             }
@@ -3929,7 +3948,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         containers.head match {
           case document@Document(features) =>
             document.containerData.featureData match {
-              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors) =>
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors, abstractView) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
@@ -3988,7 +4007,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         containers.head match {
           case document@Document(features) =>
             document.containerData.featureData match {
-              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors) =>
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors, abstractView) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW).  Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None

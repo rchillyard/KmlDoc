@@ -273,9 +273,9 @@ trait Renderers {
     } ^^ s"renderer5Super: ${implicitly[ClassTag[R]]}"
 
     /**
-     * Method to create a renderer fpr a Product (e.g., case class) with five members.
+     * Method to create a renderer fpr a Product (e.g., case class) with six members.
      *
-     * @param construct a function which takes a P0, P1, P2, P3, P4 and yields an R (this is usually the apply method of a case class).
+     * @param construct a function which takes a P0, P1, P2, P3, P4, P5 and yields an R (this is usually the apply method of a case class).
      * @tparam P0 the (Renderer) type of the first member of Product type R.
      * @tparam P1 the (Renderer) type of the second member of Product type R.
      * @tparam P2 the (Renderer) type of the third member of Product type R.
@@ -291,7 +291,7 @@ trait Renderers {
             val constructorInner: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _, objectOuter)
             val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3], r.productElement(4).asInstanceOf[P4])
             for {wInner <- renderer5(constructorInner).render(objectInner, format, stateR.recurse)
-                 wOuter <- renderOuter(r, objectOuter, 4, format.indent)
+                 wOuter <- renderOuter(r, objectOuter, 5, format.indent)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(5))
                  } yield result
         }
@@ -319,6 +319,60 @@ trait Renderers {
                 br <- tryNotNull(implicitly[Renderer[B]])("renderer5Super: Renderer[B]")
                 wInner <- br.render(b, format, stateR.recurse)
                 wOuter <- renderer6(constructOuter).render(r, format, stateR.recurse)
+                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
+            } yield result
+        }
+    } ^^ s"renderer6Super: ${implicitly[ClassTag[R]]}"
+
+    /**
+     * Method to create a renderer fpr a Product (e.g., case class) with seven members.
+     *
+     * @param construct a function which takes a P0, P1, P2, P3, P4, P5, P6 and yields an R (this is usually the apply method of a case class).
+     * @tparam P0 the (Renderer) type of the first member of Product type R.
+     * @tparam P1 the (Renderer) type of the second member of Product type R.
+     * @tparam P2 the (Renderer) type of the third member of Product type R.
+     * @tparam P3 the (Renderer) type of the fourth member of Product type R.
+     * @tparam P4 the (Renderer) type of the fifth member of Product type R.
+     * @tparam P5 the (Renderer) type of the sixth member of Product type R.
+     * @tparam P6 the (Renderer) type of the seventh member of Product type R.
+     * @tparam R  the (Renderer) type of Renderer to be returned (must be a Product).
+     * @return Renderer[R].
+     */
+    def renderer7[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, P5: Renderer, P6: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5, P6) => R): Renderer[R] = Renderer {
+        (r: R, format: Format, stateR: StateR) => {
+            val objectOuter = r.productElement(6).asInstanceOf[P6]
+            val constructorInner: (P0, P1, P2, P3, P4, P5) => R = construct(_, _, _, _, _, _, objectOuter)
+            val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2], r.productElement(3).asInstanceOf[P3], r.productElement(4).asInstanceOf[P4], r.productElement(5).asInstanceOf[P5])
+            for {wInner <- renderer6(constructorInner).render(objectInner, format, stateR.recurse)
+                 wOuter <- renderOuter(r, objectOuter, 6, format.indent)
+                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(5))
+                 } yield result
+        }
+    } ^^ s"renderer7: ${implicitly[ClassTag[R]]}"
+
+    /**
+     * Method to create a renderer fpr a Product (e.g., case class) with seven members but also an auxiliary object in a second parameter set.
+     *
+     * @param construct a function (P0, P1, P2, P3, P4, P5, P6) => R (this is usually the apply method of a case class).
+     * @tparam B  the (Renderer) type of the auxiliary object of type R.
+     * @tparam P0 the (Renderer) type of the first member of Product type R.
+     * @tparam P1 the (Renderer) type of the second member of Product type R.
+     * @tparam P2 the (Renderer) type of the third member of Product type R.
+     * @tparam P3 the (Renderer) type of the fourth member of Product type R.
+     * @tparam P4 the (Renderer) type of the fifth member of Product type R.
+     * @tparam P5 the (Renderer) type of the sixth member of Product type R.
+     * @tparam P6 the (Renderer) type of the seventh member of Product type R.
+     * @tparam R  the type of Renderer to be returned (must be a Product).
+     * @return a Renderer[R].
+     */
+    def renderer7Super[B: Renderer, P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, P5: Renderer, P6: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5, P6) => B => R)(lens: R => B): Renderer[R] = Renderer {
+        (r: R, format: Format, stateR: StateR) => {
+            val b = lens(r)
+            val constructOuter: (P0, P1, P2, P3, P4, P5, P6) => R = construct(_, _, _, _, _, _, _)(b)
+            for {
+                br <- tryNotNull(implicitly[Renderer[B]])("renderer5Super: Renderer[B]")
+                wInner <- br.render(b, format, stateR.recurse)
+                wOuter <- renderer7(constructOuter).render(r, format, stateR.recurse)
                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
             } yield result
         }
