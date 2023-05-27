@@ -1303,7 +1303,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    private def extractorPartial2[P0, P1, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
+    def extractorPartial2[P0, P1, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>

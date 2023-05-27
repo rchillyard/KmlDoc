@@ -119,14 +119,13 @@ object Geometry extends Extractors with Renderers {
  *
  * @param kmlData source of properties.
  */
-case class GeometryData(kmlData: KmlData)
-//case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option[AltitudeMode])(kmlData: KmlData)
+case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option[AltitudeMode])(val kmlData: KmlData)
 
 object GeometryData extends Extractors with Renderers {
-    private val applyFunction: KmlData => GeometryData = new GeometryData(_)
-    val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial0[KmlData, GeometryData](applyFunction)
+
+    val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial20(apply)
     implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial)
-    implicit val renderer: Renderer[GeometryData] = renderer0Super(apply)(_.kmlData) ^^ "rendererGeometryData"
+    implicit val renderer: Renderer[GeometryData] = renderer2Super(apply)(_.kmlData) ^^ "rendererGeometryData"
 }
 
 /**
@@ -623,6 +622,8 @@ object LabelStyle extends Extractors with Renderers {
 /**
  * Class Tessellate which is a Boolean.
  *
+ * CONSIDER making this part of GeometryData.
+ * 
  * CONSIDER making the member have type Int (but mean Boolean) rather than String.
  *
  * TODO this (and similar case classes with "$") define the member as CharSequence. It should be String, unless we make a special KmlBoolean object.

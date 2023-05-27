@@ -24,7 +24,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "render Placemark" in {
     val coordinates1 = Coordinates(Seq(Coordinate("-72", "0", "0"), Coordinate("-71", "1", "1000")))
-    val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
+    val point: Point = Point(Seq(coordinates1))(GeometryData(None, None)(KmlData.nemo))
     val featureData: FeatureData = FeatureData(Text("Hello"), None, None, None, None, Nil, Nil)(KmlData.nemo)
     val placemark = Placemark(Seq(point))(featureData)
     val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
@@ -34,7 +34,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   it should "render Folder" in {
     val coordinates1 = Coordinates(Seq(Coordinate("-72", "0", "0")))
-    val point: Point = Point(Seq(coordinates1))(GeometryData(KmlData.nemo))
+    val point: Point = Point(Seq(coordinates1))(GeometryData(None, None)(KmlData.nemo))
     val featureData1: FeatureData = FeatureData(Text("Hello"), None, None, None, None, Nil, Nil)(KmlData.nemo)
     val featureData2: FeatureData = FeatureData(Text("Goodbye"), None, None, None, None, Nil, Nil)(KmlData.nemo)
     val placemark = Placemark(Seq(point))(featureData1)
