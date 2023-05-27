@@ -2,7 +2,8 @@ package com.phasmidsoftware.core
 
 import com.phasmidsoftware.xml.{Extractor, Extractors}
 import scala.collection.mutable
-import scala.util.Try
+import scala.util._
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 import scala.xml.{Elem, Node, NodeSeq}
 
@@ -36,12 +37,35 @@ object Utilities {
     /**
      * Method to transform a Seq of Try[X] into a Try of Seq[X].
      *
+     * TODO move this to FP.
+     *
      * @param xys a Seq of Try[X].
      * @tparam X the underlying type.
      * @return a Try of Seq[X].
      */
     def sequence[X](xys: Seq[Try[X]]): Try[Seq[X]] = xys.foldLeft(Try(Seq[X]())) {
         (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
+    }
+
+    /**
+     * Method to transform a Seq of Try[X] into a Try of Seq[X].
+     *
+     * TODO move this to FP.
+     *
+     * @param xys a Seq of Try[X].
+     * @tparam X the underlying type.
+     * @return a Try of Seq[X].
+     */
+    def sequenceForgiving[X](f: Throwable => Unit)(xys: Seq[Try[X]]): Try[Seq[X]] = {
+        val (successes, failures) = xys partition (_.isSuccess)
+        val fatalFailures: Seq[Try[X]] = failures.collect {
+            case Failure(x) if !NonFatal(x) => Failure(x)
+        }
+        val nonFatalFailures: Seq[Try[X]] = failures.collect {
+            case Failure(x) if NonFatal(x) => Failure(x)
+        }
+        nonFatalFailures foreach (xy => xy.recover { case x => f(x) })
+        sequence(fatalFailures ++ successes)
     }
 
     private def renderNodeBrief(node: Node): String = node.label

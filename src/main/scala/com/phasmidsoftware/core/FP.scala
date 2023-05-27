@@ -49,6 +49,8 @@ object FP {
   /**
    * Sequence method to combine elements of Try.
    *
+   * TESTME
+   *
    * @param xys an Iterable of Try[X].
    * @tparam X the underlying type.
    * @return a Try of Seq[X].
@@ -63,6 +65,8 @@ object FP {
   /**
    * Sequence method to combine elements of Try.
    *
+   * TESTME
+   *
    * @param xys       an Iterable of Try[X].
    * @param pfFailure a partial function of type Throwable => Try of Option[X].
    * @tparam X the underlying type.
@@ -74,6 +78,8 @@ object FP {
 
   /**
    * Sequence method to combine elements of Try.
+   *
+   * TESTME
    *
    * @param xys       an Iterable of Try[X].
    * @param fSuccess  a function of type X => Try of Option[X].
