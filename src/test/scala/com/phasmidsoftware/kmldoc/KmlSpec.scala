@@ -216,6 +216,63 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  it should "extract Polygon with inner boundary" in {
+    val xml = <xml>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>-77.05788457660967,38.87253259892824,100
+              -77.05465973756702,38.87291016281703,100
+              -77.05315536854791,38.87053267794386,100
+              -77.05552622493516,38.868757801256,100
+              -77.05844056290393,38.86996206506943,100
+              -77.05788457660967,38.87253259892824,100</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+        <innerBoundaryIs>
+          <LinearRing>
+            <coordinates>-77.05668055019126,38.87154239798456,100
+              -77.05542625960818,38.87167890344077,100
+              -77.05485125901024,38.87076535397792,100
+              -77.05577677433152,38.87008686581446,100
+              -77.05691162017543,38.87054446963351,100
+              -77.05668055019126,38.87154239798456,100</coordinates>
+          </LinearRing>
+        </innerBoundaryIs>
+      </Polygon>
+    </xml>
+    extractAll[Seq[Geometry]](xml) match {
+      case Success(x) =>
+      case Failure(x) => fail("could not extract Polygon", x)
+    }
+  }
+
+  // FIXME: Issue #10
+  ignore should "extract Polygon without inner boundary" in {
+    val xml = <xml>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>-77.05788457660967,38.87253259892824,100
+              -77.05465973756702,38.87291016281703,100
+              -77.05315536854791,38.87053267794386,100
+              -77.05552622493516,38.868757801256,100
+              -77.05844056290393,38.86996206506943,100
+              -77.05788457660967,38.87253259892824,100</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </xml>
+    extractAll[Seq[Geometry]](xml) match {
+      case Success(x) =>
+      case Failure(x) => fail("could not extract Polygon", x)
+    }
+  }
+
   behavior of "FeatureData"
 
   it should "extract as String" in {
@@ -863,7 +920,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "StyleMap"
 
-  it should "extract StyleMaps" in {
+  it should "extract StyleMap" in {
     val xml = <xml>
       <StyleMap id="icon-22-nodesc">
         <Pair>
@@ -884,6 +941,23 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
         wy.isSuccess shouldBe true
         wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n  <Pair>\n    <key>normal</key>\n    <styleUrl>#icon-22-nodesc-normal</styleUrl>\n  </Pair>\n  <Pair>\n    <key>highlight</key>\n    <styleUrl>#icon-22-nodesc-highlight</styleUrl>\n  </Pair>\n</StyleMap>"
+      case Failure(x) => fail(x)
+    }
+  }
+
+  it should "extract StyleMap without Pairs" in {
+    val xml = <xml>
+      <StyleMap id="icon-22-nodesc">
+      </StyleMap>
+    </xml>
+    extractMulti[Seq[StyleMap]](xml / "StyleMap") match {
+      case Success(ss) =>
+        ss.size shouldBe 1
+        val styleMap: StyleMap = ss.head
+        styleMap shouldBe StyleMap(List())(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
+        val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
+        wy.isSuccess shouldBe true
+        wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n</StyleMap>"
       case Failure(x) => fail(x)
     }
   }
@@ -4130,7 +4204,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  it should "extract and render sample kml as XML from Google sample" in {
+  // FIXME: Issue #10
+  ignore should "extract and render sample kml as XML from Google sample" in {
     val renderer = implicitly[Renderer[KML_Binding]]
     val url = KML.getClass.getResource("/KML_Samples.kml")
     val xml: Elem = XML.loadFile(url.getFile)

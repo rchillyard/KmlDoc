@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, sequence}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, sequence, sequenceForgiving}
 import com.phasmidsoftware.core.{LowerCaseInitialRegex, SmartBuffer, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
@@ -154,9 +154,11 @@ object Extractor {
      */
     def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
         extractSequence[P](nodeSeq) match {
+            case Success(Nil) =>
+                Failure(XmlException(s"extractSingleton: empty"))
             case Success(p :: Nil) => Success(p)
             // TESTME
-            case Success(ps) => Failure(XmlException(s"extractSingleton: non-unique value: $ps"))
+            case Success(ps) => Failure(XmlException(s"extractSingleton: ambiguous values: $ps"))
             case Failure(x) => Failure(x)
         }
 
@@ -166,13 +168,17 @@ object Extractor {
      * implicit evidence.
      * The difference between this method and extractSingleton is in the result type.
      *
+     * CONSIDER the use of sequenceForgiving
+     *
      * @param nodeSeq a NodeSeq.
      * @tparam P the (Extractor) type to which each individual Node should be converted.
      *           Required: implicit evidence of type Extractor[P].
      * @return a Try of Seq[P].
      */
-    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
+    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
+//        val f: Throwable=>Unit = x => Extractor.logger.warn(x.getLocalizedMessage) // required if we want to use sequenceForgiving
         sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
+    }
 
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
@@ -282,8 +288,9 @@ object Extractor {
             case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
             case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
             case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-            // NOTE child nodes are extracted using extractChildren, not here.
-            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
+            // NOTE child nodes are extracted using extractChildren, not here, but if the plural-sounding name is present in node, then we are OK
+            case plural(x) if (node \ field).isEmpty => // NOTE: TESTME: this mechanism is to allow for field names to end in "s" without being plural (such as OuterBoundaryIs).
+                s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
             // NOTE optional members such that the name begins with "maybe"
             case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
             // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
@@ -457,7 +464,16 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
 
     val tsm: MultiExtractor[Seq[T]]
 
-    def extract(node: Node): Try[Seq[T]] = sequence(for (tag <- tags) yield tsm.extract(node \ tag)) map (_.flatten)
+    /**
+     * TESTME in particular regarding the use of sequenceForgiving
+     *
+     * @param node
+     * @return
+     */
+    def extract(node: Node): Try[Seq[T]] = {
+        val f: Throwable => Unit = x => Extractor.logger.warn(x.getLocalizedMessage)
+        sequenceForgiving(f)(for (tag <- tags) yield tsm.extract(node \ tag)) map (_.flatten)
+    }
 }
 
 /**
@@ -471,12 +487,15 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
  */
 class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
     /**
-     * TESTME
+     * TESTME in particular regarding the use of sequenceForgiving
      *
      * @param node a Node.
      * @return a Try[T].
      */
-    def extract(node: Node): Try[Seq[T]] = sequence(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
+    def extract(node: Node): Try[Seq[T]] = {
+        val f: Throwable => Unit = x => Extractor.logger.warn(x.getLocalizedMessage)
+        sequenceForgiving(f)(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
+    }
 }
 
 /**

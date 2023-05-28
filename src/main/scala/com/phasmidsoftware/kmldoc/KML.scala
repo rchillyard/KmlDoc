@@ -97,7 +97,8 @@ object FeatureData extends Extractors with Renderers {
 
 /**
  * Trait Geometry: abstract sub-element of KmlObject.
- * Geometry is the super-type of LineString and Point.
+ * Geometry is the super-type of LineString, Polygon, LinearRing, and Point.
+ *
  * See [[https://developers.google.com/kml/documentation/kmlreference#geometry Geometry]]
  */
 trait Geometry extends KmlObject
@@ -107,7 +108,7 @@ trait Geometry extends KmlObject
  */
 object Geometry extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[Geometry]] =
-        multiExtractor2[Geometry, (LineString, Point), LineString, Point]((l, p) => (l, p), Seq("LineString", "Point")) ^^ "multiExtractorGeometry"
+        multiExtractor4[Geometry, (LineString, Point, Polygon, LinearRing), LineString, Point, Polygon, LinearRing]((ls, pt, pg, lr) => (ls, pt, pg, lr), Seq("LineString", "Point", "Polygon", "LinearRing")) ^^ "multiExtractorGeometry"
     implicit val renderer: Renderer[Geometry] = rendererSuper2[Geometry, Point, LineString] ^^ "rendererGeometry"
     implicit val rendererSeq: Renderer[Seq[Geometry]] = sequenceRenderer[Geometry] ^^ "rendererGeometrys"
 }
@@ -123,7 +124,7 @@ case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option
 
 object GeometryData extends Extractors with Renderers {
 
-    val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial20(apply)
+    private val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial20(apply)
     implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial)
     implicit val renderer: Renderer[GeometryData] = renderer2Super(apply)(_.kmlData) ^^ "rendererGeometryData"
 }
@@ -296,6 +297,8 @@ object SubStyleData extends Extractors with Renderers {
  * Placemark: sub-type of Feature.
  * See [[https://developers.google.com/kml/documentation/kmlreference#placemark Placemark]].
  *
+ * CONSIDER restricting the number of Geometry elements to one.
+ *
  * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
  * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
  */
@@ -357,7 +360,7 @@ object ContainerData extends Extractors with Renderers {
 case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
 
 object Point extends Extractors with Renderers {
-    val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
+    private val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
     implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
     implicit val extractorSeq: MultiExtractor[Seq[Point]] = multiExtractorBase[Point]
     implicit val renderer: Renderer[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
@@ -369,17 +372,71 @@ object Point extends Extractors with Renderers {
  *
  * See [[https://developers.google.com/kml/documentation/kmlreference#linestring LineString]]
  *
- * CONSIDER having second parameter set with geometryData (like Point).
+ * @param tessellate  the tessellation.
+ * @param coordinates a sequence of Coordinates objects.
+ */
+case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
+
+object LineString extends Extractors with Renderers {
+    private val extractorPartial: Extractor[GeometryData => LineString] = extractorPartial11(apply)
+    implicit val extractor: Extractor[LineString] = extractorPartial[GeometryData, LineString](extractorPartial) ^^ "extractorLineString"
+    implicit val renderer: Renderer[LineString] = renderer2Super(apply)(_.geometryData) ^^ "rendererLineString"
+    implicit val rendererSeq: Renderer[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
+}
+
+/**
+ * Case class LineString which extends Geometry.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#linestring LineString]]
+ *
+ * @param maybeTessellate the tessellation.
+ * @param outerBoundaryIs an OuterBoundaryIs object.
+ * @param innerBoundaryIs a sequence of InnerBoundaryIs objects.
+ */
+case class Polygon(maybeTessellate: Option[Tessellate], outerBoundaryIs: OuterBoundaryIs, innerBoundaryIs: Seq[InnerBoundaryIs])(val geometryData: GeometryData) extends Geometry
+
+object Polygon extends Extractors with Renderers {
+    private val extractorPartial: Extractor[GeometryData => Polygon] = extractorPartial21(apply)
+    implicit val extractor: Extractor[Polygon] = extractorPartial[GeometryData, Polygon](extractorPartial) ^^ "extractorPolygon"
+    implicit val renderer: Renderer[Polygon] = renderer3Super(apply)(_.geometryData) ^^ "rendererPolygon"
+//    implicit val rendererSeq: Renderer[Seq[Polygon]] = sequenceRenderer[Polygon] ^^ "rendererPolygon"
+}
+
+/**
+ * [[https://developers.google.com/kml/documentation/kmlreference#outerboundaryis outerBoundaryIs]]
+ *
+ * @param linearRing
+ */
+case class OuterBoundaryIs(LinearRing: LinearRing)
+
+object OuterBoundaryIs extends Extractors with Renderers {
+    implicit val extractor: Extractor[OuterBoundaryIs] = extractor10(apply) ^^ "extractorOuterBoundaryIs"
+    implicit val renderer: Renderer[OuterBoundaryIs] = renderer1(apply) ^^ "rendererOuterBoundaryIs"
+}
+
+case class InnerBoundaryIs(LinearRing: LinearRing)
+
+object InnerBoundaryIs extends Extractors with Renderers {
+    implicit val extractor: Extractor[InnerBoundaryIs] = extractor10(apply) ^^ "extractorInnerBoundaryIs"
+    implicit val extractorSeq: MultiExtractor[Seq[InnerBoundaryIs]] = multiExtractorBase[InnerBoundaryIs] ^^ "multiExtractorInnerBoundaryIs"
+    implicit val renderer: Renderer[InnerBoundaryIs] = renderer1(apply) ^^ "rendererInnerBoundaryIs"
+    implicit val rendererSeq: Renderer[Seq[InnerBoundaryIs]] = sequenceRenderer[InnerBoundaryIs] ^^ "rendererInnerBoundaryIs"
+}
+
+/**
+ * Case class LineString which extends Geometry.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#linearring LinearRing]]
  *
  * @param tessellate  the tessellation.
  * @param coordinates a sequence of Coordinates objects.
  */
-case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates]) extends Geometry
+case class LinearRing(maybeTessellate: Option[Tessellate], coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
 
-object LineString extends Extractors with Renderers {
-    implicit val extractor: Extractor[LineString] = extractor11(apply) ^^ "extractorLineString"
-    implicit val renderer: Renderer[LineString] = renderer2(apply) ^^ "rendererLineString"
-    implicit val rendererSeq: Renderer[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
+object LinearRing extends Extractors with Renderers {
+    private val extractorPartial: Extractor[GeometryData => LinearRing] = extractorPartial11(apply)
+    implicit val extractor: Extractor[LinearRing] = extractorPartial[GeometryData, LinearRing](extractorPartial) ^^ "extractorLinearRing"
+    implicit val renderer: Renderer[LinearRing] = renderer2Super(apply)(_.geometryData) ^^ "rendererLinearRing"
 }
 
 /**
@@ -623,7 +680,7 @@ object LabelStyle extends Extractors with Renderers {
  * Class Tessellate which is a Boolean.
  *
  * CONSIDER making this part of GeometryData.
- * 
+ *
  * CONSIDER making the member have type Int (but mean Boolean) rather than String.
  *
  * TODO this (and similar case classes with "$") define the member as CharSequence. It should be String, unless we make a special KmlBoolean object.
@@ -637,7 +694,9 @@ object Tessellate extends Extractors with Renderers {
     import Renderers._
 
     implicit val extractor: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
+    implicit val extractorOpt: Extractor[Option[Tessellate]] = extractorOption[Tessellate]
     implicit val renderer: Renderer[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
+    implicit val rendererOpt: Renderer[Option[Tessellate]] = optionRenderer[Tessellate]
 }
 
 /**
@@ -653,8 +712,8 @@ object Extrude extends Extractors with Renderers {
 
     import Renderers._
 
-    implicit val extractor: Extractor[Extrude] = extractor10(apply)
-    implicit val extractorOpt: Extractor[Option[Extrude]] = extractorOption[Extrude]
+    implicit val extractor: Extractor[Extrude] = extractor10(apply) ^^ "extractorExtrude"
+    implicit val extractorOpt: Extractor[Option[Extrude]] = extractorOption[Extrude] ^^ "extractorOptionExtrude"
     implicit val renderer: Renderer[Extrude] = renderer1(apply)
     implicit val rendererOpt: Renderer[Option[Extrude]] = optionRenderer[Extrude]
 }
@@ -1066,8 +1125,8 @@ object AltitudeMode extends Extractors with Renderers {
 
     import Renderers._
 
-    implicit val extractor: Extractor[AltitudeMode] = extractor10(apply)
-    implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractorOption[AltitudeMode]
+    implicit val extractor: Extractor[AltitudeMode] = extractor10(apply) ^^ "extractorAltitudeMode"
+    implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractorOption[AltitudeMode] ^^ "extractorOptAltitudeMode"
     implicit val renderer: Renderer[AltitudeMode] = renderer1(apply)
     implicit val rendererOpt: Renderer[Option[AltitudeMode]] = optionRenderer[AltitudeMode]
 }

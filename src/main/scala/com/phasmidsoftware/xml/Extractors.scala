@@ -185,38 +185,6 @@ trait Extractors {
         }
 
     /**
-     * Method to yield an Extractor of Seq[T] where each result arises from one of the labels (tags) given.
-     *
-     * @param tag    this is a pseudo-tag--not actually present in any XML element but corresponds to a case class member.
-     * @param labels the labels of the elements we wish to extract (wrapped in Seq).
-     * @tparam T the ultimate underlying type of the resulting MultiExtractor.
-     * @return Extractor of Seq[T].
-     */
-    def seqExtractorByTag[T](tag: String, labels: Seq[String])(implicit multiExtractor: MultiExtractor[Seq[T]]): Extractor[Seq[T]] = new TagToSequenceExtractorFunc[T] {
-
-        /**
-         * Method to yield an Extractor[T], given a label.
-         *
-         * @param w a String which must match the given tag in order to return a valid Extractor.
-         * @return an Extractor[T].
-         */
-        def apply(w: String): Extractor[Seq[T]] = if (w == tag) {
-            println(s"seqExtractorByTag: $w")
-            Extractor(node => {
-                val ws: Seq[Try[Seq[T]]] = for (label <- labels) yield multiExtractor.extract(node \ label)
-                FP.sequence(ws) map (tss => tss.flatten)
-            }
-            )
-        }
-        else (node: Node) => Success(Nil)
-
-        val tags: Seq[String] = labels
-        val tsm: MultiExtractor[Seq[T]] = multiExtractor
-        val pseudo: String = tag
-
-    }.apply(tag)
-
-    /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
      *
      * TESTME
@@ -241,17 +209,16 @@ trait Extractors {
      * @tparam P1 the second (Extractor) sub-type of T.
      * @return MultiExtractor of Seq[T].
      */
-//    def multiExtractor2[T, U <: Product, P0 <: T, P1 <: T](construct: (P0, P1) => U, labels: Seq[String])(implicit evp0: Extractor[P0], evp1: Extractor[P1], evcp0: ClassTag[P0], evcp1: ClassTag[P1]): MultiExtractor[Seq[T]] = nodeSeq =>
-def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1 <: T : Extractor: ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
-    multiExtractor[T]{
-        nodeSeq =>
-            labels match {
-                case label :: fs =>
-                    val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
-                    val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs)(implicitly[Extractor[P1]], classTag).extract(nodeSeq)
-                    for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
-            }
-    }
+    def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+        multiExtractor[T] {
+            nodeSeq =>
+                labels match {
+                    case label :: fs =>
+                        val p0sy = sequence(extractElementsByLabel[P0](nodeSeq, label)(implicitly[Extractor[P0]]))
+                        val tsy: Try[Seq[T]] = multiExtractor1[T, Tuple1[P1], P1](p1 => Tuple1(p1), fs)(implicitly[Extractor[P1]], classTag).extract(nodeSeq)
+                        for (ts1 <- tsy; ts2 <- p0sy) yield ts1 ++ ts2
+                }
+        }
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of three P-types.
@@ -401,8 +368,10 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
      */
     def extractor10[P0: Extractor, T <: Product : ClassTag](construct: P0 => T, fields: Seq[String] = Nil): Extractor[T] = Extractor {
-        import Extractors.flog._
-        (node: Node) => "extractor10: " |! (extractorPartial1[P0, Unit, T](fTagToFieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
+//        import Extractors.flog._
+        (node: Node) =>
+//            "extractor10: " |!
+            (extractorPartial1[P0, Unit, T](fTagToFieldExtractor, e0 => _ => construct(e0), dropLast = false, fields).extract(node) map (z => z()))
     }
 
     /**
@@ -1303,7 +1272,7 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
      * @tparam T  the underlying type of the result, a Product.
      * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
      */
-    def extractorPartial2[P0, P1, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
+    private def extractorPartial2[P0, P1, B, T <: Product : ClassTag](fExtractor: TagToExtractorFunc[P0], nestedExtractorFunction: (P1 => B => T, List[String]) => Extractor[B => T], construct: (P0, P1) => B => T, dropLast: Boolean, fields: Seq[String] = Nil): Extractor[B => T] = Extractor {
         (node: Node) => {
             fieldNamesMaybeDropLast(fields, dropLast) match {
                 case member0 :: fs =>
@@ -1470,6 +1439,40 @@ def multiExtractor2[T: ClassTag, U <: Product, P0 <: T : Extractor: ClassTag, P1
                 case fs => Failure(XmlException(s"extractorPartial5: insufficient field names: $fs")) // TESTME
             }
         }
+
+    /**
+     * Method to yield an Extractor of Seq[T] where each result arises from one of the labels (tags) given.
+     *
+     * TESTME
+     *
+     * @param tag    this is a pseudo-tag--not actually present in any XML element but corresponds to a case class member.
+     * @param labels the labels of the elements we wish to extract (wrapped in Seq).
+     * @tparam T the ultimate underlying type of the resulting MultiExtractor.
+     * @return Extractor of Seq[T].
+     */
+    private def seqExtractorByTag[T](tag: String, labels: Seq[String])(implicit multiExtractor: MultiExtractor[Seq[T]]): Extractor[Seq[T]] = new TagToSequenceExtractorFunc[T] {
+
+        /**
+         * Method to yield an Extractor[T], given a label.
+         *
+         * @param w a String which must match the given tag in order to return a valid Extractor.
+         * @return an Extractor[T].
+         */
+        def apply(w: String): Extractor[Seq[T]] = if (w == tag) {
+            println(s"seqExtractorByTag: $w")
+            Extractor(node => {
+                val ws: Seq[Try[Seq[T]]] = for (label <- labels) yield multiExtractor.extract(node \ label)
+                sequence(ws) map (tss => tss.flatten)
+            }
+            )
+        }
+        else (node: Node) => Success(Nil)
+
+        val tags: Seq[String] = labels
+        val tsm: MultiExtractor[Seq[T]] = multiExtractor
+        val pseudo: String = tag
+
+    }.apply(tag)
 }
 
 /**
