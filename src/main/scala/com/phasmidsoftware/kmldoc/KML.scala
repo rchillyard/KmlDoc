@@ -1164,7 +1164,7 @@ object KML_Binding {
     }
     implicit val renderer: Renderer[KML_Binding] = Renderer {
         (t: KML_Binding, format: Format, stateR: StateR) =>
-            TryUsing(stateR.addAttribute(s"""${t.binding}"""))(rs => implicitly[Renderer[KML]].render(t.kml, format, rs))
+            TryUsing(stateR.addAttribute(s"""${t.binding}"""))(rs => Renderer.render(t.kml, format, rs))
     } ^^ "rendererKml_Binding"
 }
 

@@ -1,6 +1,6 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.core.FP.{sequence, tryNotNull}
+import com.phasmidsoftware.core.FP.sequence
 import com.phasmidsoftware.core.{SmartBuffer, Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.renderAttribute
@@ -42,11 +42,10 @@ trait Renderers {
      */
     def renderer0Super[B: Renderer, R <: Product : ClassTag](construct: B => R)(lens: R => B): Renderer[R] = Renderer {
         (r: R, format: Format, stateR: StateR) =>
-            val b = lens(r)
-            for {br <- tryNotNull(implicitly[Renderer[B]])("renderer0Super: Renderer[B]")
-                 wInner <- br.render(b, format, stateR.recurse)
-                 result <- doNestedRender(format, stateR, wInner, "", r.productElementName(0))
-                 } yield result
+            for {
+                wInner <- Renderer.render(lens(r), format, stateR.recurse)
+                result <- doNestedRender(format, stateR, wInner, "", r.productElementName(0))
+            } yield result
     } ^^ s"renderer0Super: ${implicitly[ClassTag[R]]}"
 
     /**
@@ -59,9 +58,10 @@ trait Renderers {
      */
     def renderer1[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R): Renderer[R] = Renderer {
         (r: R, format: Format, stateR: StateR) =>
-            for {wOuter <- renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format.indent)
-                 result <- doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
-                 } yield result
+            for {
+                wOuter <- renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format.indent)
+                result <- doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
+            } yield result
     } ^^ s"renderer1: ${implicitly[ClassTag[R]]}"
 
     /**
@@ -79,9 +79,8 @@ trait Renderers {
             val b = lens(r)
             val constructOuter: P0 => R = construct(_)(b)
             for {
-                br <- tryNotNull(implicitly[Renderer[B]])("renderer1Super: Renderer[B]")
                 // CONSIDER not invoking recurse here.
-                wInner <- br.render(b, format, stateR.recurse)
+                wInner <- Renderer.render(b, format, stateR.recurse)
                 wOuter <- renderer1(constructOuter).render(r, format, stateR.recurse)
                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
             } yield result
@@ -121,8 +120,7 @@ trait Renderers {
         (r: R, format: Format, stateR: StateR) => {
             val b = lens(r)
             val constructOuter: (P0, P1) => R = construct(_, _)(b)
-            for {br <- tryNotNull(implicitly[Renderer[B]])("renderer2Super: Renderer[B]")
-                 wInner <- br.render(b, format, stateR.recurse)
+            for {wInner <- Renderer.render(b, format, stateR.recurse)
                  wOuter <- renderer2(constructOuter).render(r, format, stateR.recurse)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
                  } yield result
@@ -166,8 +164,7 @@ trait Renderers {
         (r: R, format: Format, stateR: StateR) => {
             val b = lens(r)
             val constructOuter: (P0, P1, P2) => R = construct(_, _, _)(b)
-            for {br <- tryNotNull(implicitly[Renderer[B]])("renderer3Super: Renderer[B]")
-                 wInner <- br.render(b, format, stateR.recurse)
+            for {wInner <- Renderer.render(b, format, stateR.recurse)
                  wOuter <- renderer3(constructOuter).render(r, format, stateR.recurse)
                  result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
                  } yield result
@@ -213,11 +210,11 @@ trait Renderers {
         (r: R, format: Format, stateR: StateR) => {
             val b = lens(r)
             val constructOuter: (P0, P1, P2, P3) => R = construct(_, _, _, _)(b)
-            for {br <- tryNotNull(implicitly[Renderer[B]])("renderer4Super: Renderer[B]")
-                 wInner <- br.render(b, format, stateR.recurse)
-                 wOuter <- renderer4(constructOuter).render(r, format, stateR.recurse)
-                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
-                 } yield result
+            for {
+                wInner <- Renderer.render(b, format, stateR.recurse)
+                wOuter <- renderer4(constructOuter).render(r, format, stateR.recurse)
+                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
+            } yield result
         }
     } ^^ s"renderer4Super: ${implicitly[ClassTag[R]]}"
 
@@ -263,8 +260,7 @@ trait Renderers {
             val b = lens(r)
             val constructOuter: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _)(b)
             for {
-                br <- tryNotNull(implicitly[Renderer[B]])("renderer5Super: Renderer[B]")
-                wInner <- br.render(b, format, stateR.recurse)
+                wInner <- Renderer.render(b, format, stateR.recurse)
                 wOuter <- renderer5(constructOuter).render(r, format, stateR.recurse)
                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
             } yield result
@@ -315,8 +311,7 @@ trait Renderers {
             val b = lens(r)
             val constructOuter: (P0, P1, P2, P3, P4, P5) => R = construct(_, _, _, _, _, _)(b)
             for {
-                br <- tryNotNull(implicitly[Renderer[B]])("renderer5Super: Renderer[B]")
-                wInner <- br.render(b, format, stateR.recurse)
+                wInner <- Renderer.render(b, format, stateR.recurse)
                 wOuter <- renderer6(constructOuter).render(r, format, stateR.recurse)
                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
             } yield result
@@ -369,8 +364,7 @@ trait Renderers {
             val b = lens(r)
             val constructOuter: (P0, P1, P2, P3, P4, P5, P6) => R = construct(_, _, _, _, _, _, _)(b)
             for {
-                br <- tryNotNull(implicitly[Renderer[B]])("renderer5Super: Renderer[B]")
-                wInner <- br.render(b, format, stateR.recurse)
+                wInner <- Renderer.render(b, format, stateR.recurse)
                 wOuter <- renderer7(constructOuter).render(r, format, stateR.recurse)
                 result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(0))
             } yield result
@@ -409,8 +403,7 @@ trait Renderers {
             t match {
                 case r: R0 =>
                     for {
-                        renderable <- tryNotNull(implicitly[Renderer[R0]])(s"rendererSuper1: ${implicitly[ClassTag[T]]}")
-                        result <- renderable.render(r, format, stateR)
+                        result <- Renderer.render(r, format, stateR)
                     } yield result
                 case _ =>
                     Failure(XmlException(s"rendererSuper1: object of type ${t.getClass} is not a sub-type for ${implicitly[ClassTag[T]]}\n" +
@@ -432,8 +425,7 @@ trait Renderers {
             t match {
                 case r: R0 =>
                     for {
-                        r0r <- tryNotNull(implicitly[Renderer[R0]])(s"rendererSuper2: ${implicitly[ClassTag[T]]}")
-                        result <- r0r.render(r, format, stateR)
+                        result <- Renderer.render(r, format, stateR)
                     } yield result
                 case _ => rendererSuper1[T, R1].render(t, format, stateR)
             }
@@ -451,9 +443,7 @@ trait Renderers {
     def rendererSuper3[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag, R2 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
         (t: T, format: Format, stateR: StateR) =>
             t match {
-                case r: R0 =>
-                    val r0ry = tryNotNull(implicitly[Renderer[R0]])(s"rendererSuper3: ${implicitly[ClassTag[T]]}")
-                    for (r0r <- r0ry; result <- r0r.render(r, format, stateR)) yield result
+                case r: R0 => for (result <- Renderer.render(r, format, stateR)) yield result
                 case _ => rendererSuper2[T, R1, R2].render(t, format, stateR)
             }
     } ^^ s"rendererSuper3: ${implicitly[ClassTag[T]]}"
@@ -473,8 +463,7 @@ trait Renderers {
             t match {
                 case r: R0 =>
                     for {
-                        r0r <- tryNotNull(implicitly[Renderer[R0]])(s"rendererSuper4: ${implicitly[ClassTag[T]]}")
-                        result <- r0r.render(r, format, stateR)
+                        result <- Renderer.render(r, format, stateR)
                     } yield result
                 case _ => rendererSuper3[T, R1, R2, R3].render(t, format, stateR)
             }
@@ -496,8 +485,7 @@ trait Renderers {
             t match {
                 case r: R0 =>
                     for {
-                        r0r <- tryNotNull(implicitly[Renderer[R0]])(s"rendererSuper5: ${implicitly[ClassTag[T]]}")
-                        result <- r0r.render(r, format, stateR)
+                        result <- Renderer.render(r, format, stateR)
                     } yield result
                 case _ => rendererSuper4[T, R1, R2, R3, R4].render(t, format, stateR)
             }
@@ -519,8 +507,7 @@ trait Renderers {
         t match {
             case r: R0 =>
                 for {
-                    r0r <- tryNotNull(implicitly[Renderer[R0]])(s"rendererSuper6: ${implicitly[ClassTag[T]]}")
-                    result <- r0r.render(r, format, stateR)
+                    result <- Renderer.render(r, format, stateR)
                 } yield result
             case _ => rendererSuper5[T, R1, R2, R3, R4, R5].render(t, format, stateR)
         }
@@ -554,9 +541,9 @@ trait Renderers {
     private def renderOuter[R <: Product : ClassTag, P: Renderer](r: R, objectOuter: P, indexOuter: Int, format: Format): Try[String] =
         TryUsing(StateR().setName(r, indexOuter)) {
             sr =>
-                for {p <- tryNotNull(implicitly[Renderer[P]])(s"renderOuter: ${implicitly[ClassTag[R]]}")
-                     x <- p.render(objectOuter, format, sr)
-                     } yield sr.getAttributes + x
+                for {
+                    x <- Renderer.render(objectOuter, format, sr)
+                } yield sr.getAttributes + x
         }
 
     /**
@@ -622,8 +609,7 @@ trait Renderers {
     private def renderR[R: Renderer](r: R)(format: Format, stateR: StateR) = TryUsing(stateR) {
         sr =>
             for {
-                rr <- tryNotNull(implicitly[Renderer[R]])(s"doRenderSequence")
-                result <- rr.render(r, format, sr)
+                result <- Renderer.render(r, format, sr)
             } yield result
     }
 }

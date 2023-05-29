@@ -155,7 +155,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       implicit val renderer: Renderer[Scale] = renderer1Super(Scale.apply)(_.kmlData)
     }
     import MyRenderers._
-    val wy = TryUsing(StateR())(sr => implicitly[Renderer[Scale]].render(Scale.nemo(math.Pi), FormatXML(), sr))
+    val wy = TryUsing(StateR())(sr => Renderer.render(Scale.nemo(math.Pi), FormatXML(), sr))
     wy shouldBe Success("""<Scale>3.141592653589793</Scale>""")
   }
 
