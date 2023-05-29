@@ -1,7 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, sequence, sequenceForgiving}
-import com.phasmidsoftware.core.{LowerCaseInitialRegex, SmartBuffer, XmlException}
+import com.phasmidsoftware.core.{LowerCaseInitialRegex, MissingFieldException, SmartBuffer, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
@@ -202,8 +202,7 @@ object Extractor {
             case _: NoSuchFieldException => Success(None.asInstanceOf[P])
             case _ =>
                 val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
-                logger.warn(s"$message caused by $x")
-                Failure(XmlException(message, x))
+                Failure(MissingFieldException(message, m, x))
         }
     }
     )

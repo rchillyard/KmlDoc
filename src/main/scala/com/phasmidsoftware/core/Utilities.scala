@@ -50,8 +50,12 @@ object Utilities {
     /**
      * Method to transform a Seq of Try[X] into a Try of Seq[X].
      *
+     * Non-fatal failures are eliminated from consideration, although each one invokes the function f.
+     * Fatal failures are retained so that the result will be a Failure.
+     *
      * TODO move this to FP.
      *
+     * @param f   a function Throwable => Unit which will process each non-fatal failure.
      * @param xys a Seq of Try[X].
      * @tparam X the underlying type.
      * @return a Try of Seq[X].
@@ -133,14 +137,18 @@ class MappableRegex(r: String, f: List[String] => List[String]) extends Regex(r)
 
 class LowerCaseInitialRegex(r: String) extends MappableRegex(r, ws => ws map { w => w.head.toLower + w.tail })
 
+class XmlBaseException(message: String, cause: Throwable) extends Exception(message, cause)
+
 /**
  * CONSIDER renaming as ExtractorException.
  *
  * @param message the message.
  * @param cause   the cause (or null).
  */
-case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
+case class XmlException(message: String, cause: Throwable) extends XmlBaseException(message, cause)
 
 object XmlException {
     def apply(message: String): XmlException = apply(message, null)
 }
+
+case class MissingFieldException(message: String, reason: String, cause: Throwable) extends XmlBaseException(s"$message ($reason)", cause)

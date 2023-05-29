@@ -1,7 +1,7 @@
 package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.Utilities.parseUnparsed
-import com.phasmidsoftware.core.{Text, TryUsing}
+import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{CDATA, Extractor, Extractors, RichXml}
@@ -63,7 +63,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Style"
 
-  // FIXME Issue #10
   it should "parse BalloonStyle" in {
     val xml: Elem = <xml>
       <Style id="noDrivingDirections">
@@ -110,6 +109,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                     |</BalloonStyle>""".stripMargin
                 wy.get shouldBe expectedBalloonStyle
             }
+          case _ => fail(s"wrong sort of StyleSelector: $style")
         }
     }
   }
@@ -215,22 +215,14 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Failure(x) => fail(x)
     }
   }
-  it should "extract coordinate-less Point as geometry" in {
+  it should "fail to extract coordinate-less Point as geometry" in {
     val xml: Elem = <xml>
       <Point id="my point">
       </Point>
     </xml>
     extractMulti[Seq[Geometry]](xml / "_") match {
-      case Success(gs) =>
-        gs.size shouldBe 1
-        gs.head match {
-          case Point(cs) =>
-            cs.size shouldBe 0
-        }
-        val wy = TryUsing(StateR())(sr => Renderer.render(gs, FormatXML(), sr))
-        wy.isSuccess shouldBe true
-        wy.get shouldBe "<Point id=\"my point\">\n</Point>"
-      case Failure(x) => fail(x)
+      case Success(gs) => fail("should not succeed")
+      case Failure(x) =>
     }
   }
 
@@ -268,7 +260,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   // FIXME: Issue #10
-  ignore should "extract Polygon without inner boundary" in {
+  it should "extract Polygon without inner boundary" in {
     val xml = <xml>
       <Polygon>
         <extrude>1</extrude>
@@ -969,14 +961,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </StyleMap>
     </xml>
     extractMulti[Seq[StyleSelector]](xml / "StyleMap") match {
-      case Success(ss) =>
-        ss.size shouldBe 1
-        val styleMap: StyleMap = ss.head.asInstanceOf[StyleMap] // use pattern-matching
-        styleMap shouldBe StyleMap(List())(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
-        val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
-        wy.isSuccess shouldBe true
-        wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n</StyleMap>"
-      case Failure(x) => fail(x)
+      case Failure(x: XmlException) =>
+      case z => fail(s"should be at least one Pair: $z")
     }
   }
 
@@ -4222,8 +4208,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  // FIXME: Issue #10
-  ignore should "extract and render sample kml as XML from Google sample" in {
+  it should "extract and render sample kml as XML from Google sample" in {
     val renderer = implicitly[Renderer[KML_Binding]]
     val url = KML.getClass.getResource("/KML_Samples.kml")
     val xml: Elem = XML.loadFile(url.getFile)
@@ -4236,13 +4221,16 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         fw.write(
           """<?xml version="1.0" encoding="UTF-8"?>
             |""".stripMargin)
-        renderer.render(kml, FormatXML(), StateR().setName("kml")).map {
-          w =>
+        renderer.render(kml, FormatXML(), StateR().setName("kml")) match {
+          case Success(w) =>
             fw.write(w)
             fw.close()
             val copy: Elem = parseUnparsed(w)
             val ksy: Try[scala.Seq[KML]] = extractMulti[Seq[KML]](copy)
             ksy should matchPattern { case Success(_ :: Nil) => }
+          case Failure(x) =>
+            x.printStackTrace()
+            fail("see exception above")
         }
       case Failure(x) => fail(x)
     }

@@ -12,6 +12,10 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   case class Simple1(id: Int)
 
+  object Simple1 extends Extractors {
+    implicit val extractor: Extractor[Simple1] = extractor10(apply)
+  }
+
   case class Simple2(_id: CharSequence)
 
   case class Simple3(__id: String = "Hello World!")
@@ -81,11 +85,11 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     ChildNames.addTranslation("empties", Seq("empty"))
 
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
-    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractorBase[Empty.type]
+    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractorBase[Empty.type](1)
     implicit val extractJunk: Extractor[Junk] = extractor0[Junk](_ => Junk())
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument1: Extractor[Document1] = extractor01(Document1)
-    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractorBase[Document1]
+    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractorBase[Document1](1)
     val makeDocument2A: (CharSequence, Seq[Empty.type]) => Document2A = Document2A.apply _
     implicit val extractDocument2A: Extractor[Document2A] = extractor11(makeDocument2A)
     implicit val extractDocument2: Extractor[Document2] = extractor11(Document2)
@@ -183,7 +187,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     val xml: Elem = <xml>
       <id>1</id>
     </xml>
-    val extracted = MyExtractors.extractor10(Simple1).extract(xml)
+    val extracted = MyExtractors.extractor10(Simple1.apply).extract(xml)
     extracted shouldBe Success(Simple1(1))
   }
 
@@ -320,6 +324,34 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     </xml>
     val extractedSeq: Try[Iterable[Empty.type]] = MyExtractors.extractorIterable[Empty.type]("empty").extract(xml)
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
+  }
+
+  case class MyContainer(simple1: Simple1, simple2: Simple1, simple4s: Seq[Simple4])
+
+  object MyContainer {
+    implicit val extractor: Extractor[MyContainer] = extractor21(apply)
+    implicit val extractorSeq: MultiExtractor[Seq[MyContainer]] = multiExtractorBase[MyContainer](1)
+  }
+
+
+  case class Simple4(x: Int)
+
+  object Simple4 extends Extractors {
+    implicit val extractor: Extractor[Simple4] = extractor10(apply)
+    implicit val extractorSeq: MultiExtractor[Seq[Simple4]] = multiExtractorBase[Simple4](1)
+  }
+
+  ignore should "extract MyContainer without inner boundary" in {
+    val xml = <xml>
+      <Polygon>
+        <simple1>1</simple1>
+        <simple1>2</simple1>
+      </Polygon>
+    </xml>
+    extractAll[Seq[MyContainer]](xml) match {
+      case Success(x) =>
+      case Failure(x) => fail("could not extract MyContainer", x)
+    }
   }
 
 }

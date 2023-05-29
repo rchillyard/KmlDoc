@@ -415,7 +415,8 @@ trait Renderers {
                     } yield result
                 case _ =>
                     Failure(XmlException(s"rendererSuper1: object of type ${t.getClass} is not a sub-type for ${implicitly[ClassTag[T]]}\n" +
-                            s"Are you sure that, in the appropriate rendererSuperN definition, you've included all possible sub-types?"))
+                            s"Are you sure that, in the appropriate rendererSuperN definition, you've included all possible sub-types?" +
+                            s" (compare with the corresponding extractor definition"))
             }
     } ^^ s"rendererSuper1: ${implicitly[ClassTag[T]]}"
 

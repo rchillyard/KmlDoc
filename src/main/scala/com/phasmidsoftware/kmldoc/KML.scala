@@ -109,7 +109,7 @@ trait Geometry extends KmlObject
 object Geometry extends Extractors with Renderers {
     implicit val extractorSeq: MultiExtractor[Seq[Geometry]] =
         multiExtractor4[Geometry, (LineString, Point, Polygon, LinearRing), LineString, Point, Polygon, LinearRing]((ls, pt, pg, lr) => (ls, pt, pg, lr), Seq("LineString", "Point", "Polygon", "LinearRing")) ^^ "multiExtractorGeometry"
-    implicit val renderer: Renderer[Geometry] = rendererSuper2[Geometry, Point, LineString] ^^ "rendererGeometry"
+    implicit val renderer: Renderer[Geometry] = rendererSuper4[Geometry, Point, LineString, Polygon, LinearRing] ^^ "rendererGeometry"
     implicit val rendererSeq: Renderer[Seq[Geometry]] = sequenceRenderer[Geometry] ^^ "rendererGeometrys"
 }
 
@@ -398,7 +398,6 @@ object Polygon extends Extractors with Renderers {
     private val extractorPartial: Extractor[GeometryData => Polygon] = extractorPartial21(apply)
     implicit val extractor: Extractor[Polygon] = extractorPartial[GeometryData, Polygon](extractorPartial) ^^ "extractorPolygon"
     implicit val renderer: Renderer[Polygon] = renderer3Super(apply)(_.geometryData) ^^ "rendererPolygon"
-//    implicit val rendererSeq: Renderer[Seq[Polygon]] = sequenceRenderer[Polygon] ^^ "rendererPolygon"
 }
 
 /**
@@ -419,7 +418,7 @@ object OuterBoundaryIs extends Extractors with Renderers {
 /**
  * [[https://developers.google.com/kml/documentation/kmlreference#innerboundaryis InnerBoundaryIs]]
  *
- * @param linearRing the linear ring which makes up this inner boundary.
+ * @param LinearRing the linear ring which makes up this inner boundary.
  */
 case class InnerBoundaryIs(LinearRing: LinearRing)
 
@@ -428,7 +427,7 @@ case class InnerBoundaryIs(LinearRing: LinearRing)
  */
 object InnerBoundaryIs extends Extractors with Renderers {
     implicit val extractor: Extractor[InnerBoundaryIs] = extractor10(apply) ^^ "extractorInnerBoundaryIs"
-    implicit val extractorSeq: MultiExtractor[Seq[InnerBoundaryIs]] = multiExtractorBase[InnerBoundaryIs] ^^ "multiExtractorInnerBoundaryIs"
+    implicit val extractorSeq: MultiExtractor[Seq[InnerBoundaryIs]] = multiExtractorBase[InnerBoundaryIs](0) ^^ "multiExtractorInnerBoundaryIs"
     implicit val renderer: Renderer[InnerBoundaryIs] = renderer1(apply) ^^ "rendererInnerBoundaryIs"
     implicit val rendererSeq: Renderer[Seq[InnerBoundaryIs]] = sequenceRenderer[InnerBoundaryIs] ^^ "rendererInnerBoundaryIs"
 }
@@ -771,7 +770,7 @@ case class Coordinates(coordinates: Seq[Coordinate])
 
 object Coordinates extends Extractors with Renderers {
     implicit val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
-    implicit val extractorSeq: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates] ^^ "multiExtractorCoordinates"
+    implicit val extractorSeq: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates](1) ^^ "multiExtractorCoordinates"
     implicit val renderer: Renderer[Coordinates] = renderer1(apply) ^^ "rendererCoordinates"
     implicit val rendererSeq: Renderer[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML(_)) ^^ "rendererCoordinates_s"
 
@@ -1053,7 +1052,7 @@ case class Pair(key: Key, styleUrl: StyleURL)
 object Pair extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
-    implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair] ^^ "multiExtractorPair"
+    implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair](1) ^^ "multiExtractorPair"
     implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
     implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
 }
@@ -1152,7 +1151,7 @@ case class KML(features: Seq[Feature])
 
 object KML extends Extractors with Renderers {
     implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
-    implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML] ^^ "multiExtractorKml"
+    implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](1) ^^ "multiExtractorKml"
     implicit val renderer: Renderer[KML] = renderer1(apply) ^^ "rendererKml"
 }
 
