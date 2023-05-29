@@ -1160,7 +1160,7 @@ case class KML_Binding(kml: KML, binding: NamespaceBinding)
 object KML_Binding {
     implicit val extractor: Extractor[KML_Binding] = Extractor {
         node =>
-            implicitly[Extractor[KML]].extract(node) map (KML_Binding(_, node.scope))
+            Extractor.extract[KML](node) map (KML_Binding(_, node.scope))
     }
     implicit val renderer: Renderer[KML_Binding] = Renderer {
         (t: KML_Binding, format: Format, stateR: StateR) =>

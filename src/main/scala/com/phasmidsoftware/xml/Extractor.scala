@@ -116,7 +116,6 @@ object Extractor {
      * @return a Try[T].
      */
     def extract[T: Extractor](node: Node): Try[T] =
-//    s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !?
         implicitly[Extractor[T]].extract(node)
 
     /**

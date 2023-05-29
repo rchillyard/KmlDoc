@@ -4163,7 +4163,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "extract and render mini sample kml as XML from file" in {
-    val renderer = implicitly[Renderer[KML_Binding]]
     val url = KML.getClass.getResource("minisample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4175,7 +4174,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             fw.write(
               """<?xml version="1.0" encoding="UTF-8"?>
                 |""".stripMargin)
-            for {w <- renderer.render(kml, FormatXML(0), StateR().setName("kml"))
+            for {w <- Renderer.render(kml, FormatXML(0), StateR().setName("kml"))
                  _ = fw.write(w)
                  ks <- extractMulti[Seq[KML]](parseUnparsed(w))
                  } yield ks
@@ -4186,7 +4185,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "extract and render sample kml as XML from file" in {
-    val renderer = implicitly[Renderer[KML_Binding]]
     val url = KML.getClass.getResource("sample.kml")
     val xml: Elem = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4198,7 +4196,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             fw.write(
               """<?xml version="1.0" encoding="UTF-8"?>
                 |""".stripMargin)
-            for {w <- renderer.render(kml, FormatXML(), StateR().setName("kml"))
+            for {w <- Renderer.render(kml, FormatXML(), StateR().setName("kml"))
                  _ = fw.write(w)
                  ks <- extractMulti[Seq[KML]](parseUnparsed(w))
                  } yield ks
@@ -4209,7 +4207,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   it should "extract and render sample kml as XML from Google sample" in {
-    val renderer = implicitly[Renderer[KML_Binding]]
     val url = KML.getClass.getResource("/KML_Samples.kml")
     val xml: Elem = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4221,7 +4218,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         fw.write(
           """<?xml version="1.0" encoding="UTF-8"?>
             |""".stripMargin)
-        renderer.render(kml, FormatXML(), StateR().setName("kml")) match {
+        Renderer.render(kml, FormatXML(), StateR().setName("kml")) match {
           case Success(w) =>
             fw.write(w)
             fw.close()
