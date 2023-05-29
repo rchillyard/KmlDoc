@@ -1,6 +1,7 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, sequence, sequenceForgiving}
+import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
 import com.phasmidsoftware.core.{LowerCaseInitialRegex, MissingFieldException, SmartBuffer, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional

@@ -1,7 +1,6 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.core.FP.tryNotNull
-import com.phasmidsoftware.core.Utilities.sequence
+import com.phasmidsoftware.core.FP.{sequence, tryNotNull}
 import com.phasmidsoftware.core.{SmartBuffer, Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.renderAttribute

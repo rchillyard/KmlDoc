@@ -2,8 +2,6 @@ package com.phasmidsoftware.core
 
 import com.phasmidsoftware.xml.{Extractor, Extractors}
 import scala.collection.mutable
-import scala.util._
-import scala.util.control.NonFatal
 import scala.util.matching.Regex
 import scala.xml.{Elem, Node, NodeSeq}
 
@@ -34,44 +32,6 @@ object Utilities {
         <xml>$unparsed</xml>
     }
 
-    /**
-     * Method to transform a Seq of Try[X] into a Try of Seq[X].
-     *
-     * TODO move this to FP.
-     *
-     * @param xys a Seq of Try[X].
-     * @tparam X the underlying type.
-     * @return a Try of Seq[X].
-     */
-    def sequence[X](xys: Seq[Try[X]]): Try[Seq[X]] = xys.foldLeft(Try(Seq[X]())) {
-        (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
-    }
-
-    /**
-     * Method to transform a Seq of Try[X] into a Try of Seq[X].
-     *
-     * Non-fatal failures are eliminated from consideration, although each one invokes the function f.
-     * Fatal failures are retained so that the result will be a Failure.
-     *
-     * TODO move this to FP.
-     *
-     * @param f   a function Throwable => Unit which will process each non-fatal failure.
-     * @param xys a Seq of Try[X].
-     * @tparam X the underlying type.
-     * @return a Try of Seq[X].
-     */
-    def sequenceForgiving[X](f: Throwable => Unit)(xys: Seq[Try[X]]): Try[Seq[X]] = {
-        val (successes, failures) = xys partition (_.isSuccess)
-        val fatalFailures: Seq[Try[X]] = failures.collect {
-            case Failure(x) if !NonFatal(x) => Failure(x)
-        }
-        val nonFatalFailures: Seq[Try[X]] = failures.collect {
-            case Failure(x) if NonFatal(x) => Failure(x)
-        }
-        nonFatalFailures foreach (xy => xy.recover { case x => f(x) })
-        sequence(fatalFailures ++ successes)
-    }
-
     private def renderNodeBrief(node: Node): String = node.label
 
     def renderNode(node: Node, deep: Boolean = false): String = {
@@ -91,22 +51,6 @@ object Utilities {
     def show(node: Node): Unit = {
         println(renderNode(node))
     }
-
-    /**
-     * Method (if needed) to uncurry a 6-level curried function.
-     * Not used currently.
-     *
-     * @param f the original function.
-     * @tparam T1 type of parameter 1.
-     * @tparam T2 type of parameter 2.
-     * @tparam T3 type of parameter 3.
-     * @tparam T4 type of parameter 4.
-     * @tparam T5 type of parameter 5.
-     * @tparam T6 type of parameter 6.
-     * @tparam R  the type of the result.
-     * @return a function of type (T1, T2, T3, T4, T5, T6) => R
-     */
-    def uncurry6[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = (t1, t2, t3, t4, t5, t6) => f(t1)(t2)(t3)(t4)(t5)(t6)
 }
 
 case class Text($: CharSequence) {

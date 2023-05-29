@@ -1,7 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.FP.tryNotNull
-import com.phasmidsoftware.core.Utilities.{sequence, sequenceForgiving}
+import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving, tryNotNull}
 import com.phasmidsoftware.core.{FP, MissingFieldException, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, none}
