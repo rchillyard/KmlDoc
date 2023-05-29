@@ -294,6 +294,7 @@ object Extractor {
             // NOTE optional members such that the name begins with "maybe"
             case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
             // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
+            // FIXME why would be be looking for a singleton LinearRing in a node which is an extrude node?
             case x => s"singleton: $x" -> extractSingleton[P](node / x)
         }
 
@@ -463,17 +464,6 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
     def valid(w: String): Boolean = w == pseudo
 
     val tsm: MultiExtractor[Seq[T]]
-
-    /**
-     * TESTME in particular regarding the use of sequenceForgiving
-     *
-     * @param node
-     * @return
-     */
-    def extract(node: Node): Try[Seq[T]] = {
-        val f: Throwable => Unit = x => Extractor.logger.warn(x.getLocalizedMessage)
-        sequenceForgiving(f)(for (tag <- tags) yield tsm.extract(node \ tag)) map (_.flatten)
-    }
 }
 
 /**
@@ -538,17 +528,15 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
 
 object CDATA {
 
-    def trimSpace(w: String): String = {
-        val sb = new StringBuilder(w)
-        SmartBuffer.trimStringBuilder(sb)
-        sb.toString()
-    }
-
     def apply(x: String, pre: String, post: String): CDATA = new CDATA(x, trimSpace(pre), trimSpace(post))
 
     def apply(x: String): CDATA = apply(x, "", "")
 
     def wrapped(x: String): CDATA = apply(x, "\n", "\n")
-
-
+    
+    private def trimSpace(w: String): String = {
+        val sb = new StringBuilder(w)
+        SmartBuffer.trimStringBuilder(sb)
+        sb.toString()
+    }
 }

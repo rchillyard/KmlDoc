@@ -362,7 +362,6 @@ case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) 
 object Point extends Extractors with Renderers {
     private val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
     implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
-    implicit val extractorSeq: MultiExtractor[Seq[Point]] = multiExtractorBase[Point]
     implicit val renderer: Renderer[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
     implicit val rendererSeq: Renderer[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
 }
@@ -405,17 +404,28 @@ object Polygon extends Extractors with Renderers {
 /**
  * [[https://developers.google.com/kml/documentation/kmlreference#outerboundaryis outerBoundaryIs]]
  *
- * @param linearRing
+ * @param LinearRing the linear ring which makes up this outer boundary.
  */
 case class OuterBoundaryIs(LinearRing: LinearRing)
 
+/**
+ * Companion class to OuterBoundaryIs.
+ */
 object OuterBoundaryIs extends Extractors with Renderers {
     implicit val extractor: Extractor[OuterBoundaryIs] = extractor10(apply) ^^ "extractorOuterBoundaryIs"
     implicit val renderer: Renderer[OuterBoundaryIs] = renderer1(apply) ^^ "rendererOuterBoundaryIs"
 }
 
+/**
+ * [[https://developers.google.com/kml/documentation/kmlreference#innerboundaryis InnerBoundaryIs]]
+ *
+ * @param linearRing the linear ring which makes up this inner boundary.
+ */
 case class InnerBoundaryIs(LinearRing: LinearRing)
 
+/**
+ * Companion class to InnerBoundaryIs.
+ */
 object InnerBoundaryIs extends Extractors with Renderers {
     implicit val extractor: Extractor[InnerBoundaryIs] = extractor10(apply) ^^ "extractorInnerBoundaryIs"
     implicit val extractorSeq: MultiExtractor[Seq[InnerBoundaryIs]] = multiExtractorBase[InnerBoundaryIs] ^^ "multiExtractorInnerBoundaryIs"
@@ -428,7 +438,7 @@ object InnerBoundaryIs extends Extractors with Renderers {
  *
  * See [[https://developers.google.com/kml/documentation/kmlreference#linearring LinearRing]]
  *
- * @param tessellate  the tessellation.
+ * @param maybeTessellate  the (optional) tessellation.
  * @param coordinates a sequence of Coordinates objects.
  */
 case class LinearRing(maybeTessellate: Option[Tessellate], coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
@@ -475,7 +485,6 @@ object StyleMap extends Extractors {
 
     val extractorPartial: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply) ^^ "extractorSSD2StyleMap"
     implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorPartial) ^^ "extractorStyleMap"
-    implicit val extractorSeq: MultiExtractor[Seq[StyleMap]] = multiExtractorBase[StyleMap] ^^ "multiExtractorStyleMap"
     implicit val renderer: Renderer[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyleMap"
     implicit val rendererSeq: Renderer[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
 }

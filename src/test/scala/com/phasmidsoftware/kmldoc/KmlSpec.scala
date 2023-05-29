@@ -215,6 +215,24 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Failure(x) => fail(x)
     }
   }
+  it should "extract coordinate-less Point as geometry" in {
+    val xml: Elem = <xml>
+      <Point id="my point">
+      </Point>
+    </xml>
+    extractMulti[Seq[Geometry]](xml / "_") match {
+      case Success(gs) =>
+        gs.size shouldBe 1
+        gs.head match {
+          case Point(cs) =>
+            cs.size shouldBe 0
+        }
+        val wy = TryUsing(StateR())(sr => Renderer.render(gs, FormatXML(), sr))
+        wy.isSuccess shouldBe true
+        wy.get shouldBe "<Point id=\"my point\">\n</Point>"
+      case Failure(x) => fail(x)
+    }
+  }
 
   it should "extract Polygon with inner boundary" in {
     val xml = <xml>
@@ -933,10 +951,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         </Pair>
       </StyleMap>
     </xml>
-    extractMulti[Seq[StyleMap]](xml / "StyleMap") match {
+    extractMulti[Seq[StyleSelector]](xml / "StyleMap") match {
       case Success(ss) =>
         ss.size shouldBe 1
-        val styleMap: StyleMap = ss.head
+        val styleMap: StyleMap = ss.head.asInstanceOf[StyleMap] // use pattern-matching
         styleMap shouldBe StyleMap(List(Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal")), Pair(Key("highlight"), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
         wy.isSuccess shouldBe true
@@ -950,10 +968,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       <StyleMap id="icon-22-nodesc">
       </StyleMap>
     </xml>
-    extractMulti[Seq[StyleMap]](xml / "StyleMap") match {
+    extractMulti[Seq[StyleSelector]](xml / "StyleMap") match {
       case Success(ss) =>
         ss.size shouldBe 1
-        val styleMap: StyleMap = ss.head
+        val styleMap: StyleMap = ss.head.asInstanceOf[StyleMap] // use pattern-matching
         styleMap shouldBe StyleMap(List())(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
         wy.isSuccess shouldBe true
