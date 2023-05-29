@@ -633,12 +633,11 @@ object Renderers {
     val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
     implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
-        (x: CharSequence, _: Format, stateR: StateR) =>
-            renderAttribute(
-                x match {
-                    case CDATA(t, pre, post) => s"""$pre<![CDATA[$t]]>$post"""
-                    case _ => x.toString
-                }, stateR.maybeName)
+        (x: CharSequence, format: Format, stateR: StateR) =>
+            (x, format) match {
+                case (c: CDATA, f: FormatXML) => c.toXML
+                case _ => renderAttribute(x.toString, stateR.maybeName)
+            }
     } ^^ "charSequenceRenderer"
 
     implicit val stringRenderer: Renderer[String] = Renderer {

@@ -197,16 +197,14 @@ object Extractor {
      * @return a Try[P].
      */
     def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(node => doExtractField[P](field, node) match {
-        case _ -> Success(p) =>
-            Success(p)
-        case m -> Failure(x) =>
-            x match {
-                case _: NoSuchFieldException => Success(None.asInstanceOf[P])
-                case _ =>
-                    val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
-                    logger.warn(s"$message caused by $x")
-                    Failure(XmlException(message, x))
-            }
+        case _ -> Success(p) => Success(p)
+        case m -> Failure(x) => x match {
+            case _: NoSuchFieldException => Success(None.asInstanceOf[P])
+            case _ =>
+                val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
+                logger.warn(s"$message caused by $x")
+                Failure(XmlException(message, x))
+        }
     }
     )
 
@@ -341,12 +339,11 @@ object Extractor {
     implicit object charSequenceExtractor extends Extractor[CharSequence] {
         def extract(node: Node): Try[CharSequence] = node match {
             case x: xml.Text => Success(x.data)
+            case CDATA(x) => Success(x)
             case _ => node.child.toSeq match {
-                    case Seq(pre, PCData(x), post) => Success(CDATA(x, pre.text, post.text))
-                    case Seq(PCData(x)) => Success(CDATA(x))
-                    case Seq(x) => Success(x.text)
-                    case x => Failure(XmlException(s"charSequenceExtractor: cannot decode text node: $node: $x"))
-                }
+                case Seq(x) => Success(x.text)
+                case x => Failure(XmlException(s"charSequenceExtractor: cannot decode text node: $node: $x"))
+            }
         }
     }
 
@@ -517,6 +514,8 @@ object ChildNames {
  * @param post    the postfix (probably a newline).
  */
 case class CDATA(content: String, pre: String, post: String) extends CharSequence {
+    def toXML: Try[String] = Success(s"""$pre<![CDATA[$content]]>$post""")
+
     def length(): Int = content.length()
 
     def charAt(index: Int): Char = content.charAt(index)
@@ -533,10 +532,16 @@ object CDATA {
     def apply(x: String): CDATA = apply(x, "", "")
 
     def wrapped(x: String): CDATA = apply(x, "\n", "\n")
-    
+
     private def trimSpace(w: String): String = {
         val sb = new StringBuilder(w)
         SmartBuffer.trimStringBuilder(sb)
         sb.toString()
+    }
+
+    def unapply(node: Node): Option[CDATA] = node.child match {
+        case Seq(pre, PCData(x), post) => Some(CDATA(x, pre.text, post.text))
+        case Seq(PCData(x)) => Some(CDATA(x))
+        case _ => None
     }
 }
