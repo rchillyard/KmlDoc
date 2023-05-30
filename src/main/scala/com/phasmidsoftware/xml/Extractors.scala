@@ -4,7 +4,7 @@ import com.phasmidsoftware.core.FP.{sequence, tryNotNull}
 import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, none}
-import com.phasmidsoftware.xml.Extractors.{extractSequence, fieldNamesMaybeDropLast}
+import com.phasmidsoftware.xml.Extractors.fieldNamesMaybeDropLast
 import scala.Function.uncurried
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -28,96 +28,6 @@ trait Extractors {
     def extractorOption[P: Extractor]: Extractor[Option[P]] = implicitly[Extractor[P]] map (p => Option(p))
 
     /**
-     * Method to yield an Extractor of a super-type based on the extractor of a sub-type.
-     *
-     * @tparam R  result type.
-     * @tparam P0 extractor type.
-     *            Required: implicit evidence of type Extractor[P0].
-     * @return an Extractor[R].
-     */
-    def extractorSubtype[R, P0 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]])
-
-    /**
-     * Method to yield an Extractor which can choose from (two) alternative extractors.
-     *
-     * TODO this doesn't work properly: the order of P0 and P1 is significant: it shouldn't be.
-     *
-     * @tparam R  result type.
-     * @tparam P0 first extractor type.
-     *            Required: implicit evidence of type Extractor[P0].
-     * @tparam P1 second extractor type.
-     *            Required: implicit evidence of type Extractor[P1].
-     * @return an Extractor[R].
-     */
-    def extractorAlt[R, P0 <: R : Extractor, P1 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]])
-
-    /**
-     * Method to yield an Extractor which can choose from three other extractors.
-     * Why is this method not called extractorAlt3? Because I know my Latin ;)
-     *
-     * @tparam R  result type.
-     * @tparam P0 first extractor type.
-     * @tparam P1 second extractor type.
-     * @tparam P2 third extractor type.
-     * @return an Extractor[R].
-     */
-    def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]])
-
-    /**
-     * Method to yield an Extractor which can choose from four other extractors.
-     *
-     * @tparam R  result type.
-     * @tparam P0 first extractor type.
-     *            Required: implicit evidence of type Extractor[P0].
-     * @tparam P1 second extractor type.
-     *            Required: implicit evidence of type Extractor[P1].
-     * @tparam P2 third extractor type.
-     *            Required: implicit evidence of type Extractor[P2].
-     * @tparam P3 fourth extractor type.
-     *            Required: implicit evidence of type Extractor[P3].
-     * @return an Extractor[R].
-     */
-    def extractorAlia4[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]()
-
-    /**
-     * Method to yield an Extractor which can choose from five other extractors.
-     *
-     * @tparam R  result type.
-     * @tparam P0 first extractor type.
-     *            Required: implicit evidence of type Extractor[P0].
-     * @tparam P1 second extractor type.
-     *            Required: implicit evidence of type Extractor[P1].
-     * @tparam P2 third extractor type.
-     *            Required: implicit evidence of type Extractor[P2].
-     * @tparam P3 fourth extractor type.
-     *            Required: implicit evidence of type Extractor[P3].
-     * @tparam P4 fifth extractor type.
-     *            Required: implicit evidence of type Extractor[P4].
-     * @return an Extractor[R].
-     */
-    def extractorAlia5[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]().|[P4]()
-
-    /**
-     * Method to yield an Extractor which can choose from six other extractors.
-     *
-     * @tparam R  result type.
-     * @tparam P0 first extractor type.
-     *            Required: implicit evidence of type Extractor[P0].
-     * @tparam P1 second extractor type.
-     *            Required: implicit evidence of type Extractor[P1].
-     * @tparam P2 third extractor type.
-     *            Required: implicit evidence of type Extractor[P2].
-     * @tparam P3 fourth extractor type.
-     *            Required: implicit evidence of type Extractor[P3].
-     * @tparam P4 fifth extractor type.
-     *            Required: implicit evidence of type Extractor[P4].
-     * @tparam P5 sixth extractor type.
-     *            Required: implicit evidence of type Extractor[P5].
-     * @return an Extractor[R].
-     */
-    def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]]).|[P3]()(implicitly[Extractor[P3]]).|[P4]()(implicitly[Extractor[P4]]).|[P5]()(implicitly[Extractor[P5]])
-
-    /**
      * Method to yield an Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
      * When invoked, the Extractor uses extractSequence on a NodeSeq formed from matching label on the given node.
      *
@@ -130,7 +40,7 @@ trait Extractors {
      *           Required: implicit evidence of type Extractor[P].
      * @return an Extractor of Iterable[P].
      */
-    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => extractSequence[P](node / label))
+    def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => Extractor.extractSequence[P](node / label))
 
     /**
      * Method to create a new MultiExtractor based on type P such that the underlying type of the result
@@ -140,31 +50,6 @@ trait Extractors {
      * @return a MultiExtractor of Seq[P]
      */
     def multiExtractorBase[P: Extractor](range: Range): MultiExtractor[Seq[P]] = new MultiExtractorBase[P](range)
-
-    /**
-     * Method to create a new MultiExtractor from a function which takes a NodeSeq and returns a Try of Seq[P].
-     *
-     * @param function of type NodeSeq => Try of [Seq[P]
-     * @tparam P the underlying type of the resulting MultiExtractor.
-     * @return a MultiExtractor of Seq[P].
-     */
-    def multiExtractor[P](function: NodeSeq => Try[Seq[P]]): MultiExtractor[Seq[P]] = (nodeSeq: NodeSeq) => function(nodeSeq)
-
-    /**
-     * Method to yield an TagToExtractorFunc[P] which in turns invokes fieldExtractor with the given tag.
-     *
-     * @tparam P the underlying (Extractor) type of the result.
-     * @return an TagToExtractorFunc[P] based on fieldExtractor.
-     */
-    private def fTagToFieldExtractor[P: Extractor]: TagToExtractorFunc[P] = (tag: String) => fieldExtractor[P](tag)
-
-    /**
-     * Method to yield an TagToExtractorFunc[P] which in turns invokes extractChildrenDeprecated with the given tag.
-     *
-     * @tparam P the underlying (MultiExtractor) type of the result.
-     * @return an TagToExtractorFunc[P] based on fieldExtractor.
-     */
-    private def childrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] = (tag: String) => extractChildren[P](tag)
 
     /**
      * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
@@ -1391,6 +1276,22 @@ trait Extractors {
         }
 
     /**
+     * Method to yield an TagToExtractorFunc[P] which in turns invokes fieldExtractor with the given tag.
+     *
+     * @tparam P the underlying (Extractor) type of the result.
+     * @return an TagToExtractorFunc[P] based on fieldExtractor.
+     */
+    private def fTagToFieldExtractor[P: Extractor]: TagToExtractorFunc[P] = (tag: String) => fieldExtractor[P](tag)
+
+    /**
+     * Method to yield an TagToExtractorFunc[P] which in turns invokes extractChildrenDeprecated with the given tag.
+     *
+     * @tparam P the underlying (MultiExtractor) type of the result.
+     * @return an TagToExtractorFunc[P] based on fieldExtractor.
+     */
+    private def childrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] = (tag: String) => extractChildren[P](tag)
+
+    /**
      * Method to yield an Extractor of Seq[T] where each result arises from one of the labels (tags) given.
      *
      * TESTME
@@ -1422,6 +1323,75 @@ trait Extractors {
         val pseudo: String = tag
 
     }.apply(tag)
+
+    //======================= The following are unused=======================================//
+
+    /**
+     * Method to yield an Extractor which can choose from three other extractors.
+     * Why is this method not called extractorAlt3? Because I know my Latin ;)
+     *
+     * @tparam R  result type.
+     * @tparam P0 first extractor type.
+     * @tparam P1 second extractor type.
+     * @tparam P2 third extractor type.
+     * @return an Extractor[R].
+     */
+    def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]])
+
+    /**
+     * Method to yield an Extractor which can choose from four other extractors.
+     *
+     * @tparam R  result type.
+     * @tparam P0 first extractor type.
+     *            Required: implicit evidence of type Extractor[P0].
+     * @tparam P1 second extractor type.
+     *            Required: implicit evidence of type Extractor[P1].
+     * @tparam P2 third extractor type.
+     *            Required: implicit evidence of type Extractor[P2].
+     * @tparam P3 fourth extractor type.
+     *            Required: implicit evidence of type Extractor[P3].
+     * @return an Extractor[R].
+     */
+    def extractorAlia4[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]()
+
+    /**
+     * Method to yield an Extractor which can choose from five other extractors.
+     *
+     * @tparam R  result type.
+     * @tparam P0 first extractor type.
+     *            Required: implicit evidence of type Extractor[P0].
+     * @tparam P1 second extractor type.
+     *            Required: implicit evidence of type Extractor[P1].
+     * @tparam P2 third extractor type.
+     *            Required: implicit evidence of type Extractor[P2].
+     * @tparam P3 fourth extractor type.
+     *            Required: implicit evidence of type Extractor[P3].
+     * @tparam P4 fifth extractor type.
+     *            Required: implicit evidence of type Extractor[P4].
+     * @return an Extractor[R].
+     */
+    def extractorAlia5[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor]: Extractor[R] = none[R].|[P0]().|[P1]().|[P2]().|[P3]().|[P4]()
+
+    /**
+     * Method to yield an Extractor which can choose from six other extractors.
+     *
+     * @tparam R  result type.
+     * @tparam P0 first extractor type.
+     *            Required: implicit evidence of type Extractor[P0].
+     * @tparam P1 second extractor type.
+     *            Required: implicit evidence of type Extractor[P1].
+     * @tparam P2 third extractor type.
+     *            Required: implicit evidence of type Extractor[P2].
+     * @tparam P3 fourth extractor type.
+     *            Required: implicit evidence of type Extractor[P3].
+     * @tparam P4 fifth extractor type.
+     *            Required: implicit evidence of type Extractor[P4].
+     * @tparam P5 sixth extractor type.
+     *            Required: implicit evidence of type Extractor[P5].
+     * @return an Extractor[R].
+     */
+    def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] = none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]]).|[P3]()(implicitly[Extractor[P3]]).|[P4]()(implicitly[Extractor[P4]]).|[P5]()(implicitly[Extractor[P5]])
+
 }
 
 /**
@@ -1488,19 +1458,9 @@ object Extractors extends Extractors {
         }
 
     /**
-     * Method which tries to extract a sequence of objects from a NodeSeq.
-     *
-     * @param nodeSeq a NodeSeq.
-     * @tparam P the (Extractor) type to which each individual Node should be converted.
-     * @return a Try of Seq[P].
-     */
-    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
-        sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
-
-    /**
      * Method to create a sequence extractor for type T.
      *
-     * NOTE: not currently used.
+     * TESTME: not currently used.
      *
      * @param fExtractor a TagToSequenceExtractorFunc[T]
      * @tparam T an iterable type.

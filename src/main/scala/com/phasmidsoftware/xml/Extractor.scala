@@ -51,6 +51,8 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
     /**
      * Method to create an Extractor[T] such that, if this Extractor[T] fails, then we invoke the (implicit) Extractor[P] instead.
      *
+     * TESTME
+     *
      * @tparam P the type of the alternative Extractor. P must provide implicit evidence of Extractor[P] and P must be a sub-class of T.
      * @return an Extractor[T].
      */
@@ -168,17 +170,13 @@ object Extractor {
      * implicit evidence.
      * The difference between this method and extractSingleton is in the result type.
      *
-     * CONSIDER the use of sequenceForgiving
-     *
      * @param nodeSeq a NodeSeq.
      * @tparam P the (Extractor) type to which each individual Node should be converted.
      *           Required: implicit evidence of type Extractor[P].
      * @return a Try of Seq[P].
      */
-    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] = {
-//        val f: Throwable=>Unit = x => Extractor.logger.warn(x.getLocalizedMessage) // required if we want to use sequenceForgiving
+    def extractSequence[P: Extractor](nodeSeq: NodeSeq): Try[Seq[P]] =
         sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
-    }
 
     /**
      * Method to yield a Try[P] for a particular child or attribute of the given node.
@@ -546,7 +544,6 @@ object ChildNames {
                 case Extractor.plural(x) => Seq(x)
                 case _ => map.getOrElse(member, Seq(member))
             })
-
 }
 
 /**
@@ -568,6 +565,9 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
     override def toString: String = s"$pre$content$post"
 }
 
+/**
+ * Companion object to CDATA.
+ */
 object CDATA {
 
     def apply(x: String, pre: String, post: String): CDATA = new CDATA(x, trimSpace(pre), trimSpace(post))
