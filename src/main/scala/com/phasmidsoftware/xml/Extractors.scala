@@ -1,10 +1,10 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving, tryNotNull}
-import com.phasmidsoftware.core.{FP, MissingFieldException, Reflection, XmlException}
+import com.phasmidsoftware.core.FP.{sequence, tryNotNull}
+import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, none}
-import com.phasmidsoftware.xml.Extractors.{MultiExtractorBase, extractSequence, fieldNamesMaybeDropLast}
+import com.phasmidsoftware.xml.Extractors.{extractSequence, fieldNamesMaybeDropLast}
 import scala.Function.uncurried
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -139,7 +139,7 @@ trait Extractors {
      * @tparam P the underlying (Extractor) type.
      * @return a MultiExtractor of Seq[P]
      */
-    def multiExtractorBase[P: Extractor](min: Int, maybeMax: Option[Int] = None): MultiExtractor[Seq[P]] = new MultiExtractorBase[P](min, maybeMax)
+    def multiExtractorBase[P: Extractor](range: Range): MultiExtractor[Seq[P]] = new MultiExtractorBase[P](range)
 
     /**
      * Method to create a new MultiExtractor from a function which takes a NodeSeq and returns a Try of Seq[P].
@@ -1434,56 +1434,32 @@ object Extractors extends Extractors {
     val flog: Flog = Flog[Extractors]
 
     /**
-     * CONSIDER move this to Extract
-     *
-     * @tparam P element type of the MultiExtractor to be returned.
-     *           requires implicit evidence of Extractor[P].
-     */
-    case class MultiExtractorBase[P: Extractor](min: Int, maybeMax: Option[Int]) extends MultiExtractor[Seq[P]] {
-        def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
-            sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
-                case x@Success(ps) if ps.size >= min =>
-                    val max = maybeMax.getOrElse(Integer.MAX_VALUE)
-                    if (ps.size <= max) x
-                    else Failure(XmlException(s"MultiExtractorBase.extract: extracted ${ps.size} elements which is out of range $min:$max"))
-                case x@Success(ps) =>
-                    Failure(XmlException(s"MultiExtractorBase.extract: extracted insufficient (${ps.size}) elements where $min are required"))
-                case x@Failure(_) => x
-            }
-
-        private def logWarning(x: Throwable): Unit = x match {
-            case MissingFieldException(message, "singleton", x) if min == 0 =>
-            case XmlException(message, x) => logger.warn("MultiExtractorBase: $message" + x.getLocalizedMessage)
-        }
-    }
-
-    /**
      * Int multi extractor.
      *
      * TESTME
      */
-    implicit object IntMultiExtractor extends MultiExtractorBase[Int](0, None)
+    implicit object IntMultiExtractor extends MultiExtractorBase[Int](0 to Int.MaxValue)
 
     /**
      * Boolean multi extractor.
      *
      * TESTME
      */
-    implicit object BooleanMultiExtractor extends MultiExtractorBase[Boolean](0, None)
+    implicit object BooleanMultiExtractor extends MultiExtractorBase[Boolean](0 to Int.MaxValue)
 
     /**
      * Double multi extractor.
      *
      * TESTME
      */
-    implicit object DoubleMultiExtractor extends MultiExtractorBase[Double](0, None)
+    implicit object DoubleMultiExtractor extends MultiExtractorBase[Double](0 to Int.MaxValue)
 
     /**
      * Long multi extractor.
      *
      * TESTME
      */
-    implicit object LongMultiExtractor extends MultiExtractorBase[Long](0, None)
+    implicit object LongMultiExtractor extends MultiExtractorBase[Long](0 to Int.MaxValue)
 
     /**
      * Optional Int extractor.

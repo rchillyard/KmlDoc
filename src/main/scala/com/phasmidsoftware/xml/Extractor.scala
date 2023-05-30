@@ -429,6 +429,50 @@ object MultiExtractor {
 }
 
 /**
+ * MultiExtractorBase class to deal with minimum and maximum numbers of elements.
+ * This is not used for situations where different subtypes are grouped together (for example, Folder can contain any number of "Features,"
+ * which can be of type Container, Document, Folder, or Placemark.
+ *
+ * @tparam P element type of the MultiExtractor to be returned.
+ *           requires implicit evidence of Extractor[P].
+ */
+case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor[Seq[P]] {
+    def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
+        sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
+            case x@Success(ps) if range.contains(ps.size) => x
+            case Success(ps) => Failure(XmlException(s"MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range"))
+            case x@Failure(_) => x
+        }
+
+    private def logWarning(x: Throwable): Unit = x match {
+        case MissingFieldException(_, "singleton", _) if range.start <= 0 => // NOTE: OK -- no need to log anything.
+        case XmlException(message, x) => logger.warn("MultiExtractorBase: $message" + x.getLocalizedMessage)
+    }
+}
+
+object MultiExtractorBase {
+    /**
+     * All integers greater than zero (the "counting numbers" or Z+).
+     */
+    val Positive: Range.Inclusive = 1 to Int.MaxValue
+
+    /**
+     * All non-negative integers (Z0+).
+     */
+    val NonNegative: Range.Inclusive = 0 to Int.MaxValue
+
+    /**
+     * Exactly One.
+     */
+    val ExactlyOne: Range.Inclusive = 1 to 1
+
+    /**
+     * Either Zero or One.
+     */
+    val AtMostOne: Range.Inclusive = 0 to 1
+}
+
+/**
  * Trait which extends a function of type String => Extractor[T].
  * When the apply method is invoked with a particular label, an appropriate Extractor[T] is returned.
  *

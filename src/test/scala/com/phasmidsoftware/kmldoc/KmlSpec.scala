@@ -107,10 +107,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                     |        ]]>
                     |</text>
                     |</BalloonStyle>""".stripMargin
-                wy.get shouldBe expectedBalloonStyle
+                  wy.get shouldBe expectedBalloonStyle
             }
           case _ => fail(s"wrong sort of StyleSelector: $style")
         }
+      case Failure(x) => fail(x)
     }
   }
 

@@ -5,7 +5,8 @@ import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor.intExtractor
-import com.phasmidsoftware.xml.{Extractors, _}
+import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
+import com.phasmidsoftware.xml._
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
@@ -427,7 +428,7 @@ case class InnerBoundaryIs(LinearRing: LinearRing)
  */
 object InnerBoundaryIs extends Extractors with Renderers {
     implicit val extractor: Extractor[InnerBoundaryIs] = extractor10(apply) ^^ "extractorInnerBoundaryIs"
-    implicit val extractorSeq: MultiExtractor[Seq[InnerBoundaryIs]] = multiExtractorBase[InnerBoundaryIs](0) ^^ "multiExtractorInnerBoundaryIs"
+    implicit val extractorSeq: MultiExtractor[Seq[InnerBoundaryIs]] = multiExtractorBase[InnerBoundaryIs](NonNegative) ^^ "multiExtractorInnerBoundaryIs"
     implicit val renderer: Renderer[InnerBoundaryIs] = renderer1(apply) ^^ "rendererInnerBoundaryIs"
     implicit val rendererSeq: Renderer[Seq[InnerBoundaryIs]] = sequenceRenderer[InnerBoundaryIs] ^^ "rendererInnerBoundaryIs"
 }
@@ -770,7 +771,7 @@ case class Coordinates(coordinates: Seq[Coordinate])
 
 object Coordinates extends Extractors with Renderers {
     implicit val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
-    implicit val extractorSeq: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates](1) ^^ "multiExtractorCoordinates"
+    implicit val extractorSeq: MultiExtractor[Seq[Coordinates]] = multiExtractorBase[Coordinates](Positive) ^^ "multiExtractorCoordinates"
     implicit val renderer: Renderer[Coordinates] = renderer1(apply) ^^ "rendererCoordinates"
     implicit val rendererSeq: Renderer[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML(_)) ^^ "rendererCoordinates_s"
 
@@ -1052,7 +1053,7 @@ case class Pair(key: Key, styleUrl: StyleURL)
 object Pair extends Extractors with Renderers {
 
     implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
-    implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair](1) ^^ "multiExtractorPair"
+    implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair](Positive) ^^ "multiExtractorPair"
     implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
     implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
 }
@@ -1151,7 +1152,7 @@ case class KML(features: Seq[Feature])
 
 object KML extends Extractors with Renderers {
     implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
-    implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](1) ^^ "multiExtractorKml"
+    implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](Positive) ^^ "multiExtractorKml"
     implicit val renderer: Renderer[KML] = renderer1(apply) ^^ "rendererKml"
 }
 

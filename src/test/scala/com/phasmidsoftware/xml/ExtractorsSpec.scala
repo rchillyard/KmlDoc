@@ -1,6 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.xml.Extractor._
+import com.phasmidsoftware.xml.MultiExtractorBase.Positive
 import java.util.regex.Matcher
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
@@ -85,11 +86,11 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     ChildNames.addTranslation("empties", Seq("empty"))
 
     implicit val extractEmpty: Extractor[Empty.type] = extractor0[Empty.type](_ => Empty)
-    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractorBase[Empty.type](1)
+    implicit val extractMultiEmpty: MultiExtractor[Seq[Empty.type]] = multiExtractorBase[Empty.type](Positive)
     implicit val extractJunk: Extractor[Junk] = extractor0[Junk](_ => Junk())
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument1: Extractor[Document1] = extractor01(Document1)
-    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractorBase[Document1](1)
+    implicit val extractMultiDocument1: MultiExtractor[Seq[Document1]] = multiExtractorBase[Document1](Positive)
     val makeDocument2A: (CharSequence, Seq[Empty.type]) => Document2A = Document2A.apply _
     implicit val extractDocument2A: Extractor[Document2A] = extractor11(makeDocument2A)
     implicit val extractDocument2: Extractor[Document2] = extractor11(Document2)
@@ -330,7 +331,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   object MyContainer {
     implicit val extractor: Extractor[MyContainer] = extractor21(apply)
-    implicit val extractorSeq: MultiExtractor[Seq[MyContainer]] = multiExtractorBase[MyContainer](1)
+    implicit val extractorSeq: MultiExtractor[Seq[MyContainer]] = multiExtractorBase[MyContainer](Positive)
   }
 
 
@@ -338,7 +339,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   object Simple4 extends Extractors {
     implicit val extractor: Extractor[Simple4] = extractor10(apply)
-    implicit val extractorSeq: MultiExtractor[Seq[Simple4]] = multiExtractorBase[Simple4](1)
+    implicit val extractorSeq: MultiExtractor[Seq[Simple4]] = multiExtractorBase[Simple4](Positive)
   }
 
   ignore should "extract MyContainer without inner boundary" in {
@@ -349,7 +350,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
       </Polygon>
     </xml>
     extractAll[Seq[MyContainer]](xml) match {
-      case Success(x) =>
+      case Success(_) =>
       case Failure(x) => fail("could not extract MyContainer", x)
     }
   }
