@@ -25,43 +25,47 @@ object FP {
   def sequence[X](xys: Iterator[Try[X]]): Try[Iterator[X]] = sequence(xys.to(List)).map(_.iterator)
 
   /**
-   * Sequence method to combine elements of Try.
+   * Method to transform a Seq of Try[X] into a Try of Seq[X].
    *
-   * @param xos an Iterator of Try[X]
-   * @tparam X the underlying type
-   * @return a Try of Iterator[X]
-   */
-  def sequence[X](xos: Iterator[Option[X]]): Option[Iterator[X]] = sequence(xos.to(List)).map(_.iterator)
-
-  /**
-   * Sequence method to combine elements of Try.
+   * TODO move this to FP.
    *
-   * @param xys an Iterable of Try[X]
-   * @tparam X the underlying type
-   * @return a Try of Seq[X]
-   *         NOTE: that the output collection type will be Seq, regardless of the input type
-   */
-  def sequence[X](xys: Iterable[Try[X]]): Try[Seq[X]] =
-    xys.foldLeft(Try(Seq[X]())) {
-      (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
-    }
-
-  /**
-   * Sequence method to combine elements of Try.
-   *
-   * @param xys an Iterable of Try[X].
+   * @param xys a Seq of Try[X].
    * @tparam X the underlying type.
    * @return a Try of Seq[X].
-   *         NOTE: that the output collection type will be Seq, regardless of the input type
    */
-  def sequenceForgiving[X](xys: Iterable[Try[X]]): Try[Seq[X]] =
-    sequenceForgivingWith[X](xys) {
-      case NonFatal(x) => System.err.println(s"forgiving: $x"); Success(None)
-      case x => Failure(x)
+  def sequence[X](xys: Iterable[Try[X]]): Try[Seq[X]] = xys.foldLeft(Try(Seq[X]())) {
+    (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
+  }
+
+  /**
+   * Method to transform a Seq of Try[X] into a Try of Seq[X].
+   *
+   * Non-fatal failures are eliminated from consideration, although each one invokes the function f.
+   * Fatal failures are retained so that the result will be a Failure.
+   *
+   * TODO move this to FP.
+   *
+   * @param f   a function Throwable => Unit which will process each non-fatal failure.
+   * @param xys a Seq of Try[X].
+   * @tparam X the underlying type.
+   * @return a Try of Seq[X].
+   */
+  def sequenceForgiving[X](f: Throwable => Unit)(xys: Iterable[Try[X]]): Try[Seq[X]] = {
+    val (successes, failures) = xys partition (_.isSuccess)
+    val fatalFailures: Iterable[Try[X]] = failures.collect {
+      case Failure(x) if !NonFatal(x) => Failure(x)
     }
+    val nonFatalFailures: Iterable[Try[X]] = failures.collect {
+      case Failure(x) if NonFatal(x) => Failure(x)
+    }
+    nonFatalFailures foreach (xy => xy.recover { case x => f(x) })
+    sequence(fatalFailures ++ successes)
+  }
 
   /**
    * Sequence method to combine elements of Try.
+   *
+   * TESTME
    *
    * @param xys       an Iterable of Try[X].
    * @param pfFailure a partial function of type Throwable => Try of Option[X].
@@ -75,6 +79,8 @@ object FP {
   /**
    * Sequence method to combine elements of Try.
    *
+   * TESTME
+   *
    * @param xys       an Iterable of Try[X].
    * @param fSuccess  a function of type X => Try of Option[X].
    * @param pfFailure a partial function of type Throwable => Try of Option[X].
@@ -86,19 +92,6 @@ object FP {
     val xosy: Try[Seq[Option[X]]] = sequence(for (xy <- xys) yield xy.transform[Option[X]](fSuccess, pfFailure))
     for (xos <- xosy) yield xos.filter(_.isDefined).map(_.get)
   }
-
-  /**
-   * Sequence method to combine elements of Try.
-   *
-   * @param xos an Iterable of Option[X].
-   * @tparam X the underlying type.
-   * @return an Option of Seq[X].
-   *         NOTE: that the output collection type will be Seq, regardless of the input type
-   */
-  def sequence[X](xos: Iterable[Option[X]]): Option[Seq[X]] =
-    xos.foldLeft(Option(Seq[X]())) {
-      (xso, xo) => for (xs <- xso; x <- xo) yield xs :+ x
-    }
 
   /**
    * Method to partition an  method to combine elements of Try as an Iterator.
@@ -174,6 +167,12 @@ object FP {
   def tryNotNull[X](x: => X)(msg: String): Try[X] = Option(x) match {
     case Some(x) => Success(x)
     case None => Failure(new NoSuchElementException(s"tryNotNull: null: $msg"))
+  }
+
+  /** Uncurrying for functions of arity 6.
+   */
+  def uncurried[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = {
+    (x1, x2, x3, x4, x5, x6) => f(x1)(x2)(x3)(x4)(x5)(x6)
   }
 }
 

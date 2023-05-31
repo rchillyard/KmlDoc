@@ -1,8 +1,9 @@
 package com.phasmidsoftware.xml
 
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should
 
-class ExtractorSpec extends AnyFlatSpec {
+class ExtractorSpec extends AnyFlatSpec with should.Matchers {
 
     behavior of "Extractor"
 

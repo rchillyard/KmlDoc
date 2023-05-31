@@ -1,7 +1,8 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode, renderNodes, sequence}
-import com.phasmidsoftware.core.{LowerCaseInitialRegex, XmlException}
+import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving}
+import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
+import com.phasmidsoftware.core.{LowerCaseInitialRegex, MissingFieldException, SmartBuffer, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
@@ -10,7 +11,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Node, NodeSeq}
+import scala.xml.{Node, NodeSeq, PCData}
 
 /**
  * Trait to define the behavior of an extractor (parser) which can will take an XML Node
@@ -30,7 +31,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
     def extract(node: Node): Try[T]
 
     /**
-     * Method to transform this Extractor[T] into an Extractor[U].
+     * Method to map this Extractor[T] into an Extractor[U].
      *
      * @param f a T => U.
      * @tparam U the underlying type of the result.
@@ -39,7 +40,18 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
     def map[U](f: T => U): Extractor[U] = (node: Node) => self.extract(node) map f
 
     /**
+     * Method to flatMap this Extractor[T] into an Extractor[U].
+     *
+     * @param f a T => Try[U].
+     * @tparam U the underlying type of the result.
+     * @return an Extractor[U].
+     */
+    def flatMap[U](f: T => Try[U]): Extractor[U] = (node: Node) => self.extract(node) flatMap f
+
+    /**
      * Method to create an Extractor[T] such that, if this Extractor[T] fails, then we invoke the (implicit) Extractor[P] instead.
+     *
+     * TESTME
      *
      * @tparam P the type of the alternative Extractor. P must provide implicit evidence of Extractor[P] and P must be a sub-class of T.
      * @return an Extractor[T].
@@ -62,7 +74,8 @@ object Extractor {
 
     val flog: Flog = Flog[Extractors]
 
-    import flog._
+    // NOTE: this is needed if you enable logging (by uncommenting) in extract and extractMulti methods (below).
+//    import flog._
 
     /**
      * Method to create an Extractor[T] from a Node => Try[T] function.
@@ -84,6 +97,19 @@ object Extractor {
     def apply[T](ty: => Try[T]): Extractor[T] = Extractor(_ => ty) ^^ s"Extractor.apply($ty)"
 
     /**
+     * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
+     * The purpose of this method is to break the infinite recursion caused when implicit values are defined recursively.
+     * See the Play JSON library method in JsPath called lazyRead.
+     *
+     * TESTME
+     *
+     * @param te an Extractor[T].
+     * @tparam T the underlying type of the input and output Extractors.
+     * @return an Extractor[T].
+     */
+    def createLazy[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
+
+    /**
      * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
      *
      * @param node the node on which the extractor will work.
@@ -92,7 +118,7 @@ object Extractor {
      * @return a Try[T].
      */
     def extract[T: Extractor](node: Node): Try[T] =
-        s"extract: ${name[Extractor[T]]} from ${renderNode(node)}" !? implicitly[Extractor[T]].extract(node)
+        implicitly[Extractor[T]].extract(node)
 
     /**
      * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -104,8 +130,8 @@ object Extractor {
      * @return a Try[T].
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
-                implicitly[MultiExtractor[T]].extract(nodeSeq)
+//        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
+        implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
      * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -130,9 +156,11 @@ object Extractor {
      */
     def extractSingleton[P: Extractor](nodeSeq: NodeSeq): Try[P] =
         extractSequence[P](nodeSeq) match {
+            case Success(Nil) =>
+                Failure(XmlException(s"extractSingleton: empty"))
             case Success(p :: Nil) => Success(p)
             // TESTME
-            case Success(ps) => Failure(XmlException(s"extractSingleton: non-unique value: $ps"))
+            case Success(ps) => Failure(XmlException(s"extractSingleton: ambiguous values: $ps"))
             case Failure(x) => Failure(x)
         }
 
@@ -167,23 +195,25 @@ object Extractor {
      * @return a Try[P].
      */
     def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(node => doExtractField[P](field, node) match {
-        case _ -> Success(p) =>
-            Success(p)
-        case m -> Failure(x) =>
-            x match {
-                case _: NoSuchFieldException => Success(None.asInstanceOf[P])
-                case _ =>
-                    val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
-                    logger.warn(s"$message caused by $x")
-                    Failure(XmlException(message, x))
-            }
+        case _ -> Success(p) => Success(p)
+        case m -> Failure(x) => x match {
+            case _: NoSuchFieldException => Success(None.asInstanceOf[P])
+            case _ =>
+                val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
+                Failure(MissingFieldException(message, m, x))
+        }
     }
     )
 
     /**
      * Method to extract child elements from a node.
      *
-     * CONSIDER using extractAll instead of this method.
+     * CONSIDER rewriting this method: it has ended up being a huge a hack and needs work!!
+     * NOTE: There are four different ways to get a successful result:
+     * (1) node / member yields a non-empty result which is passed into extractMulti;
+     * (2) TagProperties.mustMatch(member) in which case the result will be empty;
+     * (3) extractAll(node) yields a successful non-empty result, which is returned;
+     * (4) extractAll(node) yields a successful empty result, in which case ChildNames.translate(member) is used to match children.
      *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
@@ -192,30 +222,31 @@ object Extractor {
      * @return a Try[P].
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-        // CONSIDER this has ended up being a bit of a hack and needs work!! There are three ways to get a result.
         val explicitChildren: NodeSeq = node / member
-        if (explicitChildren.nonEmpty) extractMulti(explicitChildren)
-        else extractAll(node) match {
-            case Success(Nil) =>
-                // CONSIDER use Flog logging
-                val ts = ChildNames.translate(member)
-                logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-                if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-                val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-                if (nodeSeq.nonEmpty) {
-                    logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
-                    extractMulti(nodeSeq)
-                }
-                else {
-                    logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-                    Try(Nil.asInstanceOf[P])
-                }
-            case Failure(x) =>
-                Failure(x)
-            case Success(x) =>
-                logger.info(s"extractChildren extracted $x using extractAll")
-                Success(x)
-        }
+        if (explicitChildren.nonEmpty || TagProperties.mustMatch(member))
+            extractMulti(explicitChildren)
+        else
+            extractAll(node) match {
+                case Success(Nil) =>
+                    // CONSIDER use Flog logging
+                    val ts = ChildNames.translate(member)
+                    logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+                    if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+                    val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
+                    if (nodeSeq.nonEmpty) {
+                        logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+                        extractMulti(nodeSeq)
+                    }
+                    else {
+                        logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+                        Try(Nil.asInstanceOf[P])
+                    }
+                case Success(x) =>
+                    logger.info(s"extractChildren extracted $x using extractAll")
+                    Success(x)
+                case Failure(x) =>
+                    Failure(x)
+            }
     }
 
     /**
@@ -237,6 +268,19 @@ object Extractor {
      * @return a failing Extractor[T].
      */
     def none[T]: Extractor[T] = Extractor(Failure(new NoSuchElementException))
+
+    /**
+     * Method to determine, from the name of a property, whether it's an attribute or an element.
+     *
+     * @param name the member (property) name.
+     * @return Some(true) if it's an optional attribute; Some(false) if it's a required attribute; else None.
+     */
+    def inferAttributeType(name: String): Option[Boolean] = name match {
+        case optionalAttribute(_) => Some(true)
+        case attribute(_) => Some(false)
+        case _ => None
+    }
+
     private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
         field match {
             // NOTE special name for the (text) content of a node.
@@ -245,11 +289,13 @@ object Extractor {
             case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
             case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
             case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
-            // NOTE child nodes are extracted using extractChildren, not here.
-            case plural(x) => s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
+            // NOTE child nodes are extracted using extractChildren, not here, but if the plural-sounding name is present in node, then we are OK
+            case plural(x) if (node \ field).isEmpty => // NOTE: TESTME: this mechanism is to allow for field names to end in "s" without being plural (such as OuterBoundaryIs).
+                s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
             // NOTE optional members such that the name begins with "maybe"
             case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
             // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
+            // FIXME why would be be looking for a singleton LinearRing in a node which is an extrude node?
             case x => s"singleton: $x" -> extractSingleton[P](node / x)
         }
 
@@ -291,34 +337,51 @@ object Extractor {
     implicit val unitExtractor: Extractor[Unit] = Extractor(Success())
 
     /**
-     * String extractor.
+     * CharSequence extractor.
      */
-    implicit object stringExtractor extends Extractor[String] {
-        def extract(node: Node): Try[String] = Success(node.text)
+    implicit object charSequenceExtractor extends Extractor[CharSequence] {
+        def extract(node: Node): Try[CharSequence] = node match {
+            case x: xml.Text => Success(x.data)
+            case CDATA(x) => Success(x)
+            case _ => node.child.toSeq match {
+                case Seq(x) => Success(x.text)
+                case x => Failure(XmlException(s"charSequenceExtractor: cannot decode text node: $node: $x"))
+            }
+        }
     }
 
     /**
      * Int extractor.
      */
-    implicit val intExtractor: Extractor[Int] = stringExtractor map (_.toInt)
+    implicit val intExtractor: Extractor[Int] = charSequenceExtractor flatMap {
+        case w: String => Success(w.toInt)
+        case x => Failure(XmlException(s"cannot convert $x to an Int"))
+    }
 
     /**
      * Boolean extractor.
      */
-    implicit val booleanExtractor: Extractor[Boolean] = stringExtractor map {
-        case "true" | "yes" | "T" | "Y" => true
-        case _ => false
+    implicit val booleanExtractor: Extractor[Boolean] = charSequenceExtractor flatMap {
+        case "true" | "yes" | "T" | "Y" => Success(true)
+        case _: String => Success(false)
+        case x => Failure(XmlException(s"cannot convert $x to a Boolean"))
     }
 
     /**
      * Double extractor.
      */
-    implicit val doubleExtractor: Extractor[Double] = stringExtractor map (_.toDouble)
+    implicit val doubleExtractor: Extractor[Double] = charSequenceExtractor flatMap {
+        case w: String => Success(w.toDouble)
+        case x => Failure(XmlException(s"cannot convert $x to a Double"))
+    }
 
     /**
      * Long extractor.
      */
-    implicit val longExtractor: Extractor[Long] = stringExtractor map (_.toLong)
+    implicit val longExtractor: Extractor[Long] = charSequenceExtractor flatMap {
+        case w: String => Success(w.toLong)
+        case x => Failure(XmlException(s"cannot convert $x to a Long"))
+    }
 
     val logger: Logger = LoggerFactory.getLogger(Extractor.getClass)
 }
@@ -370,6 +433,50 @@ object MultiExtractor {
 }
 
 /**
+ * MultiExtractorBase class to deal with minimum and maximum numbers of elements.
+ * This is not used for situations where different subtypes are grouped together (for example, Folder can contain any number of "Features,"
+ * which can be of type Container, Document, Folder, or Placemark.
+ *
+ * @tparam P element type of the MultiExtractor to be returned.
+ *           requires implicit evidence of Extractor[P].
+ */
+case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor[Seq[P]] {
+    def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
+        sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
+            case x@Success(ps) if range.contains(ps.size) => x
+            case Success(ps) => Failure(XmlException(s"MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range"))
+            case x@Failure(_) => x
+        }
+
+    private def logWarning(x: Throwable): Unit = x match {
+        case MissingFieldException(_, "singleton", _) if range.start <= 0 => // NOTE: OK -- no need to log anything.
+        case XmlException(message, x) => logger.warn("MultiExtractorBase: $message" + x.getLocalizedMessage)
+    }
+}
+
+object MultiExtractorBase {
+    /**
+     * All integers greater than zero (the "counting numbers" or Z+).
+     */
+    val Positive: Range.Inclusive = 1 to Int.MaxValue
+
+    /**
+     * All non-negative integers (Z0+).
+     */
+    val NonNegative: Range.Inclusive = 0 to Int.MaxValue
+
+    /**
+     * Exactly One.
+     */
+    val ExactlyOne: Range.Inclusive = 1 to 1
+
+    /**
+     * Either Zero or One.
+     */
+    val AtMostOne: Range.Inclusive = 0 to 1
+}
+
+/**
  * Trait which extends a function of type String => Extractor[T].
  * When the apply method is invoked with a particular label, an appropriate Extractor[T] is returned.
  *
@@ -401,19 +508,28 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
     def valid(w: String): Boolean = w == pseudo
 
     val tsm: MultiExtractor[Seq[T]]
-
-    def extract(node: Node): Try[Seq[T]] = sequence(for (tag <- tags) yield tsm.extract(node \ tag)) map (_.flatten)
 }
 
 /**
  * Class which extends an Extractor of Seq[T].
+ *
+ * NOTE: used by subclassExtractor1 method (itself unused).
  *
  * @param labels a set of labels (tags)
  * @param tsm    an (implicit) MultiExtractor of Seq[T].
  * @tparam T the type to be constructed.
  */
 class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
-    def extract(node: Node): Try[Seq[T]] = sequence(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
+    /**
+     * TESTME in particular regarding the use of sequenceForgiving
+     *
+     * @param node a Node.
+     * @return a Try[T].
+     */
+    def extract(node: Node): Try[Seq[T]] = {
+        val f: Throwable => Unit = x => Extractor.logger.warn(x.getLocalizedMessage)
+        sequenceForgiving(f)(for (label <- labels) yield tsm.extract(node \ label)) map (_.flatten)
+    }
 }
 
 /**
@@ -434,5 +550,55 @@ object ChildNames {
                 case Extractor.plural(x) => Seq(x)
                 case _ => map.getOrElse(member, Seq(member))
             })
+}
 
+object TagProperties {
+    def addMustMatch(tag: String): Unit = mustMatchList += tag
+
+    def mustMatch(tag: String): Boolean = mustMatchList.contains(tag)
+
+    private val mustMatchList = mutable.Set[String]()
+}
+
+/**
+ * Case class to represent a CDATA node.
+ *
+ * @param content the payload of the CDATA node (will contain <, >, & characters).
+ * @param pre     the prefix (probably a newline).
+ * @param post    the postfix (probably a newline).
+ */
+case class CDATA(content: String, pre: String, post: String) extends CharSequence {
+    def toXML: Try[String] = Success(s"""$pre<![CDATA[$content]]>$post""")
+
+    def length(): Int = content.length()
+
+    def charAt(index: Int): Char = content.charAt(index)
+
+    def subSequence(start: Int, end: Int): CharSequence = content.subSequence(start, end)
+
+    override def toString: String = s"$pre$content$post"
+}
+
+/**
+ * Companion object to CDATA.
+ */
+object CDATA {
+
+    def apply(x: String, pre: String, post: String): CDATA = new CDATA(x, trimSpace(pre), trimSpace(post))
+
+    def apply(x: String): CDATA = apply(x, "", "")
+
+    def wrapped(x: String): CDATA = apply(x, "\n", "\n")
+
+    private def trimSpace(w: String): String = {
+        val sb = new StringBuilder(w)
+        SmartBuffer.trimStringBuilder(sb)
+        sb.toString()
+    }
+
+    def unapply(node: Node): Option[CDATA] = node.child match {
+        case Seq(pre, PCData(x), post) => Some(CDATA(x, pre.text, post.text))
+        case Seq(PCData(x)) => Some(CDATA(x))
+        case _ => None
+    }
 }

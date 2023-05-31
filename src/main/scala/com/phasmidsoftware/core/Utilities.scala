@@ -2,7 +2,6 @@ package com.phasmidsoftware.core
 
 import com.phasmidsoftware.xml.{Extractor, Extractors}
 import scala.collection.mutable
-import scala.util.Try
 import scala.util.matching.Regex
 import scala.xml.{Elem, Node, NodeSeq}
 
@@ -33,20 +32,10 @@ object Utilities {
         <xml>$unparsed</xml>
     }
 
-    /**
-     * Method to transform a Seq of Try[X] into a Try of Seq[X].
-     *
-     * @param xys a Seq of Try[X].
-     * @tparam X the underlying type.
-     * @return a Try of Seq[X].
-     */
-    def sequence[X](xys: Seq[Try[X]]): Try[Seq[X]] = xys.foldLeft(Try(Seq[X]())) {
-        (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
-    }
-
     private def renderNodeBrief(node: Node): String = node.label
 
     def renderNode(node: Node, deep: Boolean = false): String = {
+        // CONSIDER use SmartBuffer
         val result = new mutable.StringBuilder("node: ")
         result.append(s"label=${node.label}, ")
         result.append(s"length=${node.length}, ")
@@ -62,25 +51,9 @@ object Utilities {
     def show(node: Node): Unit = {
         println(renderNode(node))
     }
-
-    /**
-     * Method (if needed) to uncurry a 6-level curried function.
-     * Not used currently.
-     *
-     * @param f the original function.
-     * @tparam T1 type of parameter 1.
-     * @tparam T2 type of parameter 2.
-     * @tparam T3 type of parameter 3.
-     * @tparam T4 type of parameter 4.
-     * @tparam T5 type of parameter 5.
-     * @tparam T6 type of parameter 6.
-     * @tparam R  the type of the result.
-     * @return a function of type (T1, T2, T3, T4, T5, T6) => R
-     */
-    def uncurry6[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = (t1, t2, t3, t4, t5, t6) => f(t1)(t2)(t3)(t4)(t5)(t6)
 }
 
-case class Text($: String) {
+case class Text($: CharSequence) {
     override def equals(obj: Any): Boolean = obj match {
         case text: Text => $ == text.$
         case _ => false
@@ -108,8 +81,18 @@ class MappableRegex(r: String, f: List[String] => List[String]) extends Regex(r)
 
 class LowerCaseInitialRegex(r: String) extends MappableRegex(r, ws => ws map { w => w.head.toLower + w.tail })
 
-case class XmlException(message: String, cause: Throwable) extends Exception(message, cause)
+class XmlBaseException(message: String, cause: Throwable) extends Exception(message, cause)
+
+/**
+ * CONSIDER renaming as ExtractorException.
+ *
+ * @param message the message.
+ * @param cause   the cause (or null).
+ */
+case class XmlException(message: String, cause: Throwable) extends XmlBaseException(message, cause)
 
 object XmlException {
     def apply(message: String): XmlException = apply(message, null)
 }
+
+case class MissingFieldException(message: String, reason: String, cause: Throwable) extends XmlBaseException(s"$message ($reason)", cause)
