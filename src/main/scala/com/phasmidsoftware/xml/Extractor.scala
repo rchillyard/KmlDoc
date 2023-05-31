@@ -131,7 +131,7 @@ object Extractor {
      */
     def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
 //        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
-                implicitly[MultiExtractor[T]].extract(nodeSeq)
+        implicitly[MultiExtractor[T]].extract(nodeSeq)
 
     /**
      * Method to extract all possible Try[T] from the implicitly defined multi-extractor operating on the given nodes.
@@ -208,7 +208,12 @@ object Extractor {
     /**
      * Method to extract child elements from a node.
      *
-     * CONSIDER using extractAll instead of this method.
+     * CONSIDER rewriting this method: it has ended up being a huge a hack and needs work!!
+     * NOTE: There are four different ways to get a successful result:
+     * (1) node / member yields a non-empty result which is passed into extractMulti;
+     * (2) TagProperties.mustMatch(member) in which case the result will be empty;
+     * (3) extractAll(node) yields a successful non-empty result, which is returned;
+     * (4) extractAll(node) yields a successful empty result, in which case ChildNames.translate(member) is used to match children.
      *
      * @param member the name of the element(s) to extract, according to the construct function (typically, this means the name of the member in a case class).
      * @param node   the node from which we want to extract.
@@ -217,30 +222,31 @@ object Extractor {
      * @return a Try[P].
      */
     def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-        // CONSIDER this has ended up being a bit of a hack and needs work!! There are three ways to get a result.
         val explicitChildren: NodeSeq = node / member
-        if (explicitChildren.nonEmpty) extractMulti(explicitChildren)
-        else extractAll(node) match {
-            case Success(Nil) =>
-                // CONSIDER use Flog logging
-                val ts = ChildNames.translate(member)
-                logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-                if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-                val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-                if (nodeSeq.nonEmpty) {
-                    logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
-                    extractMulti(nodeSeq)
-                }
-                else {
-                    logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-                    Try(Nil.asInstanceOf[P])
-                }
-            case Failure(x) =>
-                Failure(x)
-            case Success(x) =>
-                logger.info(s"extractChildren extracted $x using extractAll")
-                Success(x)
-        }
+        if (explicitChildren.nonEmpty || TagProperties.mustMatch(member))
+            extractMulti(explicitChildren)
+        else
+            extractAll(node) match {
+                case Success(Nil) =>
+                    // CONSIDER use Flog logging
+                    val ts = ChildNames.translate(member)
+                    logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+                    if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+                    val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
+                    if (nodeSeq.nonEmpty) {
+                        logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+                        extractMulti(nodeSeq)
+                    }
+                    else {
+                        logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+                        Try(Nil.asInstanceOf[P])
+                    }
+                case Success(x) =>
+                    logger.info(s"extractChildren extracted $x using extractAll")
+                    Success(x)
+                case Failure(x) =>
+                    Failure(x)
+            }
     }
 
     /**
@@ -544,6 +550,14 @@ object ChildNames {
                 case Extractor.plural(x) => Seq(x)
                 case _ => map.getOrElse(member, Seq(member))
             })
+}
+
+object TagProperties {
+    def addMustMatch(tag: String): Unit = mustMatchList += tag
+
+    def mustMatch(tag: String): Boolean = mustMatchList.contains(tag)
+
+    private val mustMatchList = mutable.Set[String]()
 }
 
 /**

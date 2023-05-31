@@ -13,6 +13,8 @@ import scala.xml.{Elem, XML}
 
 class KmlSpec extends AnyFlatSpec with should.Matchers {
 
+  KML.init()
+
   behavior of "renderers"
 
   it should "render Open" in {
@@ -255,12 +257,19 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </Polygon>
     </xml>
     extractAll[Seq[Geometry]](xml) match {
-      case Success(x) =>
+      case Success(gs) =>
+        gs.size shouldBe 1
+        val polygon = gs.head.asInstanceOf[Polygon]
+        val outerBoundary: OuterBoundaryIs = polygon.outerBoundaryIs
+        val coordinates: Seq[Coordinates] = outerBoundary.LinearRing.coordinates
+        coordinates.size shouldBe 1
+        coordinates.head.coordinates.size shouldBe 6
+        val innerBoundaries: Seq[InnerBoundaryIs] = polygon.innerBoundaryIs
+        innerBoundaries.size shouldBe 1
       case Failure(x) => fail("could not extract Polygon", x)
     }
   }
 
-  // FIXME: Issue #10
   it should "extract Polygon without inner boundary" in {
     val xml = <xml>
       <Polygon>
@@ -279,7 +288,15 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </Polygon>
     </xml>
     extractAll[Seq[Geometry]](xml) match {
-      case Success(x) =>
+      case Success(gs) =>
+        gs.size shouldBe 1
+        val polygon = gs.head.asInstanceOf[Polygon]
+        val outerBoundary: OuterBoundaryIs = polygon.outerBoundaryIs
+        val coordinates: Seq[Coordinates] = outerBoundary.LinearRing.coordinates
+        coordinates.size shouldBe 1
+        coordinates.head.coordinates.size shouldBe 6
+        val innerBoundaries: Seq[InnerBoundaryIs] = polygon.innerBoundaryIs
+        innerBoundaries.size shouldBe 0
       case Failure(x) => fail("could not extract Polygon", x)
     }
   }

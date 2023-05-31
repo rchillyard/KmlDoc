@@ -437,8 +437,6 @@ trait Extractors {
     /**
      * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
      *
-     * TESTME
-     *
      * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
      * @tparam P0 the (Extractor) type of the first member of the Product type T.
      * @tparam P1 the (Extractor) type of the second member of the Product type T.

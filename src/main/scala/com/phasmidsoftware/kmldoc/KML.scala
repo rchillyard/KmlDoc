@@ -1151,6 +1151,10 @@ object AltitudeMode extends Extractors with Renderers {
 case class KML(features: Seq[Feature])
 
 object KML extends Extractors with Renderers {
+    def init(): Unit = {
+        TagProperties.addMustMatch("innerBoundaryIs")
+    }
+
     implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
     implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](Positive) ^^ "multiExtractorKml"
     implicit val renderer: Renderer[KML] = renderer1(apply) ^^ "rendererKml"
