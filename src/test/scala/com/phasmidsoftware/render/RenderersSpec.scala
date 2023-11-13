@@ -93,7 +93,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   // CONSIDER eliminating this test
-  ignore should "sequenceRenderer" in {
+  it should "sequenceRenderer" in {
     object MyRenderers extends Renderers {
       implicit val rendererIntSeq: Renderer[Seq[Int]] = sequenceRenderer[Int]
     }
@@ -103,8 +103,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
             Success(
               """[42
                 |99
-                |1
-                |]""".stripMargin)
+                |1]""".stripMargin)
   }
 
   it should "renderer5" in {
@@ -218,7 +217,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
   }
 
   // CONSIDER eliminating this test
-  ignore should "sequenceRenderer" in {
+  it should "sequenceRenderer" in {
     object MyRenderers extends Renderers {
       implicit val rendererIntSeq: Renderer[Seq[Int]] = sequenceRenderer[Int]
     }
@@ -227,8 +226,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     wy shouldBe Success(
       """42
         |99
-        |1
-        |""".stripMargin)
+        |1""".stripMargin)
   }
 
   it should "renderer5" in {
