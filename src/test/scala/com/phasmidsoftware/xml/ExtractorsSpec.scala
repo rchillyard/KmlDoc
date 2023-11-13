@@ -70,10 +70,10 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   /**
-   * Case class similar to Document1, but has two members.
+   * Case class similar to Document2, but has three members.
    *
    * @param _id       the identifier of this Document2A.
-   * @param empties    a sequence of Empty objects.
+   * @param empties   a sequence of Empty objects.
    * @param maybejunk an optional Junk object.
    */
   case class Document3(_id: Int, maybejunk: Option[Junk], empties: Seq[Empty.type])
