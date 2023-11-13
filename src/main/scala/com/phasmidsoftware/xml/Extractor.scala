@@ -295,7 +295,7 @@ object Extractor {
       // NOTE optional members such that the name begins with "maybe"
       case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
       // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
-      // FIXME why would be be looking for a singleton LinearRing in a node which is an extrude node?
+      // FIXME why would we be looking for a singleton LinearRing in a node which is an extrude node?
       case x => s"singleton: $x" -> extractSingleton[P](node / x)
     }
 
