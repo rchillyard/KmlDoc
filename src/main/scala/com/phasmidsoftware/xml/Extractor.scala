@@ -234,7 +234,7 @@ object Extractor {
           if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
           val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
           if (nodeSeq.nonEmpty) {
-            logger.info(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+            logger.debug(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
             extractMulti(nodeSeq)
           }
           else {
@@ -242,7 +242,7 @@ object Extractor {
             Try(Nil.asInstanceOf[P])
           }
         case Success(x) =>
-          logger.info(s"extractChildren extracted $x using extractAll")
+          logger.debug(s"extractChildren extracted $x using extractAll")
           Success(x)
         case Failure(x) =>
           Failure(x)

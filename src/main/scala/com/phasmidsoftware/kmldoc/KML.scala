@@ -3,16 +3,17 @@ package com.phasmidsoftware.kmldoc
 import cats.effect.IO
 import cats.effect.IO.fromTry
 import com.phasmidsoftware.core.FP.tryNotNull
-import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
+import com.phasmidsoftware.core.{SmartBuffer, Text, TryUsing, XmlException}
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLToPrintStream
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
-import com.phasmidsoftware.xml.Extractor.intExtractor
+import com.phasmidsoftware.xml.Extractor.{extractMulti, intExtractor}
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
 import java.io.PrintStream
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
+import scala.collection.immutable.Seq
 import scala.io.Source
 import scala.reflect.ClassTag
 import scala.util._
@@ -1156,6 +1157,13 @@ object AltitudeMode extends Extractors with Renderers {
  */
 case class KML(features: Seq[Feature])
 
+/**
+ * Companion object to class KML.
+ *
+ * NOTE that there are two different methods for rendering a KML object.
+ * One is to use the KML_Binding mechanism.
+ * The other is to invoke the method below: renderKml.
+ */
 object KML extends Extractors with Renderers {
   def init(): Unit = {
     TagProperties.addMustMatch("innerBoundaryIs")
@@ -1164,6 +1172,29 @@ object KML extends Extractors with Renderers {
   implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
   implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](Positive) ^^ "multiExtractorKml"
   implicit val renderer: Renderer[KML] = renderer1(apply) ^^ "rendererKml"
+
+  /**
+   * Method to render a KML using a fixed value for xmlns and a fixed prefix.
+   *
+   * @param kml    the KML object to be rendered.
+   * @param format the format required.
+   * @return a Try[String].
+   */
+  def renderKml(kml: KML, format: Format): Try[String] = {
+    val r -> sR = format match {
+      case _: FormatXML => rendererSpecial -> stateR
+      case _ => implicitly[Renderer[KML]] -> StateR()
+    }
+    TryUsing(sR)(sr => r.render(kml, format, sr))
+  }
+
+  private val xmlnsAttribute = """xmlns="http://www.opengis.net/kml/2.2""""
+  private val prefix = """<?xml version="1.0" encoding="UTF-8"?>"""
+
+  // XXX Ensure that this remains a def
+  def stateR = new StateR(None, SmartBuffer(new StringBuilder(xmlnsAttribute)), false)
+
+  private val rendererSpecial: Renderer[KML] = renderer1Special(apply, prefix + "\n") ^^ "rendererKml"
 }
 
 case class KML_Binding(kml: KML, binding: NamespaceBinding)
@@ -1214,26 +1245,31 @@ object KMLCompanion {
 
   def renderKMLAsFormat(resourceName: String, format: Format): IO[Seq[String]] = for {
     fs <- KMLCompanion.loadKML(KML.getClass.getResource(resourceName))
-    ws <- renderFeatures(fs, format)
+    ws <- renderKMLs(fs, format)
   } yield ws
+
+  def renderKMLs(ks: Seq[KML], format: Format): IO[Seq[String]] = (ks map (k => renderKML(k, format))).sequence
+
+  def renderKML(k: KML, format: Format): IO[String] = fromTry(KML.renderKml(k, format))
 
   def renderFeatures(fs: Seq[Feature], format: Format): IO[Seq[String]] = (fs map (f => renderFeature(f, format))).sequence
 
   def renderFeature(f: Feature, format: Format): IO[String] = fromTry(TryUsing(StateR())(sr => implicitly[Renderer[Feature]].render(f, format, sr)))
 
-  def loadKML(resource: URL): IO[Seq[Feature]] = loadKML(
+  def loadKML(resource: URL): IO[Seq[KML]] = loadKML(
     for {
       u <- tryNotNull(resource)(s"resource $resource is null")
       p <- tryNotNull(u.getPath)(s"$resource yielded empty filename")
     } yield p
   )
 
-  def loadKML(triedFilename: Try[String]): IO[Seq[Feature]] =
+  def loadKML(triedFilename: Try[String]): IO[Seq[KML]] =
     for {
       filename <- fromTry(triedFilename)
       elem <- IO(XML.loadFile(filename))
-      fs <- fromTry(extractFeatures(elem))
+      fs <- fromTry(extractKML(elem))
     } yield fs
+
 
   def extractFeatures(xml: Elem): Try[Seq[Feature]] = {
     val kys: Seq[Try[Seq[Feature]]] = for (kml <- xml \\ "kml") yield Extractor.extractAll[Seq[Feature]](kml)
@@ -1242,6 +1278,8 @@ object KMLCompanion {
       case _ => Failure(new NoSuchElementException)
     }
   }
+
+  def extractKML(xml: Elem): Try[Seq[KML]] = extractMulti[Seq[KML]](xml)
 }
 
 object Test extends App {

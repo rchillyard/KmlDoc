@@ -17,6 +17,7 @@ libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.2"
 
 libraryDependencies ++= Seq(
   "com.phasmidsoftware" %% "flog" % "1.0.8",
+  "com.phasmidsoftware" %% "args" % "1.0.3",
   "ch.qos.logback" % "logback-classic" % "1.4.7" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "org.scalatest" %% "scalatest" % "3.2.15" % Test

@@ -42,6 +42,23 @@ trait Renderers {
             } yield result
     }
 
+
+    /**
+     * Method to create a renderer fpr a Product (e.g., case class) with one member.
+     *
+     * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
+     * @tparam P0 the (Renderer) type of the (single) member of Product type R.
+     * @tparam R  the type of Renderer to be returned (must be a Product).
+     * @return a Renderer[R].
+     */
+    def renderer1Special[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R, prefix: String): Renderer[R] = Renderer {
+        (r: R, format: Format, stateR: StateR) =>
+            for {
+                wOuter <- renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format.indent)
+                result <- Renderer.doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
+            } yield prefix + result
+    }
+
     /**
      * Method to create a renderer fpr a Product (e.g., case class) with two members.
      *

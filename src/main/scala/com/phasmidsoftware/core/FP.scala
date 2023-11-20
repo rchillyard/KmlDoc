@@ -159,9 +159,9 @@ object FP {
     case Failure(x) => throw x
   }
 
-  def optionToTry[X](xo: Option[X]): Try[X] = xo match {
+  def optionToTry[X](xo: Option[X], throwable: Throwable = new NoSuchElementException("optionToTry: None")): Try[X] = xo match {
     case Some(x) => Success(x)
-    case None => Failure(new NoSuchElementException("optionToTry: None"))
+    case None => Failure(throwable)
   }
 
   def tryNotNull[X](x: => X)(msg: String): Try[X] = Option(x) match {
