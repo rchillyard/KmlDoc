@@ -2,13 +2,15 @@ package com.phasmidsoftware.kmldoc
 
 import cats.effect.IO
 import cats.effect.IO.fromTry
-import com.phasmidsoftware.core.FP.{sequence, tryNotNull}
+import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
+import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLToPrintStream
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor.intExtractor
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
+import java.io.PrintStream
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
 import scala.io.Source
@@ -1204,18 +1206,36 @@ object KmlRenderers extends Renderers {
 // CONSIDER Rename as KML
 object KMLCompanion {
 
+  import cats.implicits._
+
   val logger: Logger = LoggerFactory.getLogger(KML.getClass)
 
-  // TESTME
-  def loadKML(resource: URL): Try[Seq[Feature]] = {
-    val z: Try[URL] = tryNotNull(resource)(s"resource $resource is null")
-    z flatMap (x => loadKML(x.getPath))
-  }
+  def renderKMLToPrintStream(resourceName: String, format: Format, printStream: PrintStream = System.out): IO[Unit] = renderKMLAsFormat(resourceName, format) map (_.mkString("\n")) map printStream.println
 
-  private def loadKML(file: String): Try[Seq[Feature]] = {
-    require(file != null)
-    val xml: Elem = XML.loadFile(file)
+  def renderKMLAsFormat(resourceName: String, format: Format): IO[Seq[String]] = for {
+    fs <- KMLCompanion.loadKML(KML.getClass.getResource(resourceName))
+    ws <- renderFeatures(fs, format)
+  } yield ws
 
+  def renderFeatures(fs: Seq[Feature], format: Format): IO[Seq[String]] = (fs map (f => renderFeature(f, format))).sequence
+
+  def renderFeature(f: Feature, format: Format): IO[String] = fromTry(TryUsing(StateR())(sr => implicitly[Renderer[Feature]].render(f, format, sr)))
+
+  def loadKML(resource: URL): IO[Seq[Feature]] = loadKML(
+    for {
+      u <- tryNotNull(resource)(s"resource $resource is null")
+      p <- tryNotNull(u.getPath)(s"$resource yielded empty filename")
+    } yield p
+  )
+
+  def loadKML(triedFilename: Try[String]): IO[Seq[Feature]] =
+    for {
+      filename <- fromTry(triedFilename)
+      elem <- IO(XML.loadFile(filename))
+      fs <- fromTry(extractFeatures(elem))
+    } yield fs
+
+  def extractFeatures(xml: Elem): Try[Seq[Feature]] = {
     val kys: Seq[Try[Seq[Feature]]] = for (kml <- xml \\ "kml") yield Extractor.extractAll[Seq[Feature]](kml)
     kys.headOption match {
       case Some(ky) => ky
@@ -1228,11 +1248,7 @@ object Test extends App {
 
   import cats.effect.unsafe.implicits.global
 
-  val wsy: Try[Seq[String]] = for {
-    fs <- KMLCompanion.loadKML(KML.getClass.getResource("sample.kml"))
-    y <- sequence(fs map (f => TryUsing(StateR())(sr => implicitly[Renderer[Feature]].render(f, FormatText(0), sr))))
-  } yield y
+  val ui = renderKMLToPrintStream("sample.kml", FormatText(0))
 
-  val y: IO[Unit] = fromTry(wsy) map (_.mkString("\n")) map println
-  y.unsafeRunSync()
+  ui.unsafeRunSync()
 }
