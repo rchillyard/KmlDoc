@@ -13,30 +13,23 @@ object KMLEditor extends App {
 
   import cats.effect.unsafe.implicits.global
 
-  private val fileBasename: Try[String] = optionToTry(args.headOption, new Exception("No command-line argument(s)"))
+  processKML(optionToTry(args.headOption, new Exception("No command-line argument(s)"))).unsafeRunSync()
 
-  def addExtension(triedBasename: Try[String], ext: String): Try[String] = triedBasename map (_ + ext)
+  private def processKML(basename: Try[String]): IO[Unit] = {
+    val qsi: IO[Seq[Writer]] = for {
+      w <- IO.fromTry(addExtension(basename, "_out.kml"))
+      f <- IO(new File(w))
+      bW = new BufferedWriter(new FileWriter(f, false))
+      ks <- KMLCompanion.loadKML(addExtension(basename, ".kml"))
+      ws <- renderKMLs(ks, FormatXML(0))
+      qs <- write(bW, ws).sequence
+    } yield qs
 
-  val y: IO[String] = IO.fromTry(addExtension(fileBasename, "_out.kml"))
-  val z: IO[Seq[KML]] = KMLCompanion.loadKML(addExtension(fileBasename, ".kml"))
+    val qi: IO[Writer] = qsi map (qs => qs.reduce((q, _) => q))
+    qi flatMap (q => IO(q.close()))
+  }
 
-  val x: IO[Seq[Writer]] = for {
-    f <- y
-    p <- IO(new File(f))
-    zzz = new BufferedWriter(new FileWriter(p, false))
-    fs <- z
-    q <- renderKMLs(fs, FormatXML(0))
-    a <- write(zzz, q).sequence
-  } yield a
+  private def write(bW: BufferedWriter, ws: Seq[String]): Seq[IO[Writer]] = for (w <- ws) yield IO(bW.append(w))
 
-  val qq: IO[Writer] = x map (ws => ws.reduce((b, _) => b))
-
-  val zzzz: IO[Unit] = qq flatMap (us => IO(us.close()))
-  zzzz.unsafeRunSync()
-
-  def write(file: BufferedWriter, text: Seq[String]): Seq[IO[Writer]] = for {
-    w <- text
-  } yield IO(file.append(w))
-
-
+  private def addExtension(triedBasename: Try[String], ext: String): Try[String] = triedBasename map (_ + ext)
 }

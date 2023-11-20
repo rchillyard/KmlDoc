@@ -4113,7 +4113,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             features.size shouldBe 1
             features.head match {
               case folder@Folder(features) =>
-                folder.containerData.featureData.name shouldBe Text("Untitled layer")
+                folder.containerData.featureData.name shouldBe Text("MA-Boston NE")
                 println(features)
                 features.size shouldBe 34
                 features.head match {
