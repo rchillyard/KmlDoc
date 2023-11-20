@@ -1192,7 +1192,7 @@ object KML extends Extractors with Renderers {
   private val prefix = """<?xml version="1.0" encoding="UTF-8"?>"""
 
   // XXX Ensure that this remains a def
-  def stateR = new StateR(None, SmartBuffer(new StringBuilder(xmlnsAttribute)), false)
+  def stateR = new StateR(Some("kml"), SmartBuffer(new StringBuilder(xmlnsAttribute)), false)
 
   private val rendererSpecial: Renderer[KML] = renderer1Special(apply, prefix + "\n") ^^ "rendererKml"
 }

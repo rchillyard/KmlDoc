@@ -38,7 +38,7 @@ class KMLCompanionSpec extends AnyFlatSpec with should.Matchers {
     val result = z.unsafeRunSync()
     val prefix =
       """<?xml version="1.0" encoding="UTF-8"?>
-        |<KML xmlns="http://www.opengis.net/kml/2.2">
+        |<kml xmlns="http://www.opengis.net/kml/2.2">
         |  <Document>""".stripMargin
     result.substring(0, prefix.length) shouldBe prefix
   }
