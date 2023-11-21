@@ -12,41 +12,6 @@ import scala.io.Source
 import scala.util.Try
 
 /**
- * Case class to represent the definition of a KML edit.
- *
- * @param command the function of the edit.
- * @param target the target of the edit.
- * @param result the result of the edit.
- */
-case class KmlEdit(command: String, target: Element, result: Element)
-
-object KmlEdit {
-  /**
-   * Method to parse a line of text as a KmlEdit.
-   *
-   * @param w the String to be parsed.
-   * @return an IO[KmlEdit].
-   */
-  def parse(w: String): IO[KmlEdit] = IO(KmlEdit("noop", Element("", ""), Element("", ""))) // FIXME
-
-  /**
-   * Method to parse an iterator of lines of text.
-   *
-   * @param ws an Iterator[String] typically from Source.getLines.
-   * @return a Seq[KmlEdit] wrapped in IO.
-   */
-  def parseLines(ws: Iterator[String]): IO[Seq[KmlEdit]] = (for (w <- ws) yield parse(w)).toSeq.sequence
-}
-
-/**
- * Case class to represent a KML element that will take part in an edit.
- *
- * @param tag the tag.
- * @param name the identifier.
- */
-case class Element(tag: String, name: String)
-
-/**
  * Case class to represent a set of KmlEdit objects.
  *
  * @param edits a sequence of edits.
@@ -110,12 +75,4 @@ object KMLEditor {
   private def addExtension(triedBasename: Try[String], ext: String): Try[String] = triedBasename map (_ + ext)
 
   private def addExt(basename: String, ext: String): String = basename + ext
-}
-
-object KMLDoc extends App {
-
-  import cats.effect.unsafe.implicits.global
-
-  // NOTE: the command line must include two arguments: the base name of the KML file to be processed and the filename for the edits.
-  KMLEditor.processKML(Args.parse(args)).unsafeRunSync()
 }
