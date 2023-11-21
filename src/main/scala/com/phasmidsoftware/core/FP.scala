@@ -174,6 +174,12 @@ object FP {
   def uncurried[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = {
     (x1, x2, x3, x4, x5, x6) => f(x1)(x2)(x3)(x4)(x5)(x6)
   }
+
+  def mapTryGuarded[X, Y](p: X => Boolean, predicate: String = "predicate")(f: X => Y): Try[X] => Try[Y] = {
+    case Success(x) if (p(x)) => Success(f(x))
+    case Success(x) => Failure(FPException(s"mapTryGuarded: $predicate failed for $x"))
+    case Failure(x) => Failure(x)
+  }
 }
 
 object TryUsing {

@@ -1,1 +1,1 @@
-join "Medford Branch (#1)" "Medford Branch (#2)"
+join Placemark "Medford Branch (#1)" with Placemark "Medford Branch (#2)"
