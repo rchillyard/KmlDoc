@@ -34,6 +34,9 @@ object KmlEdit {
    * @return a Seq[KmlEdit] wrapped in IO.
    */
   def parseLines(ws: Iterator[String]): IO[Seq[KmlEdit]] = (for (w <- ws) yield parse(w)).toSeq.sequence
+
+  val JOIN = "join"
+  val DELETE = "delete"
 }
 
 /**
@@ -73,13 +76,12 @@ class KMLEditParser(enclosures: String, listSeparator: Char, quote: Char, verbos
    * @param indexedString a tuple of String and Int denoting the line and its index in the file.
    * @return a Try[Strings].
    */
-  def parseEdit(indexedString: (String, Int)): Try[KmlEdit] =
-    parseAll(line, indexedString._1) match {
-      case Success(s, _) => scala.util.Success(s)
-      case Failure("end of input expected", _) => scala.util.Failure(MultiLineException(s"at line ${indexedString._2}: ${indexedString._1}"))
-      case Failure(x, _) => scala.util.Failure(formException(indexedString, x))
-      case Error(x, _) => scala.util.Failure(formException(indexedString, x))
-    }
+  def parseEdit(indexedString: (String, Int)): Try[KmlEdit] = parseAll(line, indexedString._1) match {
+    case Success(s, _) => scala.util.Success(s)
+    case Failure("end of input expected", _) => scala.util.Failure(MultiLineException(s"at line ${indexedString._2}: ${indexedString._1}"))
+    case Failure(x, _) => scala.util.Failure(formException(indexedString, x))
+    case Error(x, _) => scala.util.Failure(formException(indexedString, x))
+  }
 
   lazy val line: Parser[KmlEdit] = command ~ (blank ~> element) ~ opt(blank ~> conjunction ~> blank ~> element) ^^ { case c ~ e1 ~ e2o => KmlEdit(c, e1, e2o) }
 

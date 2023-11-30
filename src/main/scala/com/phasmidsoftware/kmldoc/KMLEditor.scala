@@ -41,17 +41,29 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     qsi map (qs => qs.reduce((q, _) => q)) flatMap (q => IO(q.close()))
   }
 
-  private def processKML(k: KML): KML = {
-    val fs = k.features
-    val fs_ = for (f <- fs) yield processFeature(f, fs)
-    k.copy(features = fs_)
+  private def processKML(k: KML): KML = processHasFeatures(k)((t, fs) => t.copy(features = fs))
+//  {
+//    val fs = k.features
+//    val fs_ = for (f <- fs) yield processFeature(f, fs)
+//    k.copy(features = fs_)
+//  }
+
+  def processHasFeatures[T <: Product](t: T)(g: (T, Seq[Feature]) => T): T = t match {
+    case h: HasFeatures =>
+      val fs = h.features
+      g(t, for (f <- fs) yield processFeature(f, fs))
+    case _ => throw new Exception(s"processHasFeatures: parameter t does not extend HasFeatures: ${t.getClass}")
   }
 
-  private def processKMLs(ks: Seq[KML]): Seq[KML] = for (k <- ks) yield processKML(k)
+  def processKMLs(ks: Seq[KML]): Seq[KML] = for (k <- ks) yield processKML(k)
 
+  def deleteFeatureIfMatch(f: Feature, name: String): Option[Feature] = f match {
+    case p: Placemark if p.featureData.name.toString == name => None
+    case _ => Some(f)
+  }
 
-  private def joinPlacemarks(p: Placemark, features: Seq[Feature], name2: String): Option[Feature] = {
-    val zz = for (f <- features) yield joinPlacemarks(p, name2, f)
+  private def joinPlacemarks(p: Placemark, features: Seq[Feature], name: String): Option[Feature] = {
+    val zz = for (f <- features) yield joinPlacemarks(p, name, f)
     for (z <- zz.find(_.isDefined); q <- z) yield q
   }
 
@@ -67,24 +79,31 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
 
   private def processPlacemark(p: Placemark, e: KmlEdit, features: Seq[Feature]): Option[Feature] =
     (p.featureData.name, e) match {
-      case (name, KmlEdit("join", Element("Placemark", name1), Some(Element("Placemark", name2)))) if name.$ == name1 =>
+      case (name, KmlEdit(KmlEdit.JOIN, Element("Placemark", name1), Some(Element("Placemark", name2)))) if name.toString == name1 =>
         joinPlacemarks(p, features, name2)
-      case _ => None
+      case (name, KmlEdit(KmlEdit.DELETE, Element(_, name1), None)) if name.toString == name1 =>
+        None
+      case (_, KmlEdit(KmlEdit.DELETE, _, _)) =>
+        Some(p)
+      case _ =>
+        None
     }
 
-  private def processFeature(f: Feature, fs: Seq[Feature]) =
+  private def processFeature(f: Feature, fs: Seq[Feature]): Feature =
     f match {
       case p: Placemark =>
-        val z = for (e <- edits) yield processPlacemark(p, e, fs)
+        val z: Seq[Option[Feature]] = for (e <- edits) yield processPlacemark(p, e, fs)
         val q = z.filter(_.isDefined) map (_.get)
         if (q.size == 1) q.head else p
+      case d: Document =>
+        processHasFeatures(d)((t, fs) => t.copy(features = fs)(d.containerData))
+      case x: Folder =>
+        processHasFeatures(x)((t, fs) => t.copy(features = fs)(x.containerData))
+
+//      case d: Document =>
+//        d.features
       case _ => f
     }
-
-//    f match {
-//    case (KmlEdit("join",Element("Placemark",name1), Some(Element("Placemark", name2))), p1: Placemark) => doJoin(f1) // NOTE: do proper join
-//    case _ => f1
-//  }
 }
 
 object KMLEditor {

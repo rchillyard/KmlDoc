@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>MA - Boston NE: Historic New England Railroads</name>
+    <description>See description of Historic New England Railroads (MA - Boston NW).  Full index: https://www.rubecula.com/RRMaps/</description>
+    <Folder>
+      <name>MA-Boston NE</name>
+      <Placemark>
+        <name>Medford Branch (#1)</name>
+        <description><![CDATA[K218A<br>RDK1: 52A: Medford Jct to Gleenwood]]></description>
+        <styleUrl>#line-006600-5000</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -71.076833,42.409787,0
+            -71.076844,42.410318,0
+            -71.076844,42.410674,0
+            -71.076897,42.410999,0
+            -71.077069,42.411427,0
+            -71.07723,42.411807,0
+            -71.077455,42.41214,0
+            -71.077809,42.412441,0
+            -71.078206,42.412758,0
+            -71.078635,42.412963,0
+            -71.079097,42.41313,0
+            -71.079601,42.413272,0
+            -71.080331,42.413423,0
+            -71.081189,42.413581,0
+            -71.08268,42.413835,0
+            -71.084021,42.414065,0
+            -71.085212,42.41427,0
+            -71.086478,42.414492,0
+            -71.087036,42.414556,0
+            -71.087487,42.414556,0
+            -71.087927,42.4145,0
+            -71.088367,42.41435,0
+            -71.088678,42.414128,0
+            -71.08886,42.413914,0
+            -71.089042,42.413676,0
+            -71.089225,42.413304,0
+            -71.089257,42.412868,0
+            -71.0893,42.41248,0
+            -71.0893,42.412171,0
+            -71.089311,42.411916,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>Medford Branch (#2)</name>
+        <description><![CDATA[K218A<br>RDK1 - 52A: Medford to Gleenwood.  Very approximate (practically impossible to see the Western end of this line)]]></description>
+        <styleUrl>#line-006600-5000</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -71.086478,42.414484,0
+            -71.087256,42.414639,0
+            -71.08798,42.41479,0
+            -71.08923,42.415023,0
+            -71.090236,42.41519,0
+            -71.091349,42.41539,0
+            -71.09269,42.415569,0
+            -71.09357,42.415704,0
+            -71.09475,42.415878,0
+            -71.095887,42.416061,0
+            -71.097239,42.416322,0
+            -71.098602,42.416552,0
+            -71.099685,42.416845,0
+            -71.100807,42.417083,0
+            -71.101788,42.417241,0
+            -71.102668,42.417344,0
+            -71.103612,42.417506,0
+            -71.104092,42.41759,0
+            -71.104736,42.417679,0
+            -71.105334,42.417782,0
+            -71.106198,42.417851,0
+            -71.106992,42.417898,0
+            -71.107657,42.417914,0
+            -71.108226,42.417954,0
+            -71.108387,42.417938,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>

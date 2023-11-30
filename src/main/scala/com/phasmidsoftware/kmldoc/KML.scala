@@ -104,6 +104,13 @@ object FeatureData extends Extractors with Renderers {
 }
 
 /**
+ * Trait to define the property of owning features.
+ */
+trait HasFeatures {
+  val features: Seq[Feature]
+}
+
+/**
  * Trait Geometry: abstract sub-element of KmlObject.
  * Geometry is the super-type of LineString, Polygon, LinearRing, and Point.
  *
@@ -587,7 +594,7 @@ object ColorStyleData extends Extractors with Renderers {
  * @param features      a sequence of Feature elements (where Feature is an abstract super-type).
  * @param containerData the ContainerData (auxiliary property).
  */
-case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container
+case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures
 
 /**
  * Companion object to Folder.
@@ -608,7 +615,7 @@ object Folder extends Extractors with Renderers {
  * @param features      a sequence of Features.
  * @param containerData ContainerData (auxiliary property).
  */
-case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container
+case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures
 
 /**
  * Companion object to Document.
@@ -1155,7 +1162,7 @@ object AltitudeMode extends Extractors with Renderers {
  *
  * @param features a sequence of Feature (typically Document).
  */
-case class KML(features: Seq[Feature])
+case class KML(features: Seq[Feature]) extends HasFeatures
 
 /**
  * Companion object to class KML.
