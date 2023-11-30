@@ -38,6 +38,17 @@ object FP {
   }
 
   /**
+   * Method to transform a Seq of Option[X] into a Option of Seq[X].
+   *
+   * @param xys a Seq of Try[X].
+   * @tparam X the underlying type.
+   * @return a Try of Seq[X].
+   */
+  def sequence[X](xys: Iterable[Option[X]]): Option[Seq[X]] = xys.foldLeft(Option(Seq[X]())) {
+    (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
+  }
+
+  /**
    * Method to transform a Seq of Try[X] into a Try of Seq[X].
    *
    * Non-fatal failures are eliminated from consideration, although each one invokes the function f.
@@ -176,7 +187,7 @@ object FP {
   }
 
   def mapTryGuarded[X, Y](p: X => Boolean, predicate: String = "predicate")(f: X => Y): Try[X] => Try[Y] = {
-    case Success(x) if (p(x)) => Success(f(x))
+    case Success(x) if p(x) => Success(f(x))
     case Success(x) => Failure(FPException(s"mapTryGuarded: $predicate failed for $x"))
     case Failure(x) => Failure(x)
   }

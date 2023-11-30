@@ -18,6 +18,8 @@ import scala.util.Try
  */
 case class KMLEditor(edits: Seq[KmlEdit]) {
 
+  println(s"KMLEditor: ${edits.mkString}")
+
   /**
    * Method to process the file defined by baseFilename by parsing it, editing it, and writing it out.
    * The input file extension is ".kml" and the output file suffix is "_out.kml"
@@ -31,7 +33,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
       f <- IO(new File(w))
       bW = new BufferedWriter(new FileWriter(f, false))
       ks <- KMLCompanion.loadKML(addExtension(baseFilename, ".kml"))
-      ks2 = process(ks)
+      ks2 = processKMLs(ks)
       ws <- renderKMLs(ks2, FormatXML(0))
       qs <- write(bW, ws).sequence
     } yield qs
@@ -39,7 +41,50 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     qsi map (qs => qs.reduce((q, _) => q)) flatMap (q => IO(q.close()))
   }
 
-  private def process(ks: Seq[KML]): Seq[KML] = ks // FIXME this doesn't edit anything!
+  private def processKML(k: KML): KML = {
+    val fs = k.features
+    val fs_ = for (f <- fs) yield processFeature(f, fs)
+    k.copy(features = fs_)
+  }
+
+  private def processKMLs(ks: Seq[KML]): Seq[KML] = for (k <- ks) yield processKML(k)
+
+
+  private def joinPlacemarks(p: Placemark, features: Seq[Feature], name2: String): Option[Feature] = {
+    val zz = for (f <- features) yield joinPlacemarks(p, name2, f)
+    for (z <- zz.find(_.isDefined); q <- z) yield q
+  }
+
+  private def joinPlacemarks(p: Placemark, name: String, feature: Feature): Option[Feature] = feature match {
+    case q: Placemark if p.featureData.name.$ == name => Some(joinPlacemarks(p, q))
+    case _ => None
+  }
+
+  private def joinPlacemarks(p: Placemark, q: Placemark): Placemark = {
+    println(s"joinPlacemarks: ${p.featureData.name},  ${q.featureData.name}")
+    p
+  } // FIXME to include q
+
+  private def processPlacemark(p: Placemark, e: KmlEdit, features: Seq[Feature]): Option[Feature] =
+    (p.featureData.name, e) match {
+      case (name, KmlEdit("join", Element("Placemark", name1), Some(Element("Placemark", name2)))) if name.$ == name1 =>
+        joinPlacemarks(p, features, name2)
+      case _ => None
+    }
+
+  private def processFeature(f: Feature, fs: Seq[Feature]) =
+    f match {
+      case p: Placemark =>
+        val z = for (e <- edits) yield processPlacemark(p, e, fs)
+        val q = z.filter(_.isDefined) map (_.get)
+        if (q.size == 1) q.head else p
+      case _ => f
+    }
+
+//    f match {
+//    case (KmlEdit("join",Element("Placemark",name1), Some(Element("Placemark", name2))), p1: Placemark) => doJoin(f1) // NOTE: do proper join
+//    case _ => f1
+//  }
 }
 
 object KMLEditor {

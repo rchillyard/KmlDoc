@@ -2,36 +2,30 @@ package com.phasmidsoftware.kmldoc
 
 import cats.effect.IO
 import cats.implicits._
-import com.phasmidsoftware.args.Args
-import com.phasmidsoftware.core.FP.mapTryGuarded
-import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLs
-import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
-import com.phasmidsoftware.render.FormatXML
-import java.io.{BufferedWriter, File, FileWriter, Writer}
 import org.slf4j.{Logger, LoggerFactory}
-import scala.annotation.tailrec
-import scala.io.Source
 import scala.util.Try
-import scala.util.matching.Regex
 import scala.util.parsing.combinator.JavaTokenParsers
 
 /**
  * Case class to represent the definition of a KML edit.
  *
- * @param command the function of the edit.
- * @param op1 the target of the edit.
- * @param op2 the result of the edit.
+ * @param command  the function of the edit.
+ * @param op1      the target of the edit.
+ * @param maybeOp2 the result of the edit.
  */
-case class KmlEdit(command: String, op1: Element, op2: Option[Element])
+case class KmlEdit(command: String, op1: Element, maybeOp2: Option[Element])
 
 object KmlEdit {
+  private val parser = KMLEditParser.apply
+
   /**
    * Method to parse a line of text as a KmlEdit.
    *
    * @param w the String to be parsed.
    * @return an IO[KmlEdit].
    */
-  def parse(w: String): IO[KmlEdit] = IO(KmlEdit("noop", Element("", ""), None)) // FIXME
+  def parse(w: String): IO[KmlEdit] = IO.fromTry(parser.parseEdit(w -> 0)) // need to get the line sequence number
+//    IO(KmlEdit("noop", Element("", ""), None)) // FIXME
 
   /**
    * Method to parse an iterator of lines of text.
@@ -54,8 +48,8 @@ case class Element(tag: String, name: String)
  * KMLEditParser: class to parse lines of an edit file.
  * NOTE: list elements always appear as a string in the form { element0 , element1 , ... }
  *
- * @param delimiter     a Regex used to match a delimiter between cells in a row.
- * @param string        a Regex used to match the content of a cell.
+ * NOTE: Much of this is probably overkill (it was copied from TableParser).
+ *
  * @param enclosures    the enclosure characters around a list (if any).
  * @param listSeparator the list separator character.
  * @param quote         the quote character which is able to preempt the string regex:
@@ -63,9 +57,9 @@ case class Element(tag: String, name: String)
  *                      there can be any number of any character (other than quote).
  * @param verbose       will print the various parameters.
  */
-class KMLEditParser(delimiter: Regex, string: Regex, enclosures: String, listSeparator: Char, quote: Char, verbose: Boolean = false) extends JavaTokenParsers {
+class KMLEditParser(enclosures: String, listSeparator: Char, quote: Char, verbose: Boolean = false) extends JavaTokenParsers {
 
-  if (verbose) KMLEditParser.logger.info(s"delimiter: '${delimiter.regex}', string: '${string.regex}', enclosures: '$enclosures', quote: '$quote', listSeparator: '$listSeparator', ")
+  if (verbose) KMLEditParser.logger.info(s"enclosures: '$enclosures', quote: '$quote', listSeparator: '$listSeparator', ")
   runChecks()
 
   override def skipWhitespace: Boolean = false
@@ -79,24 +73,31 @@ class KMLEditParser(delimiter: Regex, string: Regex, enclosures: String, listSep
    * @param indexedString a tuple of String and Int denoting the line and its index in the file.
    * @return a Try[Strings].
    */
-  def parseEdit(indexedString: (String, Int)): Try[KmlEdit] = parseAll(row, indexedString._1) match {
-    case Success(s, _) => scala.util.Success(s)
-    case Failure("end of input expected", _) => scala.util.Failure(MultiLineException(indexedString))
-    case Failure(x, _) => scala.util.Failure(formException(indexedString, x))
-    case Error(x, _) => scala.util.Failure(formException(indexedString, x))
-  }
+  def parseEdit(indexedString: (String, Int)): Try[KmlEdit] =
+    parseAll(line, indexedString._1) match {
+      case Success(s, _) => scala.util.Success(s)
+      case Failure("end of input expected", _) => scala.util.Failure(MultiLineException(s"at line ${indexedString._2}: ${indexedString._1}"))
+      case Failure(x, _) => scala.util.Failure(formException(indexedString, x))
+      case Error(x, _) => scala.util.Failure(formException(indexedString, x))
+    }
 
-  lazy val row: Parser[KmlEdit] = command ~ element ~ opt(element) ^^ { case c ~ e1 ~ e2o => KmlEdit(c, e1, e2o)}
+  lazy val line: Parser[KmlEdit] = command ~ (blank ~> element) ~ opt(blank ~> conjunction ~> blank ~> element) ^^ { case c ~ e1 ~ e2o => KmlEdit(c, e1, e2o) }
 
-  lazy val command: Parser[String] = string
+  lazy val command: Parser[String] = identifier
 
-  lazy val element: Parser[Element] = tag ~ identifier ^^ { case t ~ i => Element(t, i)}
+  lazy val element: Parser[Element] = (tag <~ blank) ~ identifier ^^ { case t ~ i => Element(t, i) }
 
-  lazy val tag: Parser[String] = string
+  private lazy val conjunction: Parser[String] = "with"
 
-  lazy val identifier: Parser[String] = quotedString
+  lazy val tag: Parser[String] = """[^ "]*""".r
 
-  lazy val cell: Parser[String] = quotedString | list | string | failure("invalid string")
+  lazy val string: Parser[String] = """[^, "]*""".r
+
+  lazy val blank: Parser[String] = rep(whiteSpace) ^^ (xs => xs.mkString(""))
+
+  private lazy val identifier: Parser[String] = quotedString | string | failure("invalid identifier")
+
+  private lazy val cell: Parser[String] = quotedString | list | string | failure("invalid string")
 
   lazy val quotedString: Parser[String] = quotedStringWithQuotes | pureQuotedString | failure("invalid quoted string")
 
@@ -104,13 +105,13 @@ class KMLEditParser(delimiter: Regex, string: Regex, enclosures: String, listSep
 
   private lazy val stringInQuotes: Parser[String] = s"""[^$quote]*""".r
 
-  type Strings = Seq[String]
+  private type Strings = Seq[String]
 
-  lazy val quotedStringWithQuotes: Parser[String] = quotedStringWithQuotesAsList ^^ (ws => ws.mkString(s"$quote"))
+  private lazy val quotedStringWithQuotes: Parser[String] = quotedStringWithQuotesAsList ^^ (ws => ws.mkString(s"$quote"))
 
-  lazy val quotedStringWithQuotesAsList: Parser[Strings] = quote ~> repsep(stringInQuotes, s"$quote$quote") <~ quote
+  private lazy val quotedStringWithQuotesAsList: Parser[Strings] = quote ~> repsep(stringInQuotes, s"$quote$quote") <~ quote
 
-  lazy val list: Parser[String] = getOpenChar ~> (component ~ listSeparator ~ rep1sep(component, listSeparator)) <~ getCloseChar ^^ { case x ~ _ ~ xs => (x +: xs).mkString("{", ",", "}") }
+  private lazy val list: Parser[String] = getOpenChar ~> (component ~ listSeparator ~ rep1sep(component, listSeparator)) <~ getCloseChar ^^ { case x ~ _ ~ xs => (x +: xs).mkString("{", ",", "}") }
 
   private val regexComponent = s"""[^,$listSeparator}]+"""
   private lazy val component: Parser[String] = regexComponent.r
@@ -119,37 +120,12 @@ class KMLEditParser(delimiter: Regex, string: Regex, enclosures: String, listSep
 
   private lazy val getCloseChar: Parser[String] = s"${enclosures.lastOption.getOrElse("")}"
 
-  private def formException(indexedString: (String, Int), x: String) = ParserException(s"Cannot parse row ${indexedString._2}: '${indexedString._1}' due to: $x")
+  private def formException(indexedString: (String, Int), x: String) = ParserException(s"Cannot parse line ${indexedString._2}: '${indexedString._1}' due to: $x")
 
   // XXX used only for debugging
-  override def toString: String = s"""LineParser: delimiter=$delimiter, string=$string, listSeparator='$listSeparator', enclosures='$enclosures', quote="$quote""""
+  override def toString: String = s"""LineParser: listSeparator='$listSeparator', enclosures='$enclosures', quote="$quote""""
 
-  private lazy val getDelimiterChar: Char = {
-    @tailrec
-    def inner(w: Seq[Char], escaped: Boolean): Char =
-      w match {
-        case h :: t =>
-          if (escaped) h match {
-            case 't' => '\t'
-            case '\\' => '\\'
-            case 'n' => '\n'
-            case 'r' => '\r'
-            case 'd' => '0'
-            case 'f' => '\f'
-            case 'b' => '\b'
-            case _ => h
-          }
-          else h match {
-            case '[' | '{' => inner(t, escaped = false)
-            case '\\' => inner(t, escaped = true)
-            case '^' => throw ParserException(s"Cannot get a delimiter from ${delimiter.regex} (unsupported)")
-            case _ => h
-          }
-        case Nil => throw ParserException(s"Cannot get a delimiter from ${delimiter.regex}")
-      }
-
-    inner(delimiter.regex.toList, escaped = false)
-  }
+  private lazy val getDelimiterChar: Char = ' '
 
   private def runChecks(): Unit = {
     def check[X](parser: Parser[X], input: String, matchedValue: X) = Try(parseAll(parser, input) match {
@@ -179,12 +155,10 @@ class KMLEditParser(delimiter: Regex, string: Regex, enclosures: String, listSep
 }
 
 object KMLEditParser {
-  def apply(implicit c: RowConfig): LineParser = {
-    LineParser.logger.info(s"Constructing LineParser with an implicitly defined instance of RowConfig: $c")
-    new LineParser(c.delimiter, c.string, c.listEnclosure, c.listSep, c.quote)
-  }
 
-  val logger: Logger = LoggerFactory.getLogger(LineParser.getClass)
+  def apply: KMLEditParser = new KMLEditParser("{}", '|', '"')
+
+  val logger: Logger = LoggerFactory.getLogger(KMLEditParser.getClass)
 }
 
 case class ParserException(msg: String, e: Throwable = null) extends Exception(msg, e)

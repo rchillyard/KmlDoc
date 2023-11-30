@@ -1248,13 +1248,20 @@ object KMLCompanion {
     ws <- renderKMLs(fs, format)
   } yield ws
 
+  /**
+   * Note that this mechanism won't work if, as we wouldn't expect, there is more than one KML element.
+   *
+   * @param ks     the KML elements.
+   * @param format the desired format.
+   * @return a Seq[String] wrapped in IO.
+   */
   def renderKMLs(ks: Seq[KML], format: Format): IO[Seq[String]] = (ks map (k => renderKML(k, format))).sequence
 
-  def renderKML(k: KML, format: Format): IO[String] = fromTry(KML.renderKml(k, format))
+  private def renderKML(k: KML, format: Format): IO[String] = fromTry(KML.renderKml(k, format))
 
   def renderFeatures(fs: Seq[Feature], format: Format): IO[Seq[String]] = (fs map (f => renderFeature(f, format))).sequence
 
-  def renderFeature(f: Feature, format: Format): IO[String] = fromTry(TryUsing(StateR())(sr => implicitly[Renderer[Feature]].render(f, format, sr)))
+  private def renderFeature(f: Feature, format: Format): IO[String] = fromTry(TryUsing(StateR())(sr => implicitly[Renderer[Feature]].render(f, format, sr)))
 
   def loadKML(resource: URL): IO[Seq[KML]] = loadKML(
     for {
@@ -1279,14 +1286,14 @@ object KMLCompanion {
     }
   }
 
-  def extractKML(xml: Elem): Try[Seq[KML]] = extractMulti[Seq[KML]](xml)
+  private def extractKML(xml: Elem): Try[Seq[KML]] = extractMulti[Seq[KML]](xml)
 }
 
 object Test extends App {
 
   import cats.effect.unsafe.implicits.global
 
-  val ui = renderKMLToPrintStream("sample.kml", FormatText(0))
+  private val ui = renderKMLToPrintStream("sample.kml", FormatText(0))
 
   ui.unsafeRunSync()
 }
