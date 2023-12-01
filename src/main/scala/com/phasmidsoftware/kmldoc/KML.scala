@@ -3,9 +3,10 @@ package com.phasmidsoftware.kmldoc
 import cats.effect.IO
 import cats.effect.IO.fromTry
 import com.phasmidsoftware.core.FP.tryNotNull
-import com.phasmidsoftware.core.{SmartBuffer, Text, TryUsing, XmlException}
+import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLToPrintStream
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
+import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor.{extractMulti, intExtractor}
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
@@ -40,7 +41,16 @@ trait KmlObject
  *
  * @param __id an optional identifier.
  */
-case class KmlData(__id: Option[String])
+case class KmlData(__id: Option[String]) extends Mergeable[KmlData] {
+
+  /**
+   * Method to merge KmlData objects.
+   *
+   * @param k a KmlData object.
+   * @return the merged value of KmlData.
+   */
+  def merge(k: KmlData): Option[KmlData] = Some(KmlData(mergeStringsDelimited(__id, k.__id)("#")))
+}
 
 /**
  * Companion object to KmlData.
@@ -89,7 +99,19 @@ object Feature extends Extractors with Renderers {
  * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
  * @param kmlData          (auxiliary) member: KmlData.
  */
-case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector], abstractView: Seq[AbstractView])(val kmlData: KmlData)
+case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector], abstractView: Seq[AbstractView])(val kmlData: KmlData) extends Mergeable[FeatureData] {
+  /**
+   * Method to merge FeatureData objects.
+   *
+   * @param f a FeatureData object.
+   * @return the merged value of FeatureData.
+   */
+  def merge(f: FeatureData): Option[FeatureData] = for {
+    n <- name merge f.name
+    d = mergeOptions(maybeDescription, f.maybeDescription)((t1, t2) => t1 merge t2)
+    z <- kmlData merge f.kmlData
+  } yield FeatureData(n, d, maybeStyleUrl, maybeOpen, maybeVisibility, StyleSelectors, abstractView)(z) // TODO: not all fields are properly merged
+}
 
 /**
  * Companion object to Feature.
@@ -135,7 +157,12 @@ object Geometry extends Extractors with Renderers {
  *
  * @param kmlData source of properties.
  */
-case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option[AltitudeMode])(val kmlData: KmlData)
+case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option[AltitudeMode])(val kmlData: KmlData) extends Mergeable[GeometryData] {
+  def merge(g: GeometryData): Option[GeometryData] =
+    for {
+      k <- kmlData merge g.kmlData
+    } yield GeometryData(mergeOptionsBiased(maybeExtrude, g.maybeExtrude), mergeOptionsBiased(maybeAltitudeMode, g.maybeAltitudeMode))(k)
+}
 
 object GeometryData extends Extractors with Renderers {
 
@@ -389,7 +416,18 @@ object Point extends Extractors with Renderers {
  * @param tessellate  the tessellation.
  * @param coordinates a sequence of Coordinates objects.
  */
-case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
+case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry with Mergeable[LineString] {
+
+  import Coordinates.empty
+
+  def merge(l: LineString): Option[LineString] = for {
+    t <- tessellate merge l.tessellate
+    g <- geometryData merge l.geometryData
+    c <- mergeSequence(coordinates)(empty).headOption
+    d <- mergeSequence(l.coordinates)(empty).headOption
+    z <- c merge d
+  } yield LineString(t, Seq(z))(g)
+}
 
 object LineString extends Extractors with Renderers {
   private val extractorPartial: Extractor[GeometryData => LineString] = extractorPartial11(apply)
@@ -710,7 +748,12 @@ object LabelStyle extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class Tessellate($: CharSequence)
+case class Tessellate($: CharSequence) extends Mergeable[Tessellate] {
+  def merge(t: Tessellate): Option[Tessellate] = ($, t.$) match {
+    case (a, b) if a == b => Some(Tessellate(a))
+    case _ => None
+  }
+}
 
 object Tessellate extends Extractors with Renderers {
 
@@ -781,7 +824,37 @@ object Visibility extends Extractors with Renderers {
 //    implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
 //}
 
-case class Coordinates(coordinates: Seq[Coordinate])
+case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinates] {
+  lazy val vector: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- last vector first) yield v
+
+  lazy val direction: Option[Double] = for (last <- coordinates.lastOption; first <- coordinates.headOption; d <- last distance first) yield d
+
+  def gap(other: Coordinates): Option[Double] = gapInternal(coordinates, other.coordinates)
+
+  def merge(other: Coordinates): Option[Coordinates] = {
+    val xo = vector
+    val yo: Option[Cartesian] = other.vector
+    val zo: Option[Double] = for (x <- xo; y <- yo) yield x dotProduct y
+    val q: Option[Coordinates] = for (z <- zo) yield if (z >= 0) other else other.reverse
+    mergeInternal(q)
+  }
+
+  def reverse: Coordinates = Coordinates(coordinates.reverse)
+
+  private def gapInternal(cs1: Seq[Coordinate], cs2: Seq[Coordinate]): Option[Double] =
+    for {
+      a <- cs1.lastOption
+      b <- cs2.headOption
+      q <- a.distance(b)
+    } yield q
+
+  private def mergeInternal(co: Option[Coordinates]): Option[Coordinates] =
+    for {
+      c <- co
+      r <- gapInternal(coordinates, c.coordinates) // coordinate gap c.coordinates
+      s <- gapInternal(c.coordinates, coordinates) // c.coordinate gap coordinates
+    } yield Coordinates(if (r < s) coordinates ++ c.coordinates else c.coordinates ++ coordinates)
+}
 
 object Coordinates extends Extractors with Renderers {
   implicit val extractor: Extractor[Coordinates] = Extractor(node => Success(Coordinates.parse(node.text))) ^^ "extractorCoordinates"
@@ -790,6 +863,8 @@ object Coordinates extends Extractors with Renderers {
   implicit val rendererSeq: Renderer[Seq[Coordinates]] = sequenceRendererFormatted[Coordinates](FormatXML(_)) ^^ "rendererCoordinates_s"
 
   def parse(w: String): Coordinates = Coordinates((for (line <- Source.fromString(w).getLines(); if line.trim.nonEmpty) yield Coordinate(line)).toSeq)
+
+  val empty: Coordinates = Coordinates(Nil)
 }
 
 /**
@@ -799,7 +874,13 @@ object Coordinates extends Extractors with Renderers {
  * @param lat  latitude.
  * @param alt  altitude.
  */
-case class Coordinate(long: String, lat: String, alt: String)
+case class Coordinate(long: String, lat: String, alt: String) {
+  lazy val geometry: Option[Cartesian] = for (x <- long.toDoubleOption; y <- lat.toDoubleOption; z <- alt.toDoubleOption) yield Cartesian(x, y, z)
+
+  def vector(c: Coordinate): Option[Cartesian] = for (a <- this.geometry; b <- c.geometry) yield a vector b
+
+  def distance(c: Coordinate): Option[Double] = for (a <- this.geometry; b <- c.geometry) yield a distance b
+}
 
 /**
  * Companion object to Coordinate.
@@ -1303,4 +1384,88 @@ object Test extends App {
   private val ui = renderKMLToPrintStream("sample.kml", FormatText(0))
 
   ui.unsafeRunSync()
+}
+
+/**
+ * Hierarchical trait to satisfy merging.
+ *
+ * CONSIDER making it a typeclass instead.
+ *
+ * @tparam T the underlying type.
+ */
+trait Mergeable[T] {
+
+  /**
+   * Merge this mergeable object with <code>t</code>.
+   *
+   * @param t the object to be merged with this.
+   * @return the merged value of T.
+   */
+  def merge(t: T): Option[T]
+}
+
+/**
+ * Companion object for Mergeable.
+ */
+object Mergeable {
+
+  /**
+   * Method to merge a Sequence into a Sequence of one.
+   *
+   * NOTE the merge method assumes that it is associative with respect to T.
+   *
+   * @param ts   the sequence to be merged.
+   * @param fail the value of T used for a merge failure.
+   * @tparam T the underlying type (extends Mergeable).
+   * @return Seq[T] with only one element.
+   */
+  def mergeSequence[T <: Mergeable[T]](ts: Seq[T])(fail: => T): Seq[T] =
+    Seq(ts reduce[T] ((t1, t2) => (t1 merge t2).getOrElse(fail)))
+
+  /**
+   * Method to merge two Optional values of the same type.
+   *
+   * @param ao the first optional value.
+   * @param bo the second optional value.
+   * @param f  a method to merge two elements of the underlying type T.
+   * @tparam T the underlying type.
+   * @return an Option[T].
+   */
+  def mergeOptions[T](ao: Option[T], bo: Option[T])(f: (T, T) => Option[T]): Option[T] = (ao, bo) match {
+    case (Some(a), Some(b)) => f(a, b)
+    case (None, _) => bo
+    case (_, None) => ao
+  }
+
+  /**
+   * Method to merge two Optional values of the same type.
+   *
+   * NOTE: In this method, there is no proper merging of two defined values: we arbitrarily select the first.
+   *
+   * @param ao the first optional value.
+   * @param bo the second optional value.
+   * @tparam T the underlying type.
+   * @return an Option[T].
+   */
+  def mergeOptionsBiased[T](ao: Option[T], bo: Option[T]): Option[T] = mergeOptions(ao, bo)((t1, _) => Some(t1))
+
+  /**
+   * Method to merge two optional Strings.
+   *
+   * @param ao the first optional String.
+   * @param bo the second optional String.
+   * @param f  a function to combine two Strings and yield an Option[String].
+   * @return an Option[String].
+   */
+  def mergeStrings(ao: Option[String], bo: Option[String])(f: (String, String) => Option[String]): Option[String] = mergeOptions(ao, bo)(f)
+
+  /**
+   * Method to concatenate two optional Strings with a delimiter between them.
+   *
+   * @param ao        the first optional String.
+   * @param bo        the second optional String.
+   * @param delimiter a String to be placed between the two given Strings.
+   * @return an Option[String].
+   */
+  def mergeStringsDelimited(ao: Option[String], bo: Option[String])(delimiter: String): Option[String] = mergeOptions(ao, bo)((a, b) => Some(s"$a$delimiter$b"))
 }

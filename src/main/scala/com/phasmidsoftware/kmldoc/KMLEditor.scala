@@ -131,14 +131,39 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
 
   private def joinPlacemarks(p: Placemark, name: String, feature: Feature): Option[Feature] =
     feature match {
-      case q: Placemark if q.featureData.name.$ == name => Some(joinPlacemarks(p, q))
+      case q: Placemark if q.featureData.name.$ == name => joinPlacemarks(p, q)
       case _ => None
     }
 
-  private def joinPlacemarks(p: Placemark, q: Placemark): Placemark = {
+  /**
+   * CONSIDER why do we not define mergeable Geometry?
+   *
+   * @param gp
+   * @param gq
+   * @return
+   */
+  def mergeLineStrings(gp: Geometry, gq: Geometry): Option[LineString] = (gp, gq) match {
+    case (lp: LineString, lq: LineString) => lp merge lq
+    case _ => None
+  }
+
+  /**
+   * NOTE: we should implement this by making Placemark extend Mergeable.
+   *
+   * @param p the first Placemark.
+   * @param q the second Placemark.
+   * @return an Option[Placemark].
+   */
+  private def joinPlacemarks(p: Placemark, q: Placemark): Option[Placemark] = {
     println(s"joinPlacemarks: ${p.featureData.name},  ${q.featureData.name}")
-    p
-  } // FIXME to include q
+    val gps: Seq[Geometry] = p.Geometry
+    val gqs = q.Geometry
+    val los: Seq[Option[LineString]] = for (gp <- gps; gq <- gqs) yield mergeLineStrings(gp, gq)
+    val z: Seq[LineString] = los filter (_.isDefined) map (_.get)
+    for {
+      xx <- p.featureData merge q.featureData
+    } yield Placemark(z)(xx)
+  }
 
   private def processFeature(f: Feature, fs: Seq[Feature]): Option[Feature] =
     f match {

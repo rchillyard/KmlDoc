@@ -1,6 +1,7 @@
 package com.phasmidsoftware.core
 
 import cats.effect.IO
+import com.phasmidsoftware.kmldoc.Mergeable
 import com.phasmidsoftware.xml.{Extractor, Extractors}
 import scala.collection.mutable
 import scala.util.matching.Regex
@@ -52,7 +53,9 @@ object Utilities {
   def show(node: Node)(f: String => Unit = println): IO[Unit] = IO(f(renderNode(node)))
 }
 
-case class Text($: CharSequence) {
+case class Text($: CharSequence) extends Mergeable[Text] {
+  def merge(t: Text): Option[Text] = Some(Text($.toString ++ t.$.toString))
+
   override def equals(obj: Any): Boolean = obj match {
     case text: Text => $ == text.$
     case _ => false
