@@ -10,12 +10,22 @@ import scala.util.parsing.combinator.JavaTokenParsers
  * Case class to represent the definition of a KML edit.
  *
  * @param command  the function of the edit.
+ * @param operands the number of operands required for this edit.
  * @param op1      the target of the edit.
  * @param maybeOp2 the result of the edit.
  */
-case class KmlEdit(command: String, op1: Element, maybeOp2: Option[Element])
+case class KmlEdit(command: String, operands: Int, op1: Element, maybeOp2: Option[Element])
 
 object KmlEdit {
+
+  def operands(command: String): Int = command match {
+    case KmlEdit.JOIN => 2
+    case KmlEdit.DELETE => 1
+    case _ => 0
+  }
+
+  def apply(command: String, op1: Element, maybeOp2: Option[Element]): KmlEdit = KmlEdit(command, operands(command), op1, maybeOp2)
+
   private val parser = KMLEditParser.apply
 
   /**

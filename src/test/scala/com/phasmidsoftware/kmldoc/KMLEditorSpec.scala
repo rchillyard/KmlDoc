@@ -11,13 +11,11 @@ class KMLEditorSpec extends AnyFlatSpec with should.Matchers {
   behavior of "KMLEditor"
 
   val placemark = "Placemark"
-  val join = "join"
-
   private val triedFilename: Success[String] = Success("src/main/resources/com/phasmidsoftware/kmldoc/placemarks.kml")
 
   // FIXME this doesn't actually work. We will fix it later.
   it should "processKMLs" in {
-    val editor = KMLEditor(Seq(KmlEdit(join, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)")))))
+    val editor = KMLEditor(Seq(KmlEdit(KmlEdit.JOIN, 2, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)"))), KmlEdit(KmlEdit.DELETE, 1, Element(placemark, "Medford Branch (#2)"), None)))
     val ksi: IO[Seq[KML]] = for {
       ks <- KMLCompanion.loadKML(triedFilename)
       ks2 = editor.processKMLs(ks)
@@ -29,8 +27,7 @@ class KMLEditorSpec extends AnyFlatSpec with should.Matchers {
         val folder = fs.head
         folder match {
           case Folder(features) =>
-            // TODO re-introduce this test
-//            features.size shouldBe 1
+            features.size shouldBe 1
             val p1 = features.head
             p1 match {
               case Placemark(g) =>
@@ -51,8 +48,8 @@ class KMLEditorSpec extends AnyFlatSpec with should.Matchers {
   it should "parse" in {
     val result: IO[KMLEditor] = KMLEditor.parse(Success("src/main/resources/com/phasmidsoftware/kmldoc/sampleEdits.txt"))
     result.unsafeRunSync() shouldBe KMLEditor(Seq(
-      KmlEdit(join, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)"))),
-      KmlEdit("delete", Element("Placemark", "Medford Branch (#2)"), None)
+      KmlEdit(KmlEdit.JOIN, 2, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)"))),
+      KmlEdit(KmlEdit.DELETE, 1, Element(placemark, "Medford Branch (#2)"), None)
     ))
   }
 

@@ -14,7 +14,7 @@ class KmlEditSpec extends AnyFlatSpec with should.Matchers {
   it should "apply" in {
     val world = Element("Hello", "World")
     val someElement = Some(Element("Goodbye", "Mr. Chips"))
-    val target = KmlEdit(join, world, someElement)
+    val target = KmlEdit(join, 2, world, someElement)
     target.command shouldBe join
     target.op1 shouldBe world
     target.maybeOp2 shouldBe someElement
@@ -25,7 +25,7 @@ class KmlEditSpec extends AnyFlatSpec with should.Matchers {
     val inputString = s"""$join $placemark "Medford Branch (#1)" with $placemark "Medford Branch (#2)""""
     val result: IO[KmlEdit] = KmlEdit.parse(inputString)
     val kmlEdit = result.unsafeRunSync()
-    kmlEdit shouldBe KmlEdit(join, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)")))
+    kmlEdit shouldBe KmlEdit(join, 2, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)")))
   }
 
   it should "parseLines" in {
