@@ -13,7 +13,6 @@ class KMLEditorSpec extends AnyFlatSpec with should.Matchers {
   val placemark = "Placemark"
   private val triedFilename: Success[String] = Success("src/main/resources/com/phasmidsoftware/kmldoc/placemarks.kml")
 
-  // FIXME this doesn't actually work. We will fix it later.
   it should "processKMLs" in {
     val editor = KMLEditor(Seq(KmlEdit(KmlEdit.JOIN, 2, Element(placemark, "Medford Branch (#1)"), Some(Element(placemark, "Medford Branch (#2)"))), KmlEdit(KmlEdit.DELETE, 1, Element(placemark, "Medford Branch (#2)"), None)))
     val ksi: IO[Seq[KML]] = for {
@@ -34,7 +33,8 @@ class KMLEditorSpec extends AnyFlatSpec with should.Matchers {
                 val lineString = g.head
                 lineString match {
                   case LineString(_, cs) =>
-                    cs.head.coordinates.size shouldBe 30 // + 25) // TODO we do need a total of 55
+                    cs.head.coordinates.size shouldBe 55
+                    // TODO check the ordering of the Coordinate values.
                 }
             }
         }

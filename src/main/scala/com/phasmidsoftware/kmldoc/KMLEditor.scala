@@ -98,6 +98,18 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
   }
 
   /**
+   * CONSIDER why do we not define mergeable Geometry?
+   *
+   * @param gp Geometry from p.
+   * @param gq Geometry from q.
+   * @return Option[LineString].
+   */
+  def mergeLineStrings(gp: Geometry, gq: Geometry): Option[LineString] = (gp, gq) match {
+    case (lp: LineString, lq: LineString) => lp merge lq
+    case _ => None
+  }
+
+  /**
    * Method to process the given Placemark with zero additional Features.
    *
    * @param p the Placemark to process. Theoretically, <code>p</code> could be some other type of Feature.
@@ -136,18 +148,6 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     }
 
   /**
-   * CONSIDER why do we not define mergeable Geometry?
-   *
-   * @param gp
-   * @param gq
-   * @return
-   */
-  def mergeLineStrings(gp: Geometry, gq: Geometry): Option[LineString] = (gp, gq) match {
-    case (lp: LineString, lq: LineString) => lp merge lq
-    case _ => None
-  }
-
-  /**
    * NOTE: we should implement this by making Placemark extend Mergeable.
    *
    * @param p the first Placemark.
@@ -172,8 +172,8 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
         val foos = for (e <- edits) yield processPlacemark(p, e, fs)
         // XXX we create a list (xs) of feature(s) corresponding to the defined results in foos.
         val xs = foos.filter(_.isDefined) map (_.get)
-        // XXX if xs has length 1, we return its head, otherwise we return f.
-        if (xs.size == 1) xs.head else Some(f)
+        // XXX if xs is not empty, we return its head, otherwise we return f.
+        if (xs.nonEmpty) xs.head else Some(f)
       case d: Document =>
         processHasFeatures(d)((t, fs) => Some(t.copy(features = fs)(d.containerData)))
       case x: Folder =>
