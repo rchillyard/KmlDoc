@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.implicits._
 import com.phasmidsoftware.args.Args
 import com.phasmidsoftware.core.FP.mapTryGuarded
+import com.phasmidsoftware.core.Text.namesMatch
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLs
 import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
 import com.phasmidsoftware.render.FormatXML
@@ -18,7 +19,7 @@ import scala.util.Try
  */
 case class KMLEditor(edits: Seq[KmlEdit]) {
 
-  println(s"KMLEditor: ${edits.mkString}")
+  System.err.println(s"KMLEditor: ${edits.mkString}") // TODO generate log message
 
   /**
    * Method to process the file defined by baseFilename by parsing it, editing it, and writing it out.
@@ -28,6 +29,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @return an IO[Unit] which needs to be run.
    */
   def process(baseFilename: Try[String]): IO[Unit] = {
+    System.err.println(s"KMLEditor.process $baseFilename") // TODO generate a log message
     val qsi: IO[Seq[Writer]] = for {
       w <- IO.fromTry(addExtension(baseFilename, "_out.kml"))
       f <- IO(new File(w))
@@ -93,6 +95,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @return an optional Feature which, if defined, is the new Placemark to be used instead of <code>p</code>.
    */
   def joinPlacemarks(p: Placemark, fs: Seq[Feature], name: String): Option[Feature] = {
+    System.err.println(s"join: ${p.featureData.name} with $name") // TODO generate a log message
     val zz = for (f <- fs if f != p) yield joinPlacemarks(p, name, f)
     for (z <- zz.find(_.isDefined); q <- z) yield q
   }
@@ -116,8 +119,10 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @param e the edit which may (or may not) apply to <code>p</code>.
    * @return an optional Feature.
    */
-  private def processPlacemark1(p: Placemark, e: KmlEdit): Option[Option[Feature]] = (p.featureData.name.$, e) match {
-    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, name1), None)) if name == name1 =>
+  private def processPlacemark1(p: Placemark, e: KmlEdit): Option[Option[Feature]] = (p.featureData.name, e) match {
+    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, name1), None))
+      if namesMatch(name, name1) =>
+      System.err.println(s"delete: ${p.featureData.name}") // TODO generate a log message
       Some(None)
     case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
       Some(Some(p))
@@ -134,8 +139,9 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @return an optional optional Feature.
    */
   private def processPlacemark2(p: Placemark, e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] =
-    (p.featureData.name.$, e) match {
-      case (name, KmlEdit(KmlEdit.JOIN, _, Element("Placemark", name1), Some(Element("Placemark", name2)))) if name == name1 =>
+    (p.featureData.name, e) match {
+      case (name, KmlEdit(KmlEdit.JOIN, _, Element("Placemark", name1), Some(Element("Placemark", name2))))
+        if namesMatch(name, name1) =>
         Some(joinPlacemarks(p, fs, name2))
       case _ =>
         None
@@ -143,7 +149,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
 
   private def joinPlacemarks(p: Placemark, name: String, feature: Feature): Option[Feature] =
     feature match {
-      case q: Placemark if q.featureData.name.$ == name => joinPlacemarks(p, q)
+      case q: Placemark if namesMatch(q.featureData.name, name) => joinPlacemarks(p, q)
       case _ => None
     }
 

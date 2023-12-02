@@ -556,23 +556,27 @@ object Renderers {
 
     val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
-    implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
-        (x: CharSequence, format: Format, stateR: StateR) =>
-            (x, format) match {
-                case (c: CDATA, _: FormatXML) => c.toXML
-                case _ => renderAttribute(x.toString, stateR.maybeName)
-            }
-    } ^^ "charSequenceRenderer"
+  implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
+    (x: CharSequence, format: Format, stateR: StateR) =>
+      (x, format) match {
+        case (c: CDATA, _: FormatXML) => c.toXML
+        // CONSIDER turning all other CharSequence into CDATA if appropriate.
+        case _ => renderAttribute(scrub(x), stateR.maybeName)
+      }
+  } ^^ "charSequenceRenderer"
 
-    implicit val stringRenderer: Renderer[String] = Renderer {
-        (x: String, _: Format, stateR: StateR) =>
-            renderAttribute(x, stateR.maybeName)
-    } ^^ "stringRenderer"
+  def scrub(x: CharSequence): String =
+    x.toString.replaceAll("<", "&lt;").replaceAll("&", "&amp;")
 
-    // CONSIDER why do we not get this from Renderers
-    implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+  implicit val stringRenderer: Renderer[String] = Renderer {
+    (x: String, _: Format, stateR: StateR) =>
+      renderAttribute(x, stateR.maybeName)
+  } ^^ "stringRenderer"
 
-    implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
+  // CONSIDER why do we not get this from Renderers
+  implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+
+  implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
 
     implicit val intRenderer: Renderer[Int] = Renderer {
         (t: Int, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)

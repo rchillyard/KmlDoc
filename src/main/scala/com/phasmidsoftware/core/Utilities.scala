@@ -2,7 +2,7 @@ package com.phasmidsoftware.core
 
 import cats.effect.IO
 import com.phasmidsoftware.kmldoc.Mergeable
-import com.phasmidsoftware.xml.{Extractor, Extractors}
+import com.phasmidsoftware.xml.{CDATA, Extractor, Extractors}
 import scala.collection.mutable
 import scala.util.matching.Regex
 import scala.xml.{Elem, Node, NodeSeq}
@@ -54,6 +54,15 @@ object Utilities {
 }
 
 case class Text($: CharSequence) extends Mergeable[Text] {
+  /**
+   * Method to merge this and another Text element.
+   *
+   * TODO: we should add a delimiter
+   * TODO: we should merge CDATA elements
+   *
+   * @param t the object to be merged with this.
+   * @return the merged value of T.
+   */
   def merge(t: Text): Option[Text] = Some(Text($.toString ++ t.$.toString))
 
   override def equals(obj: Any): Boolean = obj match {
@@ -63,6 +72,12 @@ case class Text($: CharSequence) extends Mergeable[Text] {
 }
 
 object Text extends Extractors {
+
+  def namesMatch(name: Text, name1: String): Boolean = name.$ match {
+    case c: CDATA => c.toString == name1
+    case x: CharSequence => x.toString == name1
+    case _ => false
+  }
 
   /**
    * Text extractor.
