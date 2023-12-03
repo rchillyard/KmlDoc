@@ -38,7 +38,27 @@ case class SmartBuffer(sb: StringBuilder) {
     s
   }
 
-  def result: String = sb.result()
+  /**
+   * Get the resulting String.
+   *
+   * NOTE: this method contains a hack which collapses output of the form &lt;tag ...&gt;&lt;/tag&gt; into &lt;tag .../&gt;
+   * As such, it is useful for e.g. hotSpot which has no children.
+   *
+   * NOTE: the method assumes there is at most one newline character at the beginning of the string.
+   *
+   * @return
+   */
+  def result: String = {
+    val str = sb.result()
+    if (str.isEmpty) str
+    else {
+      val regex = """(\s*)<([a-zA-Z0-9 ="]+)></(\w+)>""".r
+      str.substring(1) match {
+        case regex(p, q, _) => str.substring(0, 1) + p + "<" + q + "/>"
+        case _ => str
+      }
+    }
+  }
 
   override def toString: String = sb.toString
 

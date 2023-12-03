@@ -702,9 +702,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       |  <Icon>
       |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
       |  </Icon>
-      |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+      |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
       |</IconStyle>""".stripMargin
-  private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>"
+  private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"/>\n  </IconStyle>"
   private val balloonStyleText = "<BalloonStyle>\n    <text>\n<![CDATA[<h3>$[name]</h3>]]>\n</text>\n  </BalloonStyle>"
   private val labelStyleText = "<LabelStyle>\n    <scale>0</scale>\n  </LabelStyle>"
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
@@ -744,7 +744,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
              |  <Icon>
              |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
              |  </Icon>
-             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
              |</IconStyle>""".stripMargin)
       case Failure(x) => fail(x)
     }
@@ -850,7 +850,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                  |    <Icon>
                  |      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
                  |    </Icon>
-                 |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+                 |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
                  |  </IconStyle>
                  |  <BalloonStyle>
                  |    <text>$cdata</text>
