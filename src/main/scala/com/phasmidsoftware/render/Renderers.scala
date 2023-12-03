@@ -1,9 +1,9 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.core.{Text, XmlException}
+import com.phasmidsoftware.core.{CDATA, Text, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.{doNestedRender, doRenderSequence, renderAttribute, renderOuter}
-import com.phasmidsoftware.xml.{CDATA, Extractor}
+import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
 import scala.reflect.ClassTag

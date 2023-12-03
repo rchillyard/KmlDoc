@@ -1,10 +1,10 @@
 package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.Utilities.parseUnparsed
-import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
+import com.phasmidsoftware.core.{CDATA, Text, TryUsing, XmlException}
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
-import com.phasmidsoftware.xml.{CDATA, Extractor, Extractors, RichXml}
+import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -89,7 +89,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case Style(styles) =>
             styles.size shouldBe 1
             styles.head match {
-              case b@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
+              case b@BalloonStyle(text, _, _, _) =>
                 val expectedText =
                   """
                     |          <b>$[name]</b>
@@ -224,8 +224,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </Point>
     </xml>
     extractMulti[Seq[Geometry]](xml / "_") match {
-      case Success(gs) => fail("should not succeed")
-      case Failure(x) =>
+      case Success(_) => fail("should not succeed")
+      case Failure(_) =>
     }
   }
 
@@ -732,7 +732,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
             maybeHeading shouldBe None
             x.colorStyleData match {
-              case c@ColorStyleData(maybeColor, maybeColorMode) =>
+              case c@ColorStyleData(_, _) =>
                 println(c)
             }
         }
@@ -809,7 +809,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
               case x@LabelStyle(scale) =>
                 scale shouldBe Scale(0)(KmlData.nemo)
                 x.colorStyleData match {
-                  case c@ColorStyleData(color, maybeColorMode) =>
+                  case c@ColorStyleData(_, _) =>
                     println(c)
                 }
             }
@@ -820,7 +820,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
                 maybeHeading shouldBe None
                 x.colorStyleData match {
-                  case c@ColorStyleData(color, maybeColorMode) =>
+                  case c@ColorStyleData(_, _) =>
                     println(c)
                 }
             }
@@ -833,7 +833,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 maybeTextColor shouldBe None
                 maybeDisplayMode shouldBe None
                 x.colorStyleData match {
-                  case c@ColorStyleData(color, maybeColorMode) =>
+                  case c@ColorStyleData(_, _) =>
                     println(c)
                 }
             }
@@ -857,7 +857,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                  |  </BalloonStyle>
                  |</Style>""".stripMargin
             wy.get shouldBe expected
-          case m@StyleMap(pairs) =>
+          case StyleMap(pairs) =>
             pairs.size shouldBe 2
             pairs.head match {
               case Pair(key, styleUrl) =>
@@ -979,7 +979,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </StyleMap>
     </xml>
     extractMulti[Seq[StyleSelector]](xml / "StyleMap") match {
-      case Failure(x: XmlException) =>
+      case Failure(_: XmlException) =>
       case z => fail(s"should be at least one Pair: $z")
     }
   }
@@ -4044,7 +4044,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         containers.head match {
           case document@Document(features) =>
             document.containerData.featureData match {
-              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors, abstractView) =>
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, _, styleSelectors, _) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
@@ -4103,7 +4103,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         containers.head match {
           case document@Document(features) =>
             document.containerData.featureData match {
-              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors, abstractView) =>
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, _, styleSelectors, _) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW).  Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None

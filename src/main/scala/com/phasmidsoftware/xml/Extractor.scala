@@ -2,7 +2,7 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving}
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
-import com.phasmidsoftware.core.{LowerCaseInitialRegex, MissingFieldException, SmartBuffer, XmlException}
+import com.phasmidsoftware.core._
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
@@ -11,7 +11,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Node, NodeSeq, PCData}
+import scala.xml.{Node, NodeSeq}
 
 /**
  * Trait to define the behavior of an extractor (parser) which can will take an XML Node
@@ -550,55 +550,4 @@ object ChildNames {
         case Extractor.plural(x) => Seq(x)
         case _ => map.getOrElse(member, Seq(member))
       })
-}
-
-object TagProperties {
-  def addMustMatch(tag: String): Unit = mustMatchList += tag
-
-  def mustMatch(tag: String): Boolean = mustMatchList.contains(tag)
-
-  private val mustMatchList = mutable.Set[String]()
-}
-
-/**
- * Case class to represent a CDATA node.
- *
- * @param content the payload of the CDATA node (will contain <, >, & characters).
- * @param pre     the prefix (probably a newline).
- * @param post    the postfix (probably a newline).
- */
-case class CDATA(content: String, pre: String, post: String) extends CharSequence {
-  def toXML: Try[String] = Success(s"""$pre<![CDATA[$content]]>$post""")
-
-  def length(): Int = content.length()
-
-  def charAt(index: Int): Char = content.charAt(index)
-
-  def subSequence(start: Int, end: Int): CharSequence = content.subSequence(start, end)
-
-  override def toString: String = s"$pre$content$post"
-}
-
-/**
- * Companion object to CDATA.
- */
-object CDATA {
-
-  def apply(x: String, pre: String, post: String): CDATA = new CDATA(x, trimSpace(pre), trimSpace(post))
-
-  def apply(x: String): CDATA = apply(x, "", "")
-
-  def wrapped(x: String): CDATA = apply(x, "\n", "\n")
-
-  private def trimSpace(w: String): String = {
-    val sb = new StringBuilder(w)
-    SmartBuffer.trimStringBuilder(sb)
-    sb.toString()
-  }
-
-  def unapply(node: Node): Option[CDATA] = node.child match {
-    case Seq(pre, PCData(x), post) => Some(CDATA(x, pre.text, post.text))
-    case Seq(PCData(x)) => Some(CDATA(x))
-    case _ => None
-  }
 }
