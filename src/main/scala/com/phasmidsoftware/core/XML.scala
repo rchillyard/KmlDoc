@@ -19,7 +19,11 @@ case class Text($: CharSequence) extends Mergeable[Text] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Text): Option[Text] = Some(Text($.toString ++ t.$.toString))
+  def merge(t: Text): Option[Text] = ($, t.$) match {
+    case (c1: CDATA, c2: CDATA) => c1 merge c2 map (Text(_))
+    case _ => Some(Text($.toString + " " + t.$.toString))
+  }
+
 
   override def equals(obj: Any): Boolean = obj match {
     case text: Text => $ == text.$
@@ -30,7 +34,7 @@ case class Text($: CharSequence) extends Mergeable[Text] {
 object Text extends Extractors {
 
   def namesMatch(name: Text, name1: String): Boolean = name.$ match {
-    case c: CDATA => c.toString == name1
+    case c: CDATA => c.content == name1
     case x: CharSequence => x.toString == name1
     case _ => false
   }
@@ -62,7 +66,7 @@ object TagProperties {
  * @param pre     the prefix (probably a newline).
  * @param post    the postfix (probably a newline).
  */
-case class CDATA(content: String, pre: String, post: String) extends CharSequence {
+case class CDATA(content: String, pre: String, post: String) extends CharSequence with Mergeable[CDATA] {
   def toXML: Try[String] = Success(s"""$pre<![CDATA[$content]]>$post""")
 
   def length(): Int = content.length()
@@ -72,6 +76,16 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
   def subSequence(start: Int, end: Int): CharSequence = content.subSequence(start, end)
 
   override def toString: String = s"$pre$content$post"
+
+  /**
+   * Merge this mergeable object with <code>t</code>.
+   *
+   * @param t the object to be merged with this.
+   * @return the merged value of T.
+   */
+  def merge(t: CDATA): Option[CDATA] = Some(CDATA(content + separator(post, t.pre) + t.content, pre, t.post))
+
+  private def separator(a: String, b: String): String = (a + b).replaceAll("\n", "<br>")
 }
 
 /**

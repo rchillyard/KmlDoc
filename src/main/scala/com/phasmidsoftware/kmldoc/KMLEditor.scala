@@ -10,7 +10,7 @@ import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
 import com.phasmidsoftware.render.FormatXML
 import java.io.{BufferedWriter, File, FileWriter, Writer}
 import scala.io.Source
-import scala.util.Try
+import scala.util._
 
 /**
  * Case class to represent a set of KmlEdit objects.
@@ -25,16 +25,35 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * Method to process the file defined by baseFilename by parsing it, editing it, and writing it out.
    * The input file extension is ".kml" and the output file suffix is "_out.kml"
    *
-   * @param baseFilename the base filename.
+   * @param filename the input filename, including the extension (".kml")
    * @return an IO[Unit] which needs to be run.
    */
-  def process(baseFilename: Try[String]): IO[Unit] = {
-    System.err.println(s"KMLEditor.process $baseFilename") // TODO generate a log message
+  def process(filename: Try[String]): IO[Unit] = {
+    val kml = """.kml"""
+    val baseFilename = filename flatMap (f => if (f.endsWith(kml)) Success(f.replaceAll("""\""" + kml, "")) else Failure(new Exception("Syntax error: filename does not end with .kml")))
+    val inputFile = addExtension(baseFilename, kml)
+    val outExt = "_out" + kml
+    val outputFile = addExtension(baseFilename, outExt)
+    inputFile foreach (f => System.err.println(s"KMLEditor.process from $f")) // TODO generate a log message
+    outputFile foreach (f => System.err.println(s"KMLEditor.process to $f")) // TODO generate a log message
+    processFromTo(inputFile, outputFile)
+  }
+
+  /**
+   * Method to process the file defined by baseFilename by parsing it, editing it, and writing it out.
+   * The input file extension is ".kml" and the output file suffix is "_out.kml"
+   *
+   * @param inputFile the input file name, wrapped in Try.
+   * @param outputFile the output file name, wrapped in Try.
+   * @return an IO[Unit] which needs to be run.
+   */
+  def processFromTo(inputFile: Try[String], outputFile: Try[String]): IO[Unit] = {
     val qsi: IO[Seq[Writer]] = for {
-      w <- IO.fromTry(addExtension(baseFilename, "_out.kml"))
+      w <- IO.fromTry(outputFile)
+      _ = println(w)
       f <- IO(new File(w))
       bW = new BufferedWriter(new FileWriter(f, false))
-      ks <- KMLCompanion.loadKML(addExtension(baseFilename, ".kml"))
+      ks <- KMLCompanion.loadKML(inputFile)
       ks2 = processKMLs(ks)
       ws <- renderKMLs(ks2, FormatXML(0))
       qs <- write(bW, ws).sequence
@@ -219,6 +238,4 @@ object KMLEditor {
   private def write(bW: BufferedWriter, ws: Seq[String]): Seq[IO[Writer]] = for (w <- ws) yield IO(bW.append(w))
 
   private def addExtension(triedBasename: Try[String], ext: String): Try[String] = triedBasename map (_ + ext)
-
-  private def addExt(basename: String, ext: String): String = basename + ext
 }
