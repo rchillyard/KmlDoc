@@ -250,7 +250,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Document3(1, None, List(Empty, Empty)))
   }
 
-  // FIXME this should be just like the previous test
+  // TODO this should be just like the previous test
   ignore should "extractor3B" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
@@ -258,7 +258,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     </xml>
     import MyExtractors._
     val extracted = implicitly[Extractor[Document3]].extract(xml) // XXX Three empties
-    // FIXME check that the following is correct: shouldn't there be only two Empty elements?
+    // TODO check that the following is correct: shouldn't there be only two Empty elements?
     extracted shouldBe Success(Document3(1, Some(Junk()), List(Empty, Empty)))
   }
 

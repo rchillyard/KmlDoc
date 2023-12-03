@@ -24,6 +24,23 @@ object KmlEdit {
     case _ => 0
   }
 
+  /**
+   * Process the given feature set and return a new feature set that is the result of the processing.
+   *
+   * @param edit the Edit to be applied.
+   * @param fs   a sequence of Feature, the children of a particular object that extends HasFeatures (i.e. Kml, Document, or Folder).
+   * @return a (potentially) different sequence of Feature.
+   */
+  def editFeatures(edit: KmlEdit, fs: Seq[Feature]): Seq[Feature] = for (f <- fs; z <- f.editToOption(edit, fs)) yield z
+
+  /**
+   * Method to create a KmlEdit from a command, an Element, and an optional Element.
+   *
+   * @param command  the command string.
+   * @param op1      the first element.
+   * @param maybeOp2 (optional) second element.
+   * @return a KmlEdit.
+   */
   def apply(command: String, op1: Element, maybeOp2: Option[Element]): KmlEdit = KmlEdit(command, operands(command), op1, maybeOp2)
 
   private val parser = KMLEditParser.apply
@@ -35,7 +52,6 @@ object KmlEdit {
    * @return an IO[KmlEdit].
    */
   def parse(w: String): IO[KmlEdit] = IO.fromTry(parser.parseEdit(w -> 0)) // need to get the line sequence number
-//    IO(KmlEdit("noop", Element("", ""), None)) // FIXME
 
   /**
    * Method to parse an iterator of lines of text.

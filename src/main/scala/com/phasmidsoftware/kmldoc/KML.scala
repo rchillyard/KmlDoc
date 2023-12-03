@@ -4,7 +4,9 @@ import cats.effect.IO
 import cats.effect.IO.fromTry
 import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core._
+import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLToPrintStream
+import com.phasmidsoftware.kmldoc.KmlEdit.editFeatures
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
 import com.phasmidsoftware.render._
@@ -72,7 +74,24 @@ object KmlData extends Extractors with Renderers {
  *
  * TODO add Overlay, NetworkLink.
  */
-trait Feature extends KmlObject
+trait Feature extends KmlObject {
+
+  /**
+   * Method to edit this Feature, given a sequence of sibling Features such that we may be able to combine features.
+   *
+   * @param e  the edit to apply.
+   * @param fs the siblings (which actually do include this itself).
+   * @return an optional Feature.
+   */
+  def editToOption(e: KmlEdit, fs: Seq[Feature]): Option[Feature] =
+    this match {
+      case p: Placemark => p.editToOptionOption(e, fs).getOrElse(Some(this)) // CONSIDER returning None
+      case d: Document => editHasFeaturesToOption(d)(e)(_fs => d.copy(features = _fs)(d.containerData))
+      case x: Folder => editHasFeaturesToOption(x)(e)(_fs => x.copy(features = _fs)(x.containerData))
+      case _ => Some(this) // Container // CONSIDER returning None
+    }
+
+}
 
 /**
  * Companion object to Feature.
@@ -135,6 +154,24 @@ trait HasFeatures {
   val features: Seq[Feature]
 }
 
+object HasFeatures {
+
+  /**
+   * Method to edit an object that has features.
+   *
+   * @param edit the edit to be applied.
+   * @param t    the object to edit.
+   * @param g    a function which takes a Seq[Feature] and creates an optional new copy of the T based on the provided Feature sequence.
+   * @tparam T the type of <code>t</code>.
+   * @return an optional copy of <code>t</code> with a (potentially) new set of features.
+   */
+  def editHasFeaturesToOption[T](t: T)(edit: KmlEdit)(g: Seq[Feature] => T): Option[T] = t match {
+    case h: HasFeatures => Some(g(editFeatures(edit, h.features)))
+    case _ => throw new Exception(s"editHasFeaturesToOption: parameter t does not extend HasFeatures: ${t.getClass}")
+  }
+
+}
+
 trait HasName {
   def name: Text
 }
@@ -145,7 +182,16 @@ trait HasName {
  *
  * See [[https://developers.google.com/kml/documentation/kmlreference#geometry Geometry]]
  */
-trait Geometry extends KmlObject
+trait Geometry extends KmlObject with Mergeable[Geometry] {
+
+  /**
+   * Merge this mergeable object with <code>t</code>.
+   *
+   * @param t the object to be merged with this.
+   * @return the merged value of T.
+   */
+  def merge(t: Geometry): Option[Geometry] = throw KmlException(s"merge not implemented for this class: ${t.getClass}")
+}
 
 /**
  * Companion object to Geometry.
@@ -351,10 +397,92 @@ object SubStyleData extends Extractors with Renderers {
  * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
  * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
  */
-case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName {
+case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] {
+
+  /**
+   * Merge this mergeable object with <code>t</code>.
+   *
+   * @param t the object to be merged with this.
+   * @return the merged value of T.
+   */
+  def merge(t: Placemark): Option[Placemark] = {
+    println(s"joinPlacemarks: $name,  ${t.name}")
+    val gps: Seq[Geometry] = this.Geometry
+    val gqs = t.Geometry
+    val los: Seq[Option[Geometry]] = for (gp <- gps; gq <- gqs) yield gp.merge(gq)
+    val z: Seq[Geometry] = los filter (_.isDefined) map (_.get)
+    for {
+      xx <- this.featureData merge t.featureData
+    } yield Placemark(z)(xx)
+  }
+
   override def toString: String = s"Placemark: name=${name.$} with ${Geometry.size} geometries"
 
   def name: Text = featureData.name
+
+  /**
+   * Method to edit this Feature, given a sequence of sibling Features such that we may be able to combine features.
+   *
+   * @param e  the edit which may (or may not) apply to <code>this</code>.
+   * @param fs a sequence of Features which are the children of <code>this</code>'s family (including <code>p</code> itself).
+   * @return an optional Feature.
+   */
+  def editToOptionOption(e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] = e.operands match {
+    case 1 => editMatching1(e)
+    case 2 => editMatchingPlacemark2(e, fs)
+  }
+
+  /**
+   * Method to edit the given Placemark with zero additional Features.
+   *
+   * @param e the edit which may (or may not) apply to <code>this</code>.
+   * @return an optional Feature.
+   */
+  private def editMatching1(e: KmlEdit) = (name, e) match {
+    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, nameToMatch), None))
+      if name.matches(nameToMatch) =>
+      System.err.println(s"delete: $nameToMatch") // TODO generate a log message
+      Some(None)
+    case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
+      Some(Some(this))
+    case _ =>
+      None
+  }
+
+  /**
+   * Method to process the given Placemark with one additional Features.
+   *
+   * @param e  the edit which may (or may not) apply to <code>p</code>.
+   * @param fs a sequence of Features which are the children of <code>p</code>'s family (including <code>p</code> itself).
+   * @return an optional optional Feature.
+   */
+  private def editMatchingPlacemark2(e: KmlEdit, fs: Seq[Feature]) =
+    (name, e) match {
+      case (name, KmlEdit(KmlEdit.JOIN, _, Element("Placemark", nameToMatch1), Some(Element("Placemark", nameToMatch2))))
+        if name.matches(nameToMatch1) =>
+        Some(joinMatchedPlacemarks(fs, nameToMatch2))
+      case _ =>
+        None
+    }
+
+  /**
+   * Method to join two Placemarks together.
+   *
+   * @param fs          the potential features to be joined with <code>p</code>. These are the siblings of <code>p</code> itself.
+   * @param nameToMatch the name of the feature to be joined, as defined by the edit.
+   * @return an optional Feature which, if defined, is the new Placemark to be used instead of <code>p</code>.
+   */
+  private def joinMatchedPlacemarks(fs: Seq[Feature], nameToMatch: String) = {
+    System.err.println(s"join: $name with $nameToMatch") // TODO generate a log message
+    val zz = for (f <- fs if f != this) yield joinMatchingPlacemarks(nameToMatch, f)
+    for (z <- zz.find(_.isDefined); q <- z) yield q
+  }
+
+  private def joinMatchingPlacemarks(name: String, feature: Feature) =
+    feature match {
+      case q: Placemark if q.name.matches(name) => this merge q
+      case _ => None
+    }
 }
 
 /**
@@ -427,17 +555,21 @@ object Point extends Extractors with Renderers {
  * @param tessellate  the tessellation.
  * @param coordinates a sequence of Coordinates objects.
  */
-case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry with Mergeable[LineString] {
+case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry {
 
   import Coordinates.empty
 
-  def merge(l: LineString): Option[LineString] = for {
-    t <- tessellate merge l.tessellate
-    g <- geometryData merge l.geometryData
-    c <- mergeSequence(coordinates)(empty).headOption
-    d <- mergeSequence(l.coordinates)(empty).headOption
-    z <- c merge d
-  } yield LineString(t, Seq(z))(g)
+  override def merge(g: Geometry): Option[Geometry] = g match {
+    case l@LineString(_, _) =>
+      for {
+        t <- tessellate merge l.tessellate
+        g <- geometryData merge l.geometryData
+        c <- mergeSequence(coordinates)(empty).headOption
+        d <- mergeSequence(l.coordinates)(empty).headOption
+        z <- c merge d
+      } yield LineString(t, Seq(z))(g)
+  }
+
 }
 
 object LineString extends Extractors with Renderers {
@@ -1262,7 +1394,17 @@ object AltitudeMode extends Extractors with Renderers {
  *
  * @param features a sequence of Feature (typically Document).
  */
-case class KML(features: Seq[Feature]) extends HasFeatures
+case class KML(features: Seq[Feature]) extends HasFeatures {
+
+  /**
+   * Method to edit a KML object.
+   *
+   * @param e an edit to be applied to the given KML.
+   * @return an optional KML that, if defined, is different from the input.
+   */
+  def edit(e: KmlEdit): Option[KML] = for (z <- editHasFeaturesToOption(this)(e)(fs => copy(features = fs))) yield z
+
+}
 
 /**
  * Companion object to class KML.
@@ -1488,3 +1630,5 @@ object Mergeable {
    */
   def mergeStringsDelimited(ao: Option[String], bo: Option[String])(delimiter: String): Option[String] = mergeOptions(ao, bo)((a, b) => Some(s"$a$delimiter$b"))
 }
+
+case class KmlException(str: String) extends Exception(str)

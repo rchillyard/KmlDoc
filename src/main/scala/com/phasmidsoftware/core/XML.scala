@@ -13,9 +13,6 @@ case class Text($: CharSequence) extends Mergeable[Text] {
   /**
    * Method to merge this and another Text element.
    *
-   * TODO: we should add a delimiter
-   * TODO: we should merge CDATA elements
-   *
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
