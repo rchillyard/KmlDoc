@@ -24,6 +24,17 @@ case class Text($: CharSequence) extends Mergeable[Text] {
     case _ => Some(Text($.toString + " " + t.$.toString))
   }
 
+  /**
+   * Method to determine if this Text matches the given name.
+   *
+   * @param name the name to match
+   * @return true if the this matches name.
+   */
+  def matches(name: String): Boolean = $ match {
+    case c: CDATA => c.content == name
+    case x: CharSequence => x.toString == name
+    case _ => false
+  }
 
   override def equals(obj: Any): Boolean = obj match {
     case text: Text => $ == text.$
@@ -32,12 +43,6 @@ case class Text($: CharSequence) extends Mergeable[Text] {
 }
 
 object Text extends Extractors {
-
-  def namesMatch(name: Text, name1: String): Boolean = name.$ match {
-    case c: CDATA => c.content == name1
-    case x: CharSequence => x.toString == name1
-    case _ => false
-  }
 
   /**
    * Text extractor.

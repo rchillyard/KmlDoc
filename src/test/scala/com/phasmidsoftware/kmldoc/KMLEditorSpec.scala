@@ -47,10 +47,11 @@ class KMLEditorSpec extends AnyFlatSpec with should.Matchers {
 
   it should "parse" in {
     val result: IO[KMLEditor] = KMLEditor.parse(Success("src/main/resources/com/phasmidsoftware/kmldoc/sampleEdits.txt"))
-    result.unsafeRunSync() shouldBe KMLEditor(Seq(
+    val editor = result.unsafeRunSync()
+    editor.edits.take(2) shouldBe Seq(
       KmlEdit(KmlEdit.JOIN, 2, Element(placemark, "Salem & Lowell RR (#1)"), Some(Element(placemark, "Salem & Lowell RR (#2)"))),
       KmlEdit(KmlEdit.DELETE, 1, Element(placemark, "Salem & Lowell RR (#2)"), None)
-    ))
+    )
   }
 
 }

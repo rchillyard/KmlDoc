@@ -99,7 +99,7 @@ object Feature extends Extractors with Renderers {
  * @param StyleSelectors   a sequence of StyleSelectors: Seq[StyleSelector].
  * @param kmlData          (auxiliary) member: KmlData.
  */
-case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector], abstractView: Seq[AbstractView])(val kmlData: KmlData) extends Mergeable[FeatureData] {
+case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl: Option[Text], maybeOpen: Option[Open], maybeVisibility: Option[Visibility], StyleSelectors: Seq[StyleSelector], abstractView: Seq[AbstractView])(val kmlData: KmlData) extends Mergeable[FeatureData] with HasName {
   /**
    * Method to merge FeatureData objects.
    *
@@ -130,6 +130,10 @@ object FeatureData extends Extractors with Renderers {
  */
 trait HasFeatures {
   val features: Seq[Feature]
+}
+
+trait HasName {
+  def name: Text
 }
 
 /**
@@ -344,7 +348,11 @@ object SubStyleData extends Extractors with Renderers {
  * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
  * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
  */
-case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature
+case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName {
+  override def toString: String = s"Placemark: name=${name.$} with ${Geometry.size} geometries"
+
+  def name: Text = featureData.name
+}
 
 /**
  * Companion object to Placemark.
@@ -632,7 +640,11 @@ object ColorStyleData extends Extractors with Renderers {
  * @param features      a sequence of Feature elements (where Feature is an abstract super-type).
  * @param containerData the ContainerData (auxiliary property).
  */
-case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures
+case class Folder(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures with HasName {
+  def name: Text = containerData.featureData.name
+
+  override def toString: String = s"Folder: name=${name.$} with ${features.size} features"
+}
 
 /**
  * Companion object to Folder.
@@ -653,7 +665,11 @@ object Folder extends Extractors with Renderers {
  * @param features      a sequence of Features.
  * @param containerData ContainerData (auxiliary property).
  */
-case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures
+case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures with HasName {
+  def name: Text = containerData.featureData.name
+
+  override def toString: String = s"Document: name=${name.$} with ${features.size} features"
+}
 
 /**
  * Companion object to Document.

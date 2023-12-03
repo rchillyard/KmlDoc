@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.implicits._
 import com.phasmidsoftware.args.Args
 import com.phasmidsoftware.core.FP.mapTryGuarded
-import com.phasmidsoftware.core.Text.namesMatch
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLs
 import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
 import com.phasmidsoftware.render.FormatXML
@@ -71,30 +70,32 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @return an optional Feature.
    */
   def processPlacemark(p: Placemark, e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] = e.operands match {
-    case 1 => processPlacemark1(p, e)
-    case 2 => processPlacemark2(p, e, fs)
+    case 1 => processMatchingPlacemark1(p, e)
+    case 2 => processMatchingPlacemark2(p, e, fs)
   }
 
   /**
    * Method to process an object that has features.
    *
-   * @param t the object to process.
-   * @param g a function which takes a tuple of T and Seq[Feature] and creates an optional new copy of the T based on the given Feature sequence.
+   * @param edit the edit to be applied.
+   * @param t    the object to process.
+   * @param g    a function which takes a tuple of T and Seq[Feature] and creates an optional new copy of the T based on the given Feature sequence.
    * @tparam T the type of <code>t</code>.
    * @return an optional copy of <code>t</code> with a (potentially) new set of features.
    */
-  def processHasFeatures[T](t: T)(g: (T, Seq[Feature]) => Option[T]): Option[T] = t match {
-    case h: HasFeatures => g(t, processFeatures(h.features))
+  def processHasFeatures[T](t: T)(edit: KmlEdit)(g: (T, Seq[Feature]) => Option[T]): Option[T] = t match {
+    case h: HasFeatures => g(t, processFeatures(edit, h.features))
     case _ => throw new Exception(s"processHasFeatures: parameter t does not extend HasFeatures: ${t.getClass}")
   }
 
   /**
    * Process the given feature set and return a new feature set that is the result of the processing.
    *
-   * @param fs a sequence of Feature, the children of a particular object that extends HasFeatures (i.e. Kml, Document, or Folder).
+   * @param edit the Edit to be applied.
+   * @param fs   a sequence of Feature, the children of a particular object that extends HasFeatures (i.e. Kml, Document, or Folder).
    * @return a (potentially) different sequence of Feature.
    */
-  def processFeatures(fs: Seq[Feature]): Seq[Feature] = for (f <- fs; z <- processFeature(f, fs)) yield z
+  def processFeatures(edit: KmlEdit, fs: Seq[Feature]): Seq[Feature] = for (f <- fs; z <- processFeature(edit, f, fs)) yield z
 
   /**
    * Method to process a sequence of KML objects.
@@ -103,19 +104,19 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @param ks a sequence of KML.
    * @return a sequence of KML, quite possibly different from the input sequence.
    */
-  def processKMLs(ks: Seq[KML]): Seq[KML] = for (k <- ks; z <- processHasFeatures(k)((t, fs) => Some(t.copy(features = fs)))) yield z
+  def processKMLs(ks: Seq[KML]): Seq[KML] = for (k <- ks; z <- processHasFeatures(k)(null)((t, fs) => Some(t.copy(features = fs)))) yield z
 
   /**
    * Method to join two Placemarks together.
    *
-   * @param p    the Placemark
-   * @param fs   the potential features to be joined with <code>p</code>. These are the siblings of <code>p</code> itself.
-   * @param name the name of the feature to be joined, as defined by the edit.
+   * @param p           the Placemark
+   * @param fs          the potential features to be joined with <code>p</code>. These are the siblings of <code>p</code> itself.
+   * @param nameToMatch the name of the feature to be joined, as defined by the edit.
    * @return an optional Feature which, if defined, is the new Placemark to be used instead of <code>p</code>.
    */
-  def joinPlacemarks(p: Placemark, fs: Seq[Feature], name: String): Option[Feature] = {
-    System.err.println(s"join: ${p.featureData.name} with $name") // TODO generate a log message
-    val zz = for (f <- fs if f != p) yield joinPlacemarks(p, name, f)
+  def joinMatchedPlacemarks(p: Placemark, fs: Seq[Feature], nameToMatch: String): Option[Feature] = {
+    System.err.println(s"join: ${p.featureData.name} with $nameToMatch") // TODO generate a log message
+    val zz = for (f <- fs if f != p) yield joinMatchingPlacemarks(p, nameToMatch, f)
     for (z <- zz.find(_.isDefined); q <- z) yield q
   }
 
@@ -138,10 +139,10 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @param e the edit which may (or may not) apply to <code>p</code>.
    * @return an optional Feature.
    */
-  private def processPlacemark1(p: Placemark, e: KmlEdit): Option[Option[Feature]] = (p.featureData.name, e) match {
-    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, name1), None))
-      if namesMatch(name, name1) =>
-      System.err.println(s"delete: ${p.featureData.name}") // TODO generate a log message
+  private def processMatchingPlacemark1(p: Placemark, e: KmlEdit): Option[Option[Feature]] = (p.featureData.name, e) match {
+    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, nameToMatch), None))
+      if name.matches(nameToMatch) =>
+      System.err.println(s"delete: $nameToMatch") // TODO generate a log message
       Some(None)
     case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
       Some(Some(p))
@@ -157,18 +158,18 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @param fs a sequence of Features which are the children of <code>p</code>'s family (including <code>p</code> itself).
    * @return an optional optional Feature.
    */
-  private def processPlacemark2(p: Placemark, e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] =
+  private def processMatchingPlacemark2(p: Placemark, e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] =
     (p.featureData.name, e) match {
-      case (name, KmlEdit(KmlEdit.JOIN, _, Element("Placemark", name1), Some(Element("Placemark", name2))))
-        if namesMatch(name, name1) =>
-        Some(joinPlacemarks(p, fs, name2))
+      case (name, KmlEdit(KmlEdit.JOIN, _, Element("Placemark", nameToMatch1), Some(Element("Placemark", nameToMatch2))))
+        if name.matches(nameToMatch1) =>
+        Some(joinMatchedPlacemarks(p, fs, nameToMatch2))
       case _ =>
         None
     }
 
-  private def joinPlacemarks(p: Placemark, name: String, feature: Feature): Option[Feature] =
+  private def joinMatchingPlacemarks(p: Placemark, name: String, feature: Feature): Option[Feature] =
     feature match {
-      case q: Placemark if namesMatch(q.featureData.name, name) => joinPlacemarks(p, q)
+      case q: Placemark if q.name.matches(name) => joinPlacemarks(p, q)
       case _ => None
     }
 
@@ -190,7 +191,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     } yield Placemark(z)(xx)
   }
 
-  private def processFeature(f: Feature, fs: Seq[Feature]): Option[Feature] =
+  private def processFeature(edit: KmlEdit, f: Feature, fs: Seq[Feature]) =
     f match {
       case p: Placemark =>
         // XXX we create a list (foos) of optional features, each element of the list arising from a particular edit. There should be at most one defined result.
@@ -200,9 +201,9 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
         // XXX if xs is not empty, we return its head, otherwise we return f.
         if (xs.nonEmpty) xs.head else Some(f)
       case d: Document =>
-        processHasFeatures(d)((t, fs) => Some(t.copy(features = fs)(d.containerData)))
+        processHasFeatures(d)(edit)((t, fs) => Some(t.copy(features = fs)(d.containerData)))
       case x: Folder =>
-        processHasFeatures(x)((t, fs) => Some(t.copy(features = fs)(x.containerData)))
+        processHasFeatures(x)(edit)((t, fs) => Some(t.copy(features = fs)(x.containerData)))
       case _ => Some(f) // Container
     }
 }

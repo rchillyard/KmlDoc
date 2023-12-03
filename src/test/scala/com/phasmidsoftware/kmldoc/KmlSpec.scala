@@ -4152,7 +4152,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  it should "extract and render sample Kml from file" in {
+  it should "extract and get debug version of sample Kml from file" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4161,12 +4161,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val kml: KML = ks.head
         val w = kml.toString
         println(w)
-        w.length shouldBe 73525
+        w.length shouldBe 88
       case Failure(x) => fail(x)
     }
   }
 
-  it should "extract and render mini sample Kml from file" in {
+  it should "extract and get debug string from mini sample Kml from file" in {
     val url = KML.getClass.getResource("minisample.kml")
     val xml = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4175,7 +4175,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val kml: KML = ks.head
         val w = kml.toString
         println(w)
-        w.length shouldBe 3558
+        w.length shouldBe 88
       case Failure(x) => fail(x)
     }
   }
