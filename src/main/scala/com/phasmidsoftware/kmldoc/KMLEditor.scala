@@ -8,6 +8,7 @@ import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLs
 import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
 import com.phasmidsoftware.render.FormatXML
 import java.io.{BufferedWriter, File, FileWriter, Writer}
+import scala.annotation.tailrec
 import scala.io.Source
 import scala.util._
 
@@ -104,10 +105,39 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
    * @param ks a sequence of KML.
    * @return a sequence of KML, quite possibly different from the input sequence.
    */
-  def processKMLs(ks: Seq[KML]): Seq[KML] = for (k <- ks; z <- processHasFeatures(k)(null)((t, fs) => Some(t.copy(features = fs)))) yield z
+  def processKMLs(ks: Seq[KML]): Seq[KML] = ks map processKML
+
+  /**
+   * Method to process a KML object.
+   *
+   * @param k a KML.
+   * @return a sequence of KML, quite possibly different from the input sequence.
+   */
+  def processKML(k: KML): KML = {
+    @tailrec
+    def inner(r: KML, es: Seq[KmlEdit]): KML = es match {
+      case Nil => r
+      case e :: _es => inner(processKML(e, r).getOrElse(r), _es)
+    }
+
+    inner(k, edits to List)
+  }
+
+  /**
+   * Method to edit a KML object.
+   *
+   * TODO move
+   *
+   * @param edit an edit to be applied to the given KML.
+   * @param k    a KML.
+   * @return an optional KML that, if defined, is different from the input.
+   */
+  def processKML(edit: KmlEdit, k: KML): Option[KML] = for (z <- processHasFeatures(k)(edit)((t, fs) => Some(t.copy(features = fs)))) yield z
 
   /**
    * Method to join two Placemarks together.
+   *
+   * TODO move
    *
    * @param p           the Placemark
    * @param fs          the potential features to be joined with <code>p</code>. These are the siblings of <code>p</code> itself.
@@ -135,6 +165,8 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
   /**
    * Method to process the given Placemark with zero additional Features.
    *
+   * TODO move
+   *
    * @param p the Placemark to process. Theoretically, <code>p</code> could be some other type of Feature.
    * @param e the edit which may (or may not) apply to <code>p</code>.
    * @return an optional Feature.
@@ -153,6 +185,8 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
   /**
    * Method to process the given Placemark with one additional Features.
    *
+   * TODO move
+   *
    * @param p  the Placemark to process.
    * @param e  the edit which may (or may not) apply to <code>p</code>.
    * @param fs a sequence of Features which are the children of <code>p</code>'s family (including <code>p</code> itself).
@@ -167,6 +201,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
         None
     }
 
+  // TODO move
   private def joinMatchingPlacemarks(p: Placemark, name: String, feature: Feature): Option[Feature] =
     feature match {
       case q: Placemark if q.name.matches(name) => joinPlacemarks(p, q)
@@ -174,7 +209,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     }
 
   /**
-   * NOTE: we should implement this by making Placemark extend Mergeable.
+   * TODO: we should implement this by making Placemark extend Mergeable.
    *
    * @param p the first Placemark.
    * @param q the second Placemark.
@@ -191,15 +226,17 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     } yield Placemark(z)(xx)
   }
 
-  private def processFeature(edit: KmlEdit, f: Feature, fs: Seq[Feature]) =
+  private def processFeature(edit: KmlEdit, f: Feature, fs: Seq[Feature]): Option[Feature] =
     f match {
       case p: Placemark =>
-        // XXX we create a list (foos) of optional features, each element of the list arising from a particular edit. There should be at most one defined result.
-        val foos = for (e <- edits) yield processPlacemark(p, e, fs)
-        // XXX we create a list (xs) of feature(s) corresponding to the defined results in foos.
-        val xs = foos.filter(_.isDefined) map (_.get)
-        // XXX if xs is not empty, we return its head, otherwise we return f.
-        if (xs.nonEmpty) xs.head else Some(f)
+        val result = processPlacemark(p, edit, fs)
+        result.getOrElse(Some(f))
+//        // XXX we create a list (foos) of optional features, each element of the list arising from a particular edit. There should be at most one defined result.
+//        val foos = for (e <- edits) yield processPlacemark(p, e, fs)
+//        // XXX we create a list (xs) of feature(s) corresponding to the defined results in foos.
+//        val xs = foos.filter(_.isDefined) map (_.get)
+//        // XXX if xs is not empty, we return its head, otherwise we return f.
+//        if (xs.nonEmpty) xs.head else Some(f)
       case d: Document =>
         processHasFeatures(d)(edit)((t, fs) => Some(t.copy(features = fs)(d.containerData)))
       case x: Folder =>

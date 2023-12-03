@@ -106,11 +106,14 @@ case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl
    * @param f a FeatureData object.
    * @return the merged value of FeatureData.
    */
-  def merge(f: FeatureData): Option[FeatureData] = for {
-    n <- name merge f.name
-    d = mergeOptions(maybeDescription, f.maybeDescription)((t1, t2) => t1 merge t2)
-    z <- kmlData merge f.kmlData
-  } yield FeatureData(n, d, maybeStyleUrl, maybeOpen, maybeVisibility, StyleSelectors, abstractView)(z) // TODO: not all fields are properly merged
+  def merge(f: FeatureData): Option[FeatureData] = {
+    // TODO warn if styles are not the same.
+    for {
+      n <- name merge f.name
+      d = mergeOptions(maybeDescription, f.maybeDescription)((t1, t2) => t1 merge t2)
+      z <- kmlData merge f.kmlData
+    } yield FeatureData(n, d, maybeStyleUrl, maybeOpen, maybeVisibility, StyleSelectors, abstractView)(z) // TODO: not all fields are properly merged
+  }
 }
 
 /**
@@ -841,7 +844,7 @@ object Visibility extends Extractors with Renderers {
 //}
 
 case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinates] {
-  lazy val vector: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- last vector first) yield v
+  private lazy val vector: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- last vector first) yield v
 
   lazy val direction: Option[Double] = for (last <- coordinates.lastOption; first <- coordinates.headOption; d <- last distance first) yield d
 
@@ -867,8 +870,8 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
   private def mergeInternal(co: Option[Coordinates]): Option[Coordinates] =
     for {
       c <- co
-      r <- gapInternal(coordinates, c.coordinates) // coordinate gap c.coordinates
-      s <- gapInternal(c.coordinates, coordinates) // c.coordinate gap coordinates
+      r <- gap(c)
+      s <- c.gap(this)
     } yield Coordinates(if (r < s) coordinates ++ c.coordinates else c.coordinates ++ coordinates)
 }
 
