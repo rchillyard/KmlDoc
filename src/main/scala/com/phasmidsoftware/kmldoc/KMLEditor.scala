@@ -8,6 +8,7 @@ import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLs
 import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
 import com.phasmidsoftware.render.FormatXML
 import java.io.{BufferedWriter, File, FileWriter, Writer}
+import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.util._
@@ -19,7 +20,7 @@ import scala.util._
  */
 case class KMLEditor(edits: Seq[KmlEdit]) {
 
-  System.err.println(s"KMLEditor: ${edits.mkString}") // TODO generate log message
+  KMLEditor.logger.info(s"KMLEditor: ${edits.mkString}")
 
   /**
    * Method to process the file defined by baseFilename by parsing it, editing it, and writing it out.
@@ -34,8 +35,8 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
     val inputFile = addExtension(baseFilename, kml)
     val outExt = "_out" + kml
     val outputFile = addExtension(baseFilename, outExt)
-    inputFile foreach (f => System.err.println(s"KMLEditor.process from $f")) // TODO generate a log message
-    outputFile foreach (f => System.err.println(s"KMLEditor.process to $f")) // TODO generate a log message
+    inputFile foreach (f => KMLEditor.logger.info(s"KMLEditor.process from $f"))
+    outputFile foreach (f => KMLEditor.logger.info(s"KMLEditor.process to $f"))
     processFromTo(inputFile, outputFile)
   }
 
@@ -50,7 +51,7 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
   private def processFromTo(inputFile: Try[String], outputFile: Try[String]): IO[Unit] = {
     val qsi: IO[Seq[Writer]] = for {
       w <- IO.fromTry(outputFile)
-      _ = println(w)
+//      _ = println(w)
       f <- IO(new File(w))
       bW = new BufferedWriter(new FileWriter(f, false))
       ks <- KMLCompanion.loadKML(inputFile)
@@ -89,6 +90,8 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
 }
 
 object KMLEditor {
+  val logger: Logger = LoggerFactory.getLogger(KMLEditor.getClass)
+
   /**
    * Method to construct a KMLEditor from a filename.
    *

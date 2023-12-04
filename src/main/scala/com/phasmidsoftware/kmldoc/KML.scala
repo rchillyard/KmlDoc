@@ -6,7 +6,7 @@ import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLToPrintStream
-import com.phasmidsoftware.kmldoc.KmlEdit.editFeatures
+import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX, editFeatures}
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
 import com.phasmidsoftware.render._
@@ -51,7 +51,7 @@ case class KmlData(__id: Option[String]) extends Mergeable[KmlData] {
    * @param k a KmlData object.
    * @return the merged value of KmlData.
    */
-  def merge(k: KmlData): Option[KmlData] = Some(KmlData(mergeStringsDelimited(__id, k.__id)("#")))
+  def merge(k: KmlData, mergeName: Boolean = true): Option[KmlData] = Some(KmlData(mergeStringsDelimited(__id, k.__id)("#")))
 }
 
 /**
@@ -125,10 +125,10 @@ case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl
    * @param f a FeatureData object.
    * @return the merged value of FeatureData.
    */
-  def merge(f: FeatureData): Option[FeatureData] = {
+  def merge(f: FeatureData, mergeName: Boolean = true): Option[FeatureData] = {
     // TODO warn if styles are not the same.
     for {
-      n <- name merge f.name
+      n <- if (mergeName) name merge f.name else Some(name)
       d = mergeOptions(maybeDescription, f.maybeDescription)((t1, t2) => t1 merge t2)
       z <- kmlData merge f.kmlData
     } yield FeatureData(n, d, maybeStyleUrl, maybeOpen, maybeVisibility, StyleSelectors, abstractView)(z) // TODO: not all fields are properly merged
@@ -190,7 +190,7 @@ trait Geometry extends KmlObject with Mergeable[Geometry] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Geometry): Option[Geometry] = throw KmlException(s"merge not implemented for this class: ${t.getClass}")
+  def merge(t: Geometry, mergeName: Boolean = true): Option[Geometry] = throw KmlException(s"merge not implemented for this class: ${t.getClass}")
 }
 
 /**
@@ -211,7 +211,7 @@ object Geometry extends Extractors with Renderers {
  * @param kmlData source of properties.
  */
 case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option[AltitudeMode])(val kmlData: KmlData) extends Mergeable[GeometryData] {
-  def merge(g: GeometryData): Option[GeometryData] =
+  def merge(g: GeometryData, mergeName: Boolean = true): Option[GeometryData] =
     for {
       k <- kmlData merge g.kmlData
     } yield GeometryData(mergeOptionsBiased(maybeExtrude, g.maybeExtrude), mergeOptionsBiased(maybeAltitudeMode, g.maybeAltitudeMode))(k)
@@ -405,14 +405,14 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Placemark): Option[Placemark] = {
-    println(s"joinPlacemarks: $name,  ${t.name}")
+  def merge(t: Placemark, mergeName: Boolean = true): Option[Placemark] = {
+    logger.info(s"joinPlacemarks: $name, ${t.name} with mergeName=$mergeName")
     val gps: Seq[Geometry] = this.Geometry
     val gqs = t.Geometry
     val los: Seq[Option[Geometry]] = for (gp <- gps; gq <- gqs) yield gp.merge(gq)
     val z: Seq[Geometry] = los filter (_.isDefined) map (_.get)
     for {
-      xx <- this.featureData merge t.featureData
+      xx <- featureData.merge(t.featureData, mergeName)
     } yield Placemark(z)(xx)
   }
 
@@ -441,7 +441,7 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
   private def editMatching1(e: KmlEdit) = (name, e) match {
     case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, nameToMatch), None))
       if name.matches(nameToMatch) =>
-      System.err.println(s"delete: $nameToMatch") // TODO generate a log message
+      logger.info(s"delete: $nameToMatch")
       Some(None)
     case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
       Some(Some(this))
@@ -457,10 +457,10 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    * @return an optional optional Feature.
    */
   private def editMatchingPlacemark2(e: KmlEdit, fs: Seq[Feature]) =
-    (name, e) match {
-      case (name, KmlEdit(KmlEdit.JOIN, _, Element("Placemark", nameToMatch1), Some(Element("Placemark", nameToMatch2))))
+    e match {
+      case KmlEdit(command@(JOIN | JOINX), _, Element("Placemark", nameToMatch1), Some(Element("Placemark", nameToMatch2)))
         if name.matches(nameToMatch1) =>
-        Some(joinMatchedPlacemarks(fs, nameToMatch2))
+        Some(joinMatchedPlacemarks(fs, nameToMatch2, command == JOIN))
       case _ =>
         None
     }
@@ -472,17 +472,15 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    * @param nameToMatch the name of the feature to be joined, as defined by the edit.
    * @return an optional Feature which, if defined, is the new Placemark to be used instead of <code>p</code>.
    */
-  private def joinMatchedPlacemarks(fs: Seq[Feature], nameToMatch: String) = {
-    System.err.println(s"join: $name with $nameToMatch") // TODO generate a log message
-    val zz = for (f <- fs if f != this) yield joinMatchingPlacemarks(nameToMatch, f)
+  private def joinMatchedPlacemarks(fs: Seq[Feature], nameToMatch: String, mergeName: Boolean) = {
+    val zz = for (f <- fs if f != this) yield joinMatchingPlacemarks(nameToMatch, f, mergeName)
     for (z <- zz.find(_.isDefined); q <- z) yield q
   }
 
-  private def joinMatchingPlacemarks(name: String, feature: Feature) =
-    feature match {
-      case q: Placemark if q.name.matches(name) => this merge q
-      case _ => None
-    }
+  private def joinMatchingPlacemarks(name: String, feature: Feature, mergeName: Boolean) = feature match {
+    case q: Placemark if q.name.matches(name) => merge(q, mergeName)
+    case _ => None
+  }
 }
 
 /**
@@ -559,7 +557,7 @@ case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val
 
   import Coordinates.empty
 
-  override def merge(g: Geometry): Option[Geometry] = g match {
+  override def merge(g: Geometry, mergeName: Boolean = true): Option[Geometry] = g match {
     case l@LineString(_, _) =>
       for {
         t <- tessellate merge l.tessellate
@@ -900,7 +898,7 @@ object LabelStyle extends Extractors with Renderers {
  * @param $ the value.
  */
 case class Tessellate($: CharSequence) extends Mergeable[Tessellate] {
-  def merge(t: Tessellate): Option[Tessellate] = ($, t.$) match {
+  def merge(t: Tessellate, mergeName: Boolean = true): Option[Tessellate] = ($, t.$) match {
     case (a, b) if a == b => Some(Tessellate(a))
     case _ => None
   }
@@ -982,7 +980,7 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
 
   def gap(other: Coordinates): Option[Double] = gapInternal(coordinates, other.coordinates)
 
-  def merge(other: Coordinates): Option[Coordinates] = {
+  def merge(other: Coordinates, mergeName: Boolean = true): Option[Coordinates] = {
     val xo = vector
     val yo: Option[Cartesian] = other.vector
     val zo: Option[Double] = for (x <- xo; y <- yo) yield x dotProduct y
@@ -1562,7 +1560,7 @@ trait Mergeable[T] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: T): Option[T]
+  def merge(t: T, mergeName: Boolean = true): Option[T]
 }
 
 /**

@@ -19,8 +19,8 @@ case class KmlEdit(command: String, operands: Int, op1: Element, maybeOp2: Optio
 object KmlEdit {
 
   def operands(command: String): Int = command match {
-    case KmlEdit.JOIN => 2
-    case KmlEdit.DELETE => 1
+    case JOIN | JOINX => 2
+    case DELETE => 1
     case _ => 0
   }
 
@@ -61,7 +61,19 @@ object KmlEdit {
    */
   def parseLines(ws: Iterator[String]): IO[Seq[KmlEdit]] = (for (w <- ws) yield parse(w)).toSeq.sequence
 
+  /**
+   * Join two elements (typically using the merge method of Mergeable KML objects).
+   */
   val JOIN = "join"
+
+  /**
+   * like JOIN but retains the first name (i.e. it excludes the second name).
+   */
+  val JOINX = "joinX"
+
+  /**
+   * delete an element.
+   */
   val DELETE = "delete"
 }
 

@@ -16,7 +16,7 @@ case class Text($: CharSequence) extends Mergeable[Text] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Text): Option[Text] = ($, t.$) match {
+  def merge(t: Text, mergeName: Boolean = true): Option[Text] = ($, t.$) match {
     case (c1: CDATA, c2: CDATA) => c1 merge c2 map (Text(_))
     case _ => Some(Text($.toString + " " + t.$.toString))
   }
@@ -85,7 +85,7 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: CDATA): Option[CDATA] = Some(CDATA(content + separator(post, t.pre) + t.content, pre, t.post))
+  def merge(t: CDATA, mergeName: Boolean = true): Option[CDATA] = Some(CDATA(content + separator(post, t.pre) + t.content, pre, t.post))
 
   private def separator(a: String, b: String): String = (a + b).replaceAll("\n", "<br>")
 }
