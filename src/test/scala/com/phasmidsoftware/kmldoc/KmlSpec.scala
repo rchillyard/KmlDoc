@@ -8,6 +8,7 @@ import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
@@ -4250,5 +4251,55 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Failure(x) => fail(x)
     }
   }
+
+  behavior of "merge"
+
+  val kd: KmlData = KmlData(None)
+  val gd: GeometryData = GeometryData(None, None)(kd)
+  val fd1: FeatureData = FeatureData(Text("junk"), None, None, None, None, Nil, Nil)(kd)
+  val fd2: FeatureData = FeatureData(Text("junk junk"), None, None, None, None, Nil, Nil)(kd)
+  val cs1: Seq[Coordinate] = Seq(Coordinate("1", "0", "0"), Coordinate("1", "1", "0"))
+  val cs2: Seq[Coordinate] = Seq(Coordinate("1", "1", "0"), Coordinate("1", "2", "0"))
+  val cs2a: Seq[Coordinate] = cs2.reverse
+  val coordinates1: Seq[Coordinates] = Seq(Coordinates(cs1))
+  val coordinates2: Seq[Coordinates] = Seq(Coordinates(cs2))
+  val coordinates2a: Seq[Coordinates] = Seq(Coordinates(cs2a))
+  val tessellate: Tessellate = Tessellate("1")
+  val p1: Placemark = Placemark(Seq(LineString(tessellate, coordinates1)(gd)))(fd1)
+  val p2: Placemark = Placemark(Seq(LineString(tessellate, coordinates2)(gd)))(fd1)
+  val p2a: Placemark = Placemark(Seq(LineString(tessellate, coordinates2a)(gd)))(fd1)
+  val p12: Placemark = Placemark(Seq(LineString(tessellate, Seq(Coordinates(cs1 ++ cs2)))(gd)))(fd2)
+  val p12a: Placemark = Placemark(Seq(LineString(tessellate, Seq(Coordinates(cs2a ++ cs1.reverse)))(gd)))(fd2)
+
+  it should "merge Placemarks 1" in {
+    val maybePlacemark = p1 merge p2
+    maybePlacemark.isDefined shouldBe true
+    val pz = maybePlacemark.get
+    pz shouldBe p12
+  }
+
+  it should "merge Placemarks 2" in {
+    val maybePlacemark = p2 merge p1
+    maybePlacemark.isDefined shouldBe true
+    val pz = maybePlacemark.get
+    pz.Geometry.head match {
+      case LineString(t, cs) => cs shouldBe Seq(Coordinates(cs1 ++ cs2))
+    }
+    pz shouldBe p12
+  }
+
+//  it should "merge Placemarks 3" in {
+//    val maybePlacemark = p1 merge p2a
+//    maybePlacemark.isDefined shouldBe true
+//    val pz = maybePlacemark.get
+//    pz shouldBe p12
+//  }
+//
+//  it should "merge Placemarks 4" in {
+//    val maybePlacemark = p2a merge p1
+//    maybePlacemark.isDefined shouldBe true
+//    val pz = maybePlacemark.get
+//    pz shouldBe p12a
+//  }
 }
 

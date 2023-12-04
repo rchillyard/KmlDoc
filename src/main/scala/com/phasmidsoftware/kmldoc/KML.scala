@@ -399,6 +399,24 @@ object SubStyleData extends Extractors with Renderers {
  */
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] {
 
+  // TODO move into LineString
+  def invertLineString(l: LineString): LineString =
+    LineString(l.tessellate, for (c <- l.coordinates) yield c.reverse)(l.geometryData)
+
+  // TODO move into Geometry
+  def invertGeometry(g: Geometry): Option[LineString] =
+    g match {
+      case l: LineString => Some(invertLineString(l))
+      case _ => None
+    }
+
+  def invert: Option[Placemark] = {
+    val gs: Seq[Option[LineString]] = for (g <- Geometry) yield invertGeometry(g)
+    val lso: Option[Seq[LineString]] = FP.sequence(gs)
+    for (ls <- lso) yield Placemark(ls)(featureData)
+  }
+
+
   /**
    * Merge this mergeable object with <code>t</code>.
    *
@@ -407,16 +425,12 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    */
   def merge(t: Placemark, mergeName: Boolean = true): Option[Placemark] = {
     logger.info(s"joinPlacemarks: $name, ${t.name} with mergeName=$mergeName")
-    val gps: Seq[Geometry] = this.Geometry
-    val gqs = t.Geometry
-    val los: Seq[Option[Geometry]] = for (gp <- gps; gq <- gqs) yield gp.merge(gq)
-    val z: Seq[Geometry] = los filter (_.isDefined) map (_.get)
-    for {
-      xx <- featureData.merge(t.featureData, mergeName)
-    } yield Placemark(z)(xx)
+    val los: Seq[Option[Geometry]] = for (gp <- this.Geometry; gq <- t.Geometry) yield gp.merge(gq)
+    val gs: Seq[Geometry] = los filter (_.isDefined) map (_.get)
+    for (fd <- featureData.merge(t.featureData, mergeName)) yield Placemark(gs)(fd)
   }
 
-  override def toString: String = s"Placemark: name=${name.$} with ${Geometry.size} geometries"
+  override def toString: String = s"Placemark: name=${name.$} with ${Geometry.size} geometries: $Geometry"
 
   def name: Text = featureData.name
 
@@ -445,6 +459,9 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
       Some(None)
     case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
       Some(Some(this))
+    case (_, KmlEdit(KmlEdit.INVERT, _, Element(_, nameToMatch), _))
+      if name.matches(nameToMatch) =>
+      Some(this.invert)
     case _ =>
       None
   }
@@ -974,21 +991,35 @@ object Visibility extends Extractors with Renderers {
 //}
 
 case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinates] {
-  private lazy val vector: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- last vector first) yield v
+  override def toString: String = {
+    val sb = new StringBuilder("Coordinates{")
+    sb.append(s"# coordinates: ${coordinates.size}, ")
+    sb.append(s"from: ${coordinates.head}, ")
+    sb.append(s"to: ${coordinates.last}")
+    sb.append("}").toString()
+  }
 
-  lazy val direction: Option[Double] = for (last <- coordinates.lastOption; first <- coordinates.headOption; d <- last distance first) yield d
+  private val result: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- first vector last) yield v
+  private lazy val vector: Option[Cartesian] =
+    result
+
+  lazy val direction: Option[Double] = for (last <- coordinates.lastOption; first <- coordinates.headOption; d <- first distance last) yield d
 
   def gap(other: Coordinates): Option[Double] = gapInternal(coordinates, other.coordinates)
 
   def merge(other: Coordinates, mergeName: Boolean = true): Option[Coordinates] = {
+    KMLCompanion.logger.info(s"merge $this with $other")
     val xo = vector
     val yo: Option[Cartesian] = other.vector
     val zo: Option[Double] = for (x <- xo; y <- yo) yield x dotProduct y
-    val q: Option[Coordinates] = for (z <- zo) yield if (z >= 0) other else other.reverse
-    mergeInternal(q)
+//    val q: Option[Coordinates] = for (z <- zo) yield if (z >= 0) other else other.reverse // no longer used
+    mergeInternal(Some(other))
   }
 
-  def reverse: Coordinates = Coordinates(coordinates.reverse)
+  def reverse: Coordinates = {
+    KMLCompanion.logger.info(s"reversing $this")
+    Coordinates(coordinates.reverse)
+  }
 
   private def gapInternal(cs1: Seq[Coordinate], cs2: Seq[Coordinate]): Option[Double] =
     for {
@@ -1002,7 +1033,8 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
       c <- co
       r <- gap(c)
       s <- c.gap(this)
-    } yield Coordinates(if (r < s) coordinates ++ c.coordinates else c.coordinates ++ coordinates)
+    } yield
+      Coordinates(if (r < s) coordinates ++ c.coordinates else c.coordinates ++ coordinates)
 }
 
 object Coordinates extends Extractors with Renderers {

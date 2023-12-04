@@ -21,6 +21,7 @@ object KmlEdit {
   def operands(command: String): Int = command match {
     case JOIN | JOINX => 2
     case DELETE => 1
+    case INVERT => 1
     case _ => 0
   }
 
@@ -75,6 +76,11 @@ object KmlEdit {
    * delete an element.
    */
   val DELETE = "delete"
+
+  /**
+   * invert an element.
+   */
+  val INVERT = "invert"
 }
 
 /**
