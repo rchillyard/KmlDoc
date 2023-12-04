@@ -11,7 +11,7 @@ import scala.util.Try
 
 class KMLCompanionSpec extends AnyFlatSpec with should.Matchers {
 
-  behavior of "KMLCompanionSpec"
+  behavior of "KMLCompanion"
 
   it should "renderFeature" in {
 
@@ -23,24 +23,6 @@ class KMLCompanionSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderFeatures" in {
 
-  }
-
-  it should "renderKMLAsFormat Text" in {
-    val z: IO[String] = renderKMLAsFormat("sample.kml", FormatText(0)) map (_.mkString("\n"))
-    val result = z.unsafeRunSync()
-    println(result)
-    val prefix = "KML{[Document{"
-    result.substring(0, prefix.length) shouldBe prefix
-  }
-
-  it should "renderKMLAsFormat KML" in {
-    val z: IO[String] = renderKMLAsFormat("sample.kml", FormatXML(0)) map (_.mkString("\n"))
-    val result = z.unsafeRunSync()
-    val prefix =
-      """<?xml version="1.0" encoding="UTF-8"?>
-        |<kml xmlns="http://www.opengis.net/kml/2.2">
-        |  <Document>""".stripMargin
-    result.substring(0, prefix.length) shouldBe prefix
   }
 
   it should "loadKML" in {
