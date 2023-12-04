@@ -14,7 +14,9 @@ import scala.util.parsing.combinator.JavaTokenParsers
  * @param op1      the target of the edit.
  * @param maybeOp2 the result of the edit.
  */
-case class KmlEdit(command: String, operands: Int, op1: Element, maybeOp2: Option[Element])
+case class KmlEdit(command: String, operands: Int, op1: Element, maybeOp2: Option[Element]) {
+  def isValid: Boolean = command.nonEmpty && operands > 0
+}
 
 object KmlEdit {
 

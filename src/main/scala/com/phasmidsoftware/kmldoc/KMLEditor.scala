@@ -20,7 +20,7 @@ import scala.util._
  */
 case class KMLEditor(edits: Seq[KmlEdit]) {
 
-  KMLEditor.logger.info(s"KMLEditor: ${edits.mkString}")
+  KMLEditor.logger.info(s"""KMLEditor: ${edits.mkString(", ")}""")
 
   /**
    * Method to process the file defined by baseFilename by parsing it, editing it, and writing it out.
@@ -51,7 +51,6 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
   private def processFromTo(inputFile: Try[String], outputFile: Try[String]): IO[Unit] = {
     val qsi: IO[Seq[Writer]] = for {
       w <- IO.fromTry(outputFile)
-//      _ = println(w)
       f <- IO(new File(w))
       bW = new BufferedWriter(new FileWriter(f, false))
       ks <- KMLCompanion.loadKML(inputFile)
@@ -101,9 +100,9 @@ object KMLEditor {
   def parse(wy: Try[String]): IO[KMLEditor] = for {
     w <- IO.fromTry(wy)
     s = Source.fromFile(w)
-    z <- KmlEdit.parseLines(s.getLines())
-    q = KMLEditor(z)
-  } yield q
+    es <- KmlEdit.parseLines(s.getLines())
+    kE = KMLEditor(es filter (_.isValid))
+  } yield kE
 
   /**
    * Method to edit a KML file.
