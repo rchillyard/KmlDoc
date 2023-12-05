@@ -4311,7 +4311,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     maybePlacemark.isDefined shouldBe true
     val pz = maybePlacemark.get
     pz.Geometry.head match {
-      case LineString(t, cs) => cs shouldBe Seq(Coordinates(cs1 ++ cs2))
+      case LineString(_, cs) => cs shouldBe Seq(Coordinates(cs1 ++ cs2))
     }
     pz shouldBe p12
   }

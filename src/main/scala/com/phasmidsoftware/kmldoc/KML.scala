@@ -182,7 +182,7 @@ trait HasName {
  *
  * See [[https://developers.google.com/kml/documentation/kmlreference#geometry Geometry]]
  */
-trait Geometry extends KmlObject with Mergeable[Geometry] {
+trait Geometry extends KmlObject with Mergeable[Geometry] with Invertible[Geometry] {
 
   /**
    * Merge this mergeable object with <code>t</code>.
@@ -190,7 +190,9 @@ trait Geometry extends KmlObject with Mergeable[Geometry] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Geometry, mergeName: Boolean = true): Option[Geometry] = throw KmlException(s"merge not implemented for this class: ${t.getClass}")
+  def merge(t: Geometry, mergeName: Boolean = true): Option[Geometry] = None
+
+  def invert: Option[Geometry] = None
 }
 
 /**
@@ -397,22 +399,11 @@ object SubStyleData extends Extractors with Renderers {
  * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
  * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
  */
-case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] {
-
-  // TODO move into LineString
-  def invertLineString(l: LineString): LineString =
-    LineString(l.tessellate, for (c <- l.coordinates) yield c.reverse)(l.geometryData)
-
-  // TODO move into Geometry
-  def invertGeometry(g: Geometry): Option[LineString] =
-    g match {
-      case l: LineString => Some(invertLineString(l))
-      case _ => None
-    }
+case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] with Invertible[Placemark] {
 
   def invert: Option[Placemark] = {
-    val gs: Seq[Option[LineString]] = for (g <- Geometry) yield invertGeometry(g)
-    val lso: Option[Seq[LineString]] = FP.sequence(gs)
+    val gs: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
+    val lso: Option[Seq[Geometry]] = FP.sequence(gs)
     for (ls <- lso) yield Placemark(ls)(featureData)
   }
 
@@ -583,6 +574,8 @@ case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val
         z <- c merge d
       } yield LineString(t, Seq(z))(g)
   }
+
+  override def invert: Option[LineString] = Some(LineString(tessellate, for (c <- coordinates) yield c.reverse)(geometryData))
 
 }
 
@@ -1008,9 +1001,10 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
 
   def merge(other: Coordinates, mergeName: Boolean = true): Option[Coordinates] = {
     KMLCompanion.logger.info(s"merge $this with $other")
-    val xo = vector
-    val yo: Option[Cartesian] = other.vector
-    val zo: Option[Double] = for (x <- xo; y <- yo) yield x dotProduct y
+    // CONSIDER rejuvenating the following code to try to deal automatically with inversions.
+//    val xo = vector
+//    val yo: Option[Cartesian] = other.vector
+//    val zo: Option[Double] = for (x <- xo; y <- yo) yield x dotProduct y
 //    val q: Option[Coordinates] = for (z <- zo) yield if (z >= 0) other else other.reverse // no longer used
     mergeInternal(Some(other))
   }
@@ -1574,90 +1568,6 @@ object Test extends App {
   private val ui = renderKMLToPrintStream("sample.kml", FormatText(0))
 
   ui.unsafeRunSync()
-}
-
-/**
- * Hierarchical trait to satisfy merging.
- *
- * CONSIDER making it a typeclass instead.
- *
- * @tparam T the underlying type.
- */
-trait Mergeable[T] {
-
-  /**
-   * Merge this mergeable object with <code>t</code>.
-   *
-   * @param t the object to be merged with this.
-   * @return the merged value of T.
-   */
-  def merge(t: T, mergeName: Boolean = true): Option[T]
-}
-
-/**
- * Companion object for Mergeable.
- */
-object Mergeable {
-
-  /**
-   * Method to merge a Sequence into a Sequence of one.
-   *
-   * NOTE the merge method assumes that it is associative with respect to T.
-   *
-   * @param ts   the sequence to be merged.
-   * @param fail the value of T used for a merge failure.
-   * @tparam T the underlying type (extends Mergeable).
-   * @return Seq[T] with only one element.
-   */
-  def mergeSequence[T <: Mergeable[T]](ts: Seq[T])(fail: => T): Seq[T] =
-    Seq(ts reduce[T] ((t1, t2) => (t1 merge t2).getOrElse(fail)))
-
-  /**
-   * Method to merge two Optional values of the same type.
-   *
-   * @param ao the first optional value.
-   * @param bo the second optional value.
-   * @param f  a method to merge two elements of the underlying type T.
-   * @tparam T the underlying type.
-   * @return an Option[T].
-   */
-  def mergeOptions[T](ao: Option[T], bo: Option[T])(f: (T, T) => Option[T]): Option[T] = (ao, bo) match {
-    case (Some(a), Some(b)) => f(a, b)
-    case (None, _) => bo
-    case (_, None) => ao
-  }
-
-  /**
-   * Method to merge two Optional values of the same type.
-   *
-   * NOTE: In this method, there is no proper merging of two defined values: we arbitrarily select the first.
-   *
-   * @param ao the first optional value.
-   * @param bo the second optional value.
-   * @tparam T the underlying type.
-   * @return an Option[T].
-   */
-  def mergeOptionsBiased[T](ao: Option[T], bo: Option[T]): Option[T] = mergeOptions(ao, bo)((t1, _) => Some(t1))
-
-  /**
-   * Method to merge two optional Strings.
-   *
-   * @param ao the first optional String.
-   * @param bo the second optional String.
-   * @param f  a function to combine two Strings and yield an Option[String].
-   * @return an Option[String].
-   */
-  def mergeStrings(ao: Option[String], bo: Option[String])(f: (String, String) => Option[String]): Option[String] = mergeOptions(ao, bo)(f)
-
-  /**
-   * Method to concatenate two optional Strings with a delimiter between them.
-   *
-   * @param ao        the first optional String.
-   * @param bo        the second optional String.
-   * @param delimiter a String to be placed between the two given Strings.
-   * @return an Option[String].
-   */
-  def mergeStringsDelimited(ao: Option[String], bo: Option[String])(delimiter: String): Option[String] = mergeOptions(ao, bo)((a, b) => Some(s"$a$delimiter$b"))
 }
 
 case class KmlException(str: String) extends Exception(str)
