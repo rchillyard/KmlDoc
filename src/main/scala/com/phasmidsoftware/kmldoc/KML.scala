@@ -416,7 +416,6 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
     for (ls <- lso) yield Placemark(ls)(featureData)
   }
 
-
   /**
    * Merge this mergeable object with <code>t</code>.
    *
@@ -496,7 +495,7 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
 
   private def joinMatchingPlacemarks(name: String, feature: Feature, mergeName: Boolean) = feature match {
     case q: Placemark if q.name.matches(name) => merge(q, mergeName)
-    case _ => None
+    case _ => None // FIXME can result in this Placemark being lost if name doesn't match q.name
   }
 }
 
