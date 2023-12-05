@@ -38,6 +38,17 @@ object FP {
   }
 
   /**
+   * Method to transform a Seq of Option[X] into a Option of Seq[X].
+   *
+   * @param xys a Seq of Try[X].
+   * @tparam X the underlying type.
+   * @return a Try of Seq[X].
+   */
+  def sequence[X](xys: Iterable[Option[X]]): Option[Seq[X]] = xys.foldLeft(Option(Seq[X]())) {
+    (xsy, xy) => for (xs <- xsy; x <- xy) yield xs :+ x
+  }
+
+  /**
    * Method to transform a Seq of Try[X] into a Try of Seq[X].
    *
    * Non-fatal failures are eliminated from consideration, although each one invokes the function f.
@@ -159,9 +170,9 @@ object FP {
     case Failure(x) => throw x
   }
 
-  def optionToTry[X](xo: Option[X]): Try[X] = xo match {
+  def optionToTry[X](xo: Option[X], throwable: Throwable = new NoSuchElementException("optionToTry: None")): Try[X] = xo match {
     case Some(x) => Success(x)
-    case None => Failure(new NoSuchElementException("optionToTry: None"))
+    case None => Failure(throwable)
   }
 
   def tryNotNull[X](x: => X)(msg: String): Try[X] = Option(x) match {
@@ -173,6 +184,12 @@ object FP {
    */
   def uncurried[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = {
     (x1, x2, x3, x4, x5, x6) => f(x1)(x2)(x3)(x4)(x5)(x6)
+  }
+
+  def mapTryGuarded[X, Y](p: X => Boolean, predicate: String = "predicate")(f: X => Y): Try[X] => Try[Y] = {
+    case Success(x) if p(x) => Success(f(x))
+    case Success(x) => Failure(FPException(s"mapTryGuarded: $predicate failed for $x"))
+    case Failure(x) => Failure(x)
   }
 }
 

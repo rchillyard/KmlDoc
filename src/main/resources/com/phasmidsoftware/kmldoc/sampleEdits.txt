@@ -1,0 +1,6 @@
+join Placemark "Salem & Lowell RR (#1)" with Placemark "Salem & Lowell RR (#2)"
+delete Placemark "Salem & Lowell RR (#2)"
+join Placemark "Salem & Lawrence RR (#1)" with Placemark "Salem & Lawrence RR (#2)"
+delete Placemark "Salem & Lawrence RR (#2)"
+join Placemark "Line 15" with Placemark "Line 3"
+delete Placemark "Line 3"

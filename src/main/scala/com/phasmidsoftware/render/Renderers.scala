@@ -1,9 +1,9 @@
 package com.phasmidsoftware.render
 
-import com.phasmidsoftware.core.{Text, XmlException}
+import com.phasmidsoftware.core.{CDATA, Text, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.{doNestedRender, doRenderSequence, renderAttribute, renderOuter}
-import com.phasmidsoftware.xml.{CDATA, Extractor}
+import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
 import scala.annotation.unused
 import scala.reflect.ClassTag
@@ -40,6 +40,23 @@ trait Renderers {
                 wOuter <- renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format.indent)
                 result <- Renderer.doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
             } yield result
+    }
+
+
+    /**
+     * Method to create a renderer fpr a Product (e.g., case class) with one member.
+     *
+     * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
+     * @tparam P0 the (Renderer) type of the (single) member of Product type R.
+     * @tparam R  the type of Renderer to be returned (must be a Product).
+     * @return a Renderer[R].
+     */
+    def renderer1Special[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R, prefix: String): Renderer[R] = Renderer {
+        (r: R, format: Format, stateR: StateR) =>
+            for {
+                wOuter <- renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format.indent)
+                result <- Renderer.doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
+            } yield prefix + result
     }
 
     /**
@@ -539,23 +556,27 @@ object Renderers {
 
     val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
-    implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
-        (x: CharSequence, format: Format, stateR: StateR) =>
-            (x, format) match {
-                case (c: CDATA, _: FormatXML) => c.toXML
-                case _ => renderAttribute(x.toString, stateR.maybeName)
-            }
-    } ^^ "charSequenceRenderer"
+  implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer {
+    (x: CharSequence, format: Format, stateR: StateR) =>
+      (x, format) match {
+        case (c: CDATA, _: FormatXML) => c.toXML
+        // CONSIDER turning all other CharSequence into CDATA if appropriate.
+        case _ => renderAttribute(scrub(x), stateR.maybeName)
+      }
+  } ^^ "charSequenceRenderer"
 
-    implicit val stringRenderer: Renderer[String] = Renderer {
-        (x: String, _: Format, stateR: StateR) =>
-            renderAttribute(x, stateR.maybeName)
-    } ^^ "stringRenderer"
+  def scrub(x: CharSequence): String =
+    x.toString.replaceAll("<", "&lt;").replaceAll("&", "&amp;")
 
-    // CONSIDER why do we not get this from Renderers
-    implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+  implicit val stringRenderer: Renderer[String] = Renderer {
+    (x: String, _: Format, stateR: StateR) =>
+      renderAttribute(x, stateR.maybeName)
+  } ^^ "stringRenderer"
 
-    implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
+  // CONSIDER why do we not get this from Renderers
+  implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
+
+  implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
 
     implicit val intRenderer: Renderer[Int] = Renderer {
         (t: Int, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
