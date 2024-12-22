@@ -16,7 +16,6 @@ import com.phasmidsoftware.xml._
 import java.io.PrintStream
 import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
-import scala.collection.immutable.Seq
 import scala.io.Source
 import scala.reflect.ClassTag
 import scala.util._
@@ -402,9 +401,9 @@ object SubStyleData extends Extractors with Renderers {
 case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] with Invertible[Placemark] {
 
   def invert: Option[Placemark] = {
-    val gs: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
-    val lso: Option[Seq[Geometry]] = FP.sequence(gs)
-    for (ls <- lso) yield Placemark(ls)(featureData)
+    val gos: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
+    val gso: Option[Seq[Geometry]] = FP.sequence(gos)
+    for (gs <- gso) yield Placemark(gs)(featureData)
   }
 
   /**
@@ -486,7 +485,8 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
 
   private def joinMatchingPlacemarks(name: String, feature: Feature, mergeName: Boolean) = feature match {
     case q: Placemark if q.name.matches(name) => merge(q, mergeName)
-    case _ => None // FIXME can result in this Placemark being lost if name doesn't match q.name
+    // FIXME Issue #20 can result in this Placemark being lost if name doesn't match q.name
+    case _ => None
   }
 }
 

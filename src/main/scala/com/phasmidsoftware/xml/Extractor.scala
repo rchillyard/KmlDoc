@@ -14,8 +14,8 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
 /**
- * Trait to define the behavior of an extractor (parser) which can will take an XML Node
- * and return Try[T] where T is the underlying type of the Extractor.
+ * Trait to define the behavior of an extractor (parser) that takes an XML `Node`
+ * and return `Try[T]` where `T` is the underlying type of the `Extractor`.
  *
  * @tparam T the type to be constructed.
  */
@@ -23,46 +23,47 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
   self =>
 
   /**
-   * Method to convert a Node into a Try[T].
+   * Method to convert a `Node` into a `Try[T]`.
    *
-   * @param node a Node.
-   * @return a Try[T].
+   * @param node a `Node`.
+   * @return a `Try[T]`.
    */
   def extract(node: Node): Try[T]
 
   /**
-   * Method to map this Extractor[T] into an Extractor[U].
+   * Method to map this `Extractor[T]` into an `Extractor[U]`.
    *
-   * @param f a T => U.
+   * @param f a `T => U`.
    * @tparam U the underlying type of the result.
-   * @return an Extractor[U].
+   * @return an `Extractor[U]`.
    */
   def map[U](f: T => U): Extractor[U] = (node: Node) => self.extract(node) map f
 
   /**
-   * Method to flatMap this Extractor[T] into an Extractor[U].
+   * Method to `flatMap` this `Extractor[T]` into an `Extractor[U]`.
    *
-   * @param f a T => Try[U].
+   * @param f a `T => Try[U]`.
    * @tparam U the underlying type of the result.
-   * @return an Extractor[U].
+   * @return an `Extractor[U]`.
    */
   def flatMap[U](f: T => Try[U]): Extractor[U] = (node: Node) => self.extract(node) flatMap f
 
   /**
-   * Method to create an Extractor[T] such that, if this Extractor[T] fails, then we invoke the (implicit) Extractor[P] instead.
+   * Method to create an `Extractor[T]` such that, if this `Extractor[T]` fails, then we invoke the (implicit) `Extractor[P]` instead.
    *
    * TESTME
    *
-   * @tparam P the type of the alternative Extractor. P must provide implicit evidence of Extractor[P] and P must be a sub-class of T.
-   * @return an Extractor[T].
+   * @tparam P the type of the alternative `Extractor`.
+   *           `P` must provide implicit evidence of `Extractor[P]` and `P` must be a sub-class of `T`.
+   * @return an `Extractor[T]`.
    */
   def |[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
 
   /**
-   * Method to create an Extractor[P] which instantiates a Try[T] but treats it as a Try[P] where P is a super-class of T.
+   * Method to create an `Extractor[P]` which instantiates a `Try[T]` but treats it as a `Try[P]` where `P` is a super-class of `T`.
    *
-   * @tparam P the type of the Extractor we wish to return.
-   * @return an Extractor[P].
+   * @tparam P the type of the `Extractor` we wish to return.
+   * @return an `Extractor[P]`.
    */
   private def mapTo[P >: T]: Extractor[P] = (node: Node) => self.extract(node)
 }
@@ -281,6 +282,20 @@ object Extractor {
     case _ => None
   }
 
+  /**
+   * Extracts a field value from a given XML node based on the specified field name.
+   *
+   * CONSIDER improving the model on which this extraction is based. It's messy!
+   *
+   * @param field The name of the field to extract. This may represent different types
+   *              of elements or attributes, such as node content, attributes, optional attributes,
+   *              plurals, singletons, etc.
+   * @param node  The XML node from which the field value is to be extracted.
+   * @tparam P The type of the field value, constrained by the `Extractor` type class.
+   * @return A tuple containing the field description as a `String` and a `Try[P]` representing
+   *         the success or failure of the extraction process. In case of failure, the `Try` includes
+   *         information about the cause of failure.
+   */
   private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
     field match {
       // NOTE special name for the (text) content of a node.
@@ -295,10 +310,22 @@ object Extractor {
       // NOTE optional members such that the name begins with "maybe"
       case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
       // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
-      // FIXME why would we be looking for a singleton LinearRing in a node which is an extrude node?
+      // TODO Issue #21 why would we be looking for a singleton LinearRing in a node which is an extrude node?
       case x => s"singleton: $x" -> extractSingleton[P](node / x)
     }
 
+  /**
+   * Extracts an attribute value from the given XML node based on its name.
+   * The extraction utilizes an implicit `Extractor` for the specified type `P`.
+   * Returns a `Failure` if the attribute is not found and `optional` is false,
+   * or if the attribute cannot be uniquely determined.
+   *
+   * @param node     the XML node from which the attribute value is retrieved (a `Node`).
+   * @param x        the name of the attribute to be extracted.
+   * @param optional a flag indicating if the attribute is optional. Defaults to false.
+   * @tparam P the type of the result, constrained by the implicit `Extractor` type class.
+   * @return a `Try[P]` containing the extracted value, or a failure if extraction fails.
+   */
   private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
     (for (ns <- node.attribute(x)) yield for (n <- ns) yield Extractor.extract[P](n)) match {
       case Some(py :: Nil) => py
@@ -441,6 +468,15 @@ object MultiExtractor {
  *           requires implicit evidence of Extractor[P].
  */
 case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor[Seq[P]] {
+  /**
+   * Extracts a sequence of elements of type `P` from the provided `NodeSeq`, ensuring that the number of extracted elements
+   * falls within a specified range. If the extraction succeeds but the resulting sequence does not meet the range requirements,
+   * a failure is returned. Non-fatal issues during the extraction are logged and ignored.
+   *
+   * @param nodeSeq the sequence of XML nodes from which elements of type `P` are to be extracted.
+   * @return a `Try` containing a sequence of extracted elements of type `P` if successful and the number of elements is within the specified range;
+   *         otherwise, a failure with the corresponding exception.
+   */
   def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
     sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
       case x@Success(ps) if range.contains(ps.size) => x
@@ -448,6 +484,12 @@ case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor
       case x@Failure(_) => x
     }
 
+  /**
+   * Logs a warning message or takes appropriate action based on the type of exception encountered during XML processing.
+   *
+   * @param x the exception to evaluate and log if necessary.
+   * @return Unit, as this method is side-effecting and logs messages without returning a value.
+   */
   private def logWarning(x: Throwable): Unit = x match {
     case MissingFieldException(_, "singleton", _) if range.start <= 0 => // NOTE: OK -- no need to log anything.
     case XmlException(message, x) => logger.warn("MultiExtractorBase: $message" + x.getLocalizedMessage)
@@ -477,20 +519,18 @@ object MultiExtractorBase {
 }
 
 /**
- * Trait which extends a function of type String => Extractor[T].
- * When the apply method is invoked with a particular label, an appropriate Extractor[T] is returned.
- *
- * CONSIDER renaming this because it isn't an extractor, but a function which creates an extractor from a String.
+ * Trait which extends a function of type `String => Extractor[T]`.
+ * When the `apply` method is invoked with a particular label, an appropriate `Extractor[T]` is returned.
  *
  * @tparam T the underlying type of the result of invoking apply. T may be an Iterable type.
  */
 trait TagToExtractorFunc[T] extends (String => Extractor[T]) {
 
   /**
-   * Method to yield an Extractor[T], given a label.
+   * Method to yield an `Extractor[T]`, given `label`.
    *
-   * @param label the label of a node or sequence of nodes we wish to extract.
-   * @return an Extractor[T].
+   * @param label the label of a node or sequence of nodes we wish to extract (a `String`).
+   * @return an `Extractor[T]`.
    */
   def apply(label: String): Extractor[T]
 }
@@ -501,22 +541,42 @@ trait TagToExtractorFunc[T] extends (String => Extractor[T]) {
  * @tparam T the underlying type of the resulting sequence when invoking apply.
  */
 trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
+  /**
+   * A sequence of tag names used to identify or categorize elements in the context of the trait.
+   */
   val tags: Seq[String]
 
+  /**
+   * A string representing a pseudo identifier or key relevant to the context of the trait.
+   * This value is used as part of the trait functionality, such as validation or categorization.
+   */
   val pseudo: String
 
+  /**
+   * Validates if the input string matches the pseudo identifier.
+   *
+   * @param w the input string to validate.
+   * @return true if the input string matches the pseudo identifier, false otherwise.
+   */
   def valid(w: String): Boolean = w == pseudo
 
+  /**
+   * A MultiExtractor instance used for extracting a sequence of type `T` from an XML `NodeSeq`.
+   * This value represents a reusable mechanism to perform the extraction process
+   * based on specific tags or identifiers within the XML structure.
+   *
+   * @tparam T the underlying type of the sequence to be extracted.
+   */
   val tsm: MultiExtractor[Seq[T]]
 }
 
 /**
- * Class which extends an Extractor of Seq[T].
+ * Class which extends an `Extractor` of `Seq[T]`.
  *
  * NOTE: used by subclassExtractor1 method (itself unused).
  *
  * @param labels a set of labels (tags)
- * @param tsm    an (implicit) MultiExtractor of Seq[T].
+ * @param tsm    an (implicit) `MultiExtractor` of `Seq[T]`.
  * @tparam T the type to be constructed.
  */
 class SubclassExtractor[T](val labels: Seq[String])(implicit tsm: MultiExtractor[Seq[T]]) extends Extractor[Seq[T]] {
