@@ -1442,7 +1442,7 @@ object KML extends Extractors with Renderers {
   }
 
   implicit val extractor: Extractor[KML] = extractor01(apply) ^^ "extractorKml"
-  implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](Positive) ^^ "multiExtractorKml"
+  implicit val extractorSeq: MultiExtractor[Seq[KML]] = multiExtractorBase[KML](NonNegative) ^^ "multiExtractorKml"
   implicit val renderer: Renderer[KML] = renderer1(apply) ^^ "rendererKml"
 
   /**
