@@ -8,7 +8,6 @@ import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
@@ -4252,7 +4251,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  // TODO Issue #19
   it should "extract and render placemarks without descriptor" in {
     val url = KML.getClass.getResource("/emptyDescriptor.kml")
     val xml: Elem = XML.loadFile(url.getFile)

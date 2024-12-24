@@ -121,8 +121,10 @@ object Extractor {
     implicitly[Extractor[T]].extract(node)
 
   /**
-   * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
-   * Usually, T is itself an Iterable type.
+   * Method to extract a `Try[T]` from the implicitly defined multi-extractor operating on the given nodes.
+   * Usually, `T` is itself an `Iterable` type.
+   *
+   * NOTE that each implicit instanced of a `MultiExtractor[T]` has its own definition of Range.
    *
    * @param nodeSeq the nodes on which the extractor will work.
    * @tparam T the underlying result type.
@@ -130,7 +132,6 @@ object Extractor {
    * @return a Try[T].
    */
   def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-//        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
     implicitly[MultiExtractor[T]].extract(nodeSeq)
 
   /**
@@ -281,6 +282,14 @@ object Extractor {
     case _ => None
   }
 
+  /**
+   * Method to extract the value of a field from the given `node`.
+   *
+   * @param field the name of the field which determines how the field will be extracted from the `node`.
+   * @param node  the `Node` from which the field will be extracted.
+   * @tparam P the underlying type of the result.
+   * @return a tuple of `String` and `Try[P]`.
+   */
   private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
     field match {
       // NOTE special name for the (text) content of a node.
@@ -299,6 +308,18 @@ object Extractor {
       case x => s"singleton: $x" -> extractSingleton[P](node / x)
     }
 
+  /**
+   * Extracts an attribute value from the given XML Node and attempts to convert it into the specified type `P`.
+   * Uses an implicit `Extractor[P]` to handle the conversion.
+   *
+   * @param node     the XML Node from which the attribute is to be extracted.
+   * @param x        the name of the attribute to extract.
+   * @param optional a flag indicating whether the attribute is optional. Defaults to false.
+   *                 If true and the attribute is not found, the method returns a failure without throwing an exception.
+   * @tparam P the type to which the extracted attribute should be converted. An implicit `Extractor[P]` must be available.
+   * @return a `Try[P]` containing the extracted and converted attribute, or a failure if the attribute is
+   *         missing and not optional, or if the extraction/conversion process fails.
+   */
   private def extractAttribute[P: Extractor](node: Node, x: String, optional: Boolean = false): Try[P] =
     (for (ns <- node.attribute(x)) yield for (n <- ns) yield Extractor.extract[P](n)) match {
       case Some(py :: Nil) => py
@@ -441,19 +462,47 @@ object MultiExtractor {
  *           requires implicit evidence of Extractor[P].
  */
 case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor[Seq[P]] {
+  /**
+   * Extracts a sequence of elements of type P from the given NodeSeq.
+   *
+   * The extraction results are processed through `sequenceForgiving` to handle failures gracefully.
+   * If the size of the resulting sequence is within the specified range, a successful result is returned.
+   * Otherwise, a failure is returned specifying that the size of the extracted elements is not in the required range.
+   *
+   * @param nodeSeq the NodeSeq to extract elements from.
+   * @return a Try containing a sequence of extracted elements of type P, or a Failure if the extraction fails
+   *         or the number of extracted elements is outside the specified range.
+   */
   def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
     sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
       case x@Success(ps) if range.contains(ps.size) => x
-      case Success(ps) => Failure(XmlException(s"MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range"))
+      case Success(ps) => Failure(XmlException(
+        s"""MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range
+           |Consider changing the Range in the appropriate call to multiExtractorBase.""".stripMargin))
       case x@Failure(_) => x
     }
 
+  /**
+   * Logs warnings for specific exceptions encountered during the extraction process.
+   *
+   * This method handles different types of `Throwable` instances based on certain conditions:
+   * - If the exception is a `MissingFieldException` for a "singleton" field and the range's start is less than or equal to zero,
+   * it considers the situation acceptable and does not log anything.
+   * - If the exception is an `XmlException`, it logs the associated message and localized message using the logger.
+   *
+   * @param x the `Throwable` to be examined and potentially logged as a warning
+   * @return Unit, the method does not produce any value
+   */
   private def logWarning(x: Throwable): Unit = x match {
     case MissingFieldException(_, "singleton", _) if range.start <= 0 => // NOTE: OK -- no need to log anything.
     case XmlException(message, x) => logger.warn("MultiExtractorBase: $message" + x.getLocalizedMessage)
   }
 }
 
+/**
+ * Companion object for the MultiExtractorBase class. This object provides predefined ranges
+ * that can be used when working with extractors or other numerical validations.
+ */
 object MultiExtractorBase {
   /**
    * All integers greater than zero (the "counting numbers" or Z+).
@@ -501,12 +550,31 @@ trait TagToExtractorFunc[T] extends (String => Extractor[T]) {
  * @tparam T the underlying type of the resulting sequence when invoking apply.
  */
 trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
+  /**
+   * A sequence of tags associated with the extractor function.
+   * This is used to describe or qualify the type of sequences that the extractor handles.
+   */
   val tags: Seq[String]
 
+  /**
+   * A string that represents a pseudo tag or identifier.
+   * It serves as a default or auxiliary string used in the context of sequence extraction
+   * within the TagToSequenceExtractorFunc trait.
+   */
   val pseudo: String
 
+  /**
+   * Determines if the provided string matches the pseudo tag or identifier.
+   *
+   * @param w the string to be checked against the pseudo tag.
+   * @return true if the provided string matches the pseudo tag, otherwise false.
+   */
   def valid(w: String): Boolean = w == pseudo
 
+  /**
+   * A `MultiExtractor` instance used for extracting sequences of type `T` from an XML `NodeSeq`.
+   * This value represents a `MultiExtractor` specifically designed for handling sequences of type `T`.
+   */
   val tsm: MultiExtractor[Seq[T]]
 }
 
