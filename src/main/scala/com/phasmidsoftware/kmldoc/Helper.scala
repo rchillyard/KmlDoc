@@ -1,13 +1,91 @@
 package com.phasmidsoftware.kmldoc
 
-import com.phasmidsoftware.core.{Text, TryUsing}
+import com.phasmidsoftware.core.{Cartesian, Text, TryUsing}
 import com.phasmidsoftware.kmldoc.KmlEdit.editFeatures
+import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor
 import scala.reflect.ClassTag
+import scala.util.Success
+import scala.util.matching.Regex
 import scala.xml.NamespaceBinding
 
+/**
+ * The Helper object provides a collection of utility functions and methods
+ * designed to facilitate common tasks and simplify code implementation.
+ *
+ * It serves as a central location for reusable helper logic, aiming to promote
+ * code modularity and reduce code duplication throughout the application.
+ */
 object Helper
+
+/**
+ * Case class Coordinate to represent a three-dimensional point.
+ *
+ * @param long longitude.
+ * @param lat  latitude.
+ * @param alt  altitude.
+ */
+case class Coordinate(long: String, lat: String, alt: String) {
+  /**
+   * Represents the Cartesian coordinate of the current instance of `Coordinate`.
+   *
+   * This value is lazily computed and will return an `Option[Cartesian]` if the `long`, `lat`, and `alt` fields
+   * of this instance can be successfully converted to `Double`.
+   * If any of these conversions fail, the result is `None`.
+   */
+  lazy val geometry: Option[Cartesian] = for (x <- long.toDoubleOption; y <- lat.toDoubleOption; z <- alt.toDoubleOption) yield Cartesian(x, y, z)
+
+  /**
+   * Computes the vector difference between the current `Coordinate` instance and another given `Coordinate` instance.
+   *
+   * @param c a `Coordinate` instance for which the vector difference is calculated with respect to the current instance.
+   * @return an `Option[Cartesian]` representing the vector difference if both coordinates can be converted to `Cartesian`,
+   *         otherwise `None`.
+   */
+  def vector(c: Coordinate): Option[Cartesian] = for (a <- this.geometry; b <- c.geometry) yield a vector b
+
+  /**
+   * Calculates the distance between the current `Coordinate` instance and another given `Coordinate` instance.
+   *
+   * The distance is computed using the Cartesian coordinates of both instances, provided that they can be successfully
+   * converted to their Cartesian representation.
+   * If either coordinate cannot be converted, the result will be `None`.
+   *
+   * @param c the `Coordinate` instance to calculate the distance to.
+   * @return an `Option[Double]` representing the Euclidean distance between the two coordinates, or `None` if the
+   *         Cartesian conversion fails for either of the coordinates.
+   */
+  def distance(c: Coordinate): Option[Double] = for (a <- this.geometry; b <- c.geometry) yield a distance b
+}
+
+/**
+ * Companion object for the `Coordinate` case class, providing methods to parse and render `Coordinate` objects.
+ */
+object Coordinate {
+
+  // CONSIDER using Parser-combinators here.
+  private val longLatAlt: Regex = """^\s*([\d\-\.]+),\s*([\d\-\.]+),\s*([\d\-\.]+)\s*$""".r
+//    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
+
+
+
+  /**
+   * Parses a coordinate string and converts it into a `Coordinate` instance,
+   * if the string matches the expected format.
+   *
+   * @param w the input string representing a coordinate in the format "longitude,latitude,altitude".
+   * @return a `Coordinate` instance created from the parsed string.
+   * @throws KmlException if the input string does not match the expected coordinate format.
+   */
+  def apply(w: String): Coordinate = w match {
+    case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)
+    case _ => throw KmlException(s"""bad coordinate string: "$w" """)
+  }
+
+  implicit val renderer: Renderer[Coordinate] = Renderer { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long},${t.lat},${t.alt}") } ^^ "rendererCoordinate"
+  implicit val rendererSeq: Renderer[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](KmlRenderers.FormatCoordinate) ^^ "rendererCoordinates1"
+}
 
 /**
  * Trait to define the property of owning features.

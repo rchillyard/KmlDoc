@@ -3,7 +3,6 @@ package com.phasmidsoftware.kmldoc
 import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
-import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor.intExtractor
@@ -11,7 +10,6 @@ import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
 import scala.io.Source
 import scala.util._
-import scala.util.matching.Regex
 
 /**
  * Trait KmlObject: abstract super-element of all KML elements. Known in the reference document as Object.
@@ -105,7 +103,32 @@ object AbstractViewData extends Extractors with Renderers {
 }
 
 /**
+ * Case class representing an altitude value.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
+ *
+ * @param $ the altitude value, typically measured in meters.
+ */
+case class Altitude($: Double)
+
+/**
+ * Object representing utilities for working with the Altitude case class.
+ *
+ * Provides implementations for `Extractor` and `Renderer` type classes,
+ * enabling extraction and rendering functionality for `Altitude` and `Option[Altitude]`.
+ */
+object Altitude extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Altitude] = extractor10(apply)
+  implicit val extractorOpt: Extractor[Option[Altitude]] = extractorOption[Altitude]
+  implicit val renderer: Renderer[Altitude] = renderer1(apply)
+  implicit val rendererOpt: Renderer[Option[Altitude]] = optionRenderer[Altitude]
+}
+
+/**
  * Represents the altitude mode for a specific KML element.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
  *
  * An altitude mode defines the way altitude values are interpreted.
  *
@@ -173,6 +196,42 @@ object BalloonStyle extends Extractors with Renderers {
 }
 
 /**
+ * This case class represents a background color element with a single parameter.
+ * Used by `BalloonStyle` and `ListStyle`.
+ *
+ * @param $ a CharSequence value that defines the background color.
+ */
+case class BgColor($: CharSequence)
+
+/**
+ * Companion object for the BgColor case class.
+ * This object provides utilities
+ * to extract and render BgColor instances.
+ * It includes implicit definitions
+ * for handling BgColor objects and optional BgColor instances using the Extractor
+ * and Renderer type classes respectively.
+ *
+ * The Extractor instances are used to parse data into BgColor instances, while
+ * the Renderer instances manage the conversion of BgColor objects back to their
+ * desired output formats.
+ *
+ * Key functionalities:
+ * - Provides an implicit extractor for BgColor to facilitate data extraction.
+ * - Supplies an optional extractor to handle optional BgColor values.
+ * - Defines a renderer for BgColor to support data transformation and output.
+ * - Includes an optional renderer for handling optional BgColor values.
+ */
+object BgColor extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[BgColor] = extractor10(apply) ^^ "extractorBgColor"
+  implicit val extractorOpt: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
+  implicit val renderer: Renderer[BgColor] = renderer1(apply) ^^ "rendererBgColor"
+  implicit val rendererOpt: Renderer[Option[BgColor]] = optionRenderer[BgColor] ^^ "rendererOptionBgColor"
+}
+
+/**
  * Case class Camera represents a viewpoint from which a KML feature is viewed.
  * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
  *
@@ -209,6 +268,70 @@ object Camera extends Extractors with Renderers {
   implicit val extractor: Extractor[Camera] = extractorPartial[AbstractViewData, Camera](extractorPartial)
   implicit val renderer: Renderer[Camera] = renderer7Super(apply)(_.abstractViewData)
   implicit val rendererOpt: Renderer[Option[Camera]] = optionRenderer[Camera]
+}
+
+/**
+ * Case class to define Color.
+ * An element of ColorStyle.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#colorstyle ColorStyle]]
+ *
+ * @param $ the color as a hexadecimal string.
+ */
+case class Color($: CharSequence)
+
+/**
+ * The `Color` object provides implicit extractors and renderers for the `Color` case class.
+ * It enhances the functional processing of `Color` instances, enabling extraction and rendering capabilities.
+ *
+ * Implicit extractors provided:
+ * - `extractor`: Extracts a `Color` instance.
+ * - `extractorOpt`: Extracts an optional `Color` instance.
+ *
+ * Implicit renderers provided:
+ * - `renderer`: Renders a `Color` instance.
+ * - `rendererOpt`: Renders an optional `Color` instance.
+ *
+ * This object is designed for integration with systems requiring model extraction and rendering logic.
+ */
+object Color extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractorColor"
+  implicit val extractorOpt: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
+  implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
+  implicit val rendererOpt: Renderer[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
+}
+
+/**
+ * Case class to model ColorMode.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#colormode ColorMode]]
+ *
+ * @param $ the color mode as string: "normal" or "random."
+ */
+case class ColorMode($: CharSequence)
+
+/**
+ * Object companion for the `ColorMode` case class that provides auxiliary utilities.
+ *
+ * This object includes implicit `Extractor` and `Renderer` instances for `ColorMode`.
+ *
+ * ColorMode represents the mode of color used, typically defined as either "normal" or "random."
+ *
+ * Key functionalities:
+ * - Implicit `Extractor[ColorMode]`: Used to extract `ColorMode` values.
+ * - Implicit `Extractor[Option[ColorMode]]`: Handles optional extraction for `ColorMode`.
+ * - Implicit `Renderer[ColorMode]`: Converts `ColorMode` to a renderable form.
+ * - Implicit `Renderer[Option[ColorMode]]`: Renders optional `ColorMode` values.
+ */
+object ColorMode extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[ColorMode] = extractor10(apply) ^^ "extractorColorMode"
+  implicit val extractorOpt: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
+  implicit val renderer: Renderer[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
+  implicit val rendererOpt: Renderer[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
 }
 
 /**
@@ -440,101 +563,6 @@ object Coordinates extends Extractors with Renderers {
 }
 
 /**
- * Case class Coordinate to represent a three-dimensional point.
- *
- * @param long longitude.
- * @param lat  latitude.
- * @param alt  altitude.
- */
-case class Coordinate(long: String, lat: String, alt: String) {
-  /**
-   * Represents the Cartesian coordinate of the current instance of `Coordinate`.
-   *
-   * This value is lazily computed and will return an `Option[Cartesian]` if the `long`, `lat`, and `alt` fields
-   * of this instance can be successfully converted to `Double`.
-   * If any of these conversions fail, the result is `None`.
-   */
-  lazy val geometry: Option[Cartesian] = for (x <- long.toDoubleOption; y <- lat.toDoubleOption; z <- alt.toDoubleOption) yield Cartesian(x, y, z)
-
-  /**
-   * Computes the vector difference between the current `Coordinate` instance and another given `Coordinate` instance.
-   *
-   * @param c a `Coordinate` instance for which the vector difference is calculated with respect to the current instance.
-   * @return an `Option[Cartesian]` representing the vector difference if both coordinates can be converted to `Cartesian`,
-   *         otherwise `None`.
-   */
-  def vector(c: Coordinate): Option[Cartesian] = for (a <- this.geometry; b <- c.geometry) yield a vector b
-
-  /**
-   * Calculates the distance between the current `Coordinate` instance and another given `Coordinate` instance.
-   *
-   * The distance is computed using the Cartesian coordinates of both instances, provided that they can be successfully
-   * converted to their Cartesian representation.
-   * If either coordinate cannot be converted, the result will be `None`.
-   *
-   * @param c the `Coordinate` instance to calculate the distance to.
-   * @return an `Option[Double]` representing the Euclidean distance between the two coordinates, or `None` if the
-   *         Cartesian conversion fails for either of the coordinates.
-   */
-  def distance(c: Coordinate): Option[Double] = for (a <- this.geometry; b <- c.geometry) yield a distance b
-}
-
-/**
- * Companion object for the `Coordinate` case class, providing methods to parse and render `Coordinate` objects.
- */
-object Coordinate {
-
-  // CONSIDER using Parser-combinators here.
-  private val longLatAlt: Regex = """^\s*([\d\-\.]+),\s*([\d\-\.]+),\s*([\d\-\.]+)\s*$""".r
-//    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
-
-  /**
-   * Parses a coordinate string and returns a Coordinate object.
-   *
-   * @param w the coordinate string to parse. The string should follow the format of longLatAlt(long, lat, alt).
-   * @return a Coordinate object containing the parsed longitude, latitude, and altitude.
-   * @throws KmlException if the input string does not match the expected coordinate format.
-   */
-  def apply(w: String): Coordinate = w match {
-    case longLatAlt(long, lat, alt) => Coordinate(long, lat, alt)
-    case _ => throw KmlException(s"""bad coordinate string: "$w" """)
-  }
-
-  implicit val renderer: Renderer[Coordinate] = Renderer { (t: Coordinate, _: Format, _: StateR) => Success(s"${t.long},${t.lat},${t.alt}") } ^^ "rendererCoordinate"
-  implicit val rendererSeq: Renderer[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](KmlRenderers.FormatCoordinate) ^^ "rendererCoordinates1"
-}
-
-/**
- * Fill.
- * NOTE that this is a boolean that is represented by 0 or 1.
- *
- * @param boolean whether to fill or not.
- */
-case class Fill(boolean: Int)
-
-/**
- * The `Fill` object provides extractor and renderer implementations for the `Fill` case class.
- * It offers mechanisms to extract `Fill` instances and render them as representations
- * suitable for processing or serialization.
- *
- * The object includes implicit extractors and renderers for both `Fill` and `Option[Fill]` types:
- * - Extractors parse and convert input representations into `Fill` instances.
- * - Renderers generate output representations from `Fill` instances.
- *
- * Operations within this object make use of the provided mechanisms in the `Extractors`
- * and `Renderers` traits for consistent and flexible processing pipelines.
- */
-object Fill extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[Fill] = extractor10(apply) ^^ "extractorFill"
-  implicit val extractorOpt: Extractor[Option[Fill]] = extractorOption[Fill] ^^ "extractMaybeFill"
-  implicit val renderer: Renderer[Fill] = renderer1(apply) ^^ "rendererFill"
-  implicit val rendererOpt: Renderer[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
-}
-
-/**
  * DisplayMode which has values "default" or "hide".
  * Used by BalloonStyle.
  *
@@ -588,9 +616,9 @@ object Document extends Extractors with Renderers {
 }
 
 /**
- * Class Extrude which represents a Boolean.
- *
- * Similar to Tessellate--and in fact they often go together.
+ * Class Extrude which represents a `Boolean`.
+ * Used by `LineString` and `Polygon`.
+ * Similar to `Tessellate`--and in fact they often go together.
  *
  * @param $ the value.
  */
@@ -701,6 +729,36 @@ object FeatureData extends Extractors with Renderers {
   val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial52(apply)
   implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial) ^^ "extractorFeatureData"
   implicit val renderer: Renderer[FeatureData] = renderer7Super(apply)(_.kmlData) ^^ "rendererFeatureData"
+}
+
+/**
+ * Fill.
+ * NOTE that this is a boolean that is represented by 0 or 1.
+ *
+ * @param boolean whether to fill or not.
+ */
+case class Fill(boolean: Int)
+
+/**
+ * The `Fill` object provides extractor and renderer implementations for the `Fill` case class.
+ * It offers mechanisms to extract `Fill` instances and render them as representations
+ * suitable for processing or serialization.
+ *
+ * The object includes implicit extractors and renderers for both `Fill` and `Option[Fill]` types:
+ * - Extractors parse and convert input representations into `Fill` instances.
+ * - Renderers generate output representations from `Fill` instances.
+ *
+ * Operations within this object make use of the provided mechanisms in the `Extractors`
+ * and `Renderers` traits for consistent and flexible processing pipelines.
+ */
+object Fill extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Fill] = extractor10(apply) ^^ "extractorFill"
+  implicit val extractorOpt: Extractor[Option[Fill]] = extractorOption[Fill] ^^ "extractMaybeFill"
+  implicit val renderer: Renderer[Fill] = renderer1(apply) ^^ "rendererFill"
+  implicit val rendererOpt: Renderer[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
 }
 
 /**
@@ -844,97 +902,6 @@ object Heading extends Extractors with Renderers {
 }
 
 /**
- * This case class represents a background color element with a single parameter.
- *
- * @param $ a CharSequence value that defines the background color.
- */
-case class BgColor($: CharSequence)
-
-/**
- * Companion object for the BgColor case class.
- * This object provides utilities
- * to extract and render BgColor instances.
- * It includes implicit definitions
- * for handling BgColor objects and optional BgColor instances using the Extractor
- * and Renderer type classes respectively.
- *
- * The Extractor instances are used to parse data into BgColor instances, while
- * the Renderer instances manage the conversion of BgColor objects back to their
- * desired output formats.
- *
- * Key functionalities:
- * - Provides an implicit extractor for BgColor to facilitate data extraction.
- * - Supplies an optional extractor to handle optional BgColor values.
- * - Defines a renderer for BgColor to support data transformation and output.
- * - Includes an optional renderer for handling optional BgColor values.
- */
-object BgColor extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[BgColor] = extractor10(apply) ^^ "extractorBgColor"
-  implicit val extractorOpt: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
-  implicit val renderer: Renderer[BgColor] = renderer1(apply) ^^ "rendererBgColor"
-  implicit val rendererOpt: Renderer[Option[BgColor]] = optionRenderer[BgColor] ^^ "rendererOptionBgColor"
-}
-
-/**
- * Case class Icon.
- * NOTE: we do not support Link.
- * See [[https://developers.google.com/kml/documentation/kmlreference#icon Icon]]
- *
- * @param href a URL reference to an image.
- */
-case class Icon(href: Text)
-
-/**
- * Companion object for the case class Icon.
- *
- * Extends functionality with Extractors and Renderers to enable safe conversion
- * and rendering for the Icon case class.
- * The object defines implicit extractor
- * and renderer instances for handling the Icon type.
- * The extractor and renderer
- * are utilized for serializing and deserializing Icon objects.
- */
-object Icon extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[Icon] = extractor10(apply) ^^ "extractorIcon"
-  implicit val renderer: Renderer[Icon] = renderer1(apply) ^^ "rendererIcon"
-}
-
-/**
- * Case class representing an icon associated with an item, characterized by its state and a hyperlink reference.
- *
- * @param state the state of the ItemIcon, which should ideally represent one of several possible enumerated statuses
- *              such as "open," "closed," "error," "fetching0," "fetching1," or "fetching2."
- * @param href  the hyperlink reference (represented as Text) associated with the ItemIcon.
- */
-case class ItemIcon(state: State, href: Text)
-
-/**
- * Companion object for the ItemIcon case class that provides utilities for extracting,
- * rendering, and optionally managing ItemIcon instances.
- * This object facilitates the
- * interaction and transformation of ItemIcon objects through predefined extractors and renderers.
- *
- * Extractors and Renderers:
- * - Provides implicit definitions for extracting values of type `ItemIcon` and `Option[ItemIcon]`.
- * - Provides implicit definitions for rendering `ItemIcon` and `Option[ItemIcon]` objects.
- */
-object ItemIcon extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[ItemIcon] = extractor20(apply) ^^ "extractorItemIcon"
-  implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
-  implicit val renderer: Renderer[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
-  implicit val rendererOpt: Renderer[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
-}
-
-/**
  * Case class to model a HotSpot.
  *
  * TODO change _xunits and _yunits to be of type String.
@@ -967,395 +934,30 @@ object HotSpot extends Extractors with Renderers {
 }
 
 /**
- * Case class to define Color.
- * An element of ColorStyle.
- * See [[https://developers.google.com/kml/documentation/kmlreference#colorstyle ColorStyle]]
+ * Case class Icon.
+ * NOTE: we do not currently support Link.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#icon Icon]]
  *
- * @param $ the color as a hexadecimal string.
+ * @param href a URL reference to an image.
  */
-case class Color($: CharSequence)
+case class Icon(href: Text)
 
 /**
- * The `Color` object provides implicit extractors and renderers for the `Color` case class.
- * It enhances the functional processing of `Color` instances, enabling extraction and rendering capabilities.
+ * Companion object for the case class Icon.
  *
- * Implicit extractors provided:
- * - `extractor`: Extracts a `Color` instance.
- * - `extractorOpt`: Extracts an optional `Color` instance.
- *
- * Implicit renderers provided:
- * - `renderer`: Renders a `Color` instance.
- * - `rendererOpt`: Renders an optional `Color` instance.
- *
- * This object is designed for integration with systems requiring model extraction and rendering logic.
+ * Extends functionality with Extractors and Renderers to enable safe conversion
+ * and rendering for the Icon case class.
+ * The object defines implicit extractor
+ * and renderer instances for handling the Icon type.
+ * The extractor and renderer
+ * are utilized for serializing and deserializing Icon objects.
  */
-object Color extends Extractors with Renderers {
+object Icon extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractorColor"
-  implicit val extractorOpt: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
-  implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
-  implicit val rendererOpt: Renderer[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
-}
-
-/**
- * Case class to model ColorMode.
- * See [[https://developers.google.com/kml/documentation/kmlreference#colormode ColorMode]]
- *
- * @param $ the color mode as string: "normal" or "random."
- */
-case class ColorMode($: CharSequence)
-
-/**
- * Object companion for the `ColorMode` case class that provides auxiliary utilities.
- *
- * This object includes implicit `Extractor` and `Renderer` instances for `ColorMode`.
- *
- * ColorMode represents the mode of color used, typically defined as either "normal" or "random."
- *
- * Key functionalities:
- * - Implicit `Extractor[ColorMode]`: Used to extract `ColorMode` values.
- * - Implicit `Extractor[Option[ColorMode]]`: Handles optional extraction for `ColorMode`.
- * - Implicit `Renderer[ColorMode]`: Converts `ColorMode` to a renderable form.
- * - Implicit `Renderer[Option[ColorMode]]`: Renders optional `ColorMode` values.
- */
-object ColorMode extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[ColorMode] = extractor10(apply) ^^ "extractorColorMode"
-  implicit val extractorOpt: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
-  implicit val renderer: Renderer[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
-  implicit val rendererOpt: Renderer[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
-}
-
-/**
- * Represents a "LookAt" view element in a KML document, describing a position to look at from a specific viewpoint,
- * with additional details like orientation, range, and optional altitude.
- * See [[https://developers.google.com/kml/documentation/kmlreference#lookat LookAt]]
- *
- * LookAt defines the geographic position (longitude, latitude), optional altitude, heading, tilt, and range
- * parameters for setting up a view in a geographic visualization context such as Google Earth.
- *
- * @param longitude         the longitude of the LookAt position in degrees.
- * @param latitude          the latitude of the LookAt position in degrees.
- * @param maybeAltitude     an optional altitude value for the LookAt position.
- * @param heading           the direction (in degrees) from the observer to the LookAt point.
- * @param tilt              the tilt angle (in degrees) of the view relative to the surface.
- * @param range             the distance (in meters) from the observer to the LookAt point.
- * @param maybeAltitudeMode an optional altitude mode specifying how the altitude is interpreted.
- * @param abstractViewData  additional data inherited from AbstractView.
- */
-case class LookAt(longitude: Longitude, latitude: Latitude, maybeAltitude: Option[Altitude], heading: Heading, tilt: Tilt, range: Range, maybeAltitudeMode: Option[AltitudeMode])(val abstractViewData: AbstractViewData) extends AbstractView
-
-/**
- * Companion object for the LookAt class, providing implicit extractors, renderers, and utilities
- * for working with LookAt instances.
- * LookAt represents a viewpoint in a KML visualization,
- * describing location, orientation, and viewing distance.
- *
- * It extends the functionality of Extractors and Renderers to allow for convenient serialization,
- * deserialization, and optional handling of LookAt objects.
- *
- * - `extractorPartial`: Defines a partial extractor for the LookAt class.
- * - `extractor`: An implicit extractor for deserializing LookAt instances.
- * - `extractorOpt`: An implicit extractor for handling optional LookAt instances.
- * - `renderer`: An implicit renderer for serializing LookAt instances.
- * - `rendererOpt`: An implicit renderer for serializing optional LookAt instances.
- */
-object LookAt extends Extractors with Renderers {
-
-  val extractorPartial: Extractor[AbstractViewData => LookAt] = extractorPartial70(apply)
-  implicit val extractor: Extractor[LookAt] = extractorPartial[AbstractViewData, LookAt](extractorPartial)
-  implicit val extractorOpt: Extractor[Option[LookAt]] = extractorOption[LookAt]
-  implicit val renderer: Renderer[LookAt] = renderer7Super(apply)(_.abstractViewData)
-  implicit val rendererOpt: Renderer[Option[LookAt]] = optionRenderer[LookAt]
-}
-
-/**
- * Placemark: subtype of Feature.
- * See [[https://developers.google.com/kml/documentation/kmlreference#placemark Placemark]].
- *
- * CONSIDER restricting the number of Geometry elements to one.
- *
- * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
- * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
- */
-case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] with Invertible[Placemark] {
-
-  /**
-   * Inverts the current Placemark instance by reversing the orientation or nature
-   * of its underlying geometric structure, if applicable.
-   * This is achieved by attempting to invert each associated Geometry.
-   *
-   * @return an Option containing a new Placemark with inverted Geometries,
-   *         or None if inversion is not possible.
-   */
-  def invert: Option[Placemark] = {
-    val gos: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
-    val gso: Option[Seq[Geometry]] = FP.sequence(gos)
-    for (gs <- gso) yield Placemark(gs)(featureData)
-  }
-
-  /**
-   * Merge this mergeable object with <code>t</code>.
-   *
-   * @param t the object to be merged with this.
-   * @return the merged value of T.
-   */
-  def merge(t: Placemark, mergeName: Boolean = true): Option[Placemark] = {
-    logger.info(s"joinPlacemarks: $name, ${t.name} with mergeName=$mergeName")
-    val los: Seq[Option[Geometry]] = for (gp <- this.Geometry; gq <- t.Geometry) yield gp.merge(gq)
-    val gs: Seq[Geometry] = los filter (_.isDefined) map (_.get)
-    for (fd <- featureData.merge(t.featureData, mergeName)) yield Placemark(gs)(fd)
-  }
-
-  override def toString: String = s"Placemark: name=${name.$} with ${Geometry.size} geometries: $Geometry"
-
-  /**
-   * Retrieves the name of the feature data.
-   *
-   * @return The name of the feature as a `Text` instance.
-   */
-  def name: Text = featureData.name
-
-  /**
-   * Method to edit this Feature, given a sequence of sibling Features such that we may be able to combine features.
-   *
-   * @param e  the edit which may (or may not) apply to <code>this</code>.
-   * @param fs a sequence of Features which are the children of <code>this</code>'s family (including <code>p</code> itself).
-   * @return an optional Feature.
-   */
-  def editToOptionOption(e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] = e.operands match {
-    case 1 => editMatching1(e)
-    case 2 => editMatchingPlacemark2(e, fs)
-  }
-
-  /**
-   * Method to edit the given Placemark with zero additional Features.
-   *
-   * @param e the edit which may (or may not) apply to <code>this</code>.
-   * @return an optional Feature.
-   */
-  private def editMatching1(e: KmlEdit) = (name, e) match {
-    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, nameToMatch), None))
-      if name.matches(nameToMatch) =>
-      logger.info(s"delete: $nameToMatch")
-      Some(None)
-    case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
-      Some(Some(this))
-    case (_, KmlEdit(KmlEdit.INVERT, _, Element(_, nameToMatch), _))
-      if name.matches(nameToMatch) =>
-      Some(this.invert)
-    case _ =>
-      None
-  }
-
-  /**
-   * Method to process the given Placemark with one additional Features.
-   *
-   * @param e  the edit which may (or may not) apply to <code>p</code>.
-   * @param fs a sequence of Features which are the children of <code>p</code>'s family (including <code>p</code> itself).
-   * @return an optional optional Feature.
-   */
-  private def editMatchingPlacemark2(e: KmlEdit, fs: Seq[Feature]) =
-    e match {
-      case KmlEdit(command@(JOIN | JOINX), _, Element("Placemark", nameToMatch1), Some(Element("Placemark", nameToMatch2)))
-        if name.matches(nameToMatch1) =>
-        Some(joinMatchedPlacemarks(fs, nameToMatch2, command == JOIN))
-      case _ =>
-        None
-    }
-
-  /**
-   * Method to join two Placemarks together.
-   *
-   * @param fs          the potential features to be joined with <code>p</code>. These are the siblings of <code>p</code> itself.
-   * @param nameToMatch the name of the feature to be joined, as defined by the edit.
-   * @return an optional Feature which, if defined, is the new Placemark to be used instead of <code>p</code>.
-   */
-  private def joinMatchedPlacemarks(fs: Seq[Feature], nameToMatch: String, mergeName: Boolean) = {
-    val zz = for (f <- fs if f != this) yield joinMatchingPlacemarks(nameToMatch, f, mergeName)
-    for (z <- zz.find(_.isDefined); q <- z) yield q
-  }
-
-  /**
-   * Attempts to join a matching `Placemark` associated with the provided `Feature` based on the specified name.
-   * If the feature is a `Placemark` and its name matches the given string, it attempts to merge this `Placemark`
-   * with the given one.
-   * Otherwise, returns `None`.
-   *
-   * @param name      the name to match against the `Placemark`'s name.
-   * @param feature   the `Feature` which may or may not be a `Placemark` to attempt merging.
-   * @param mergeName a flag indicating whether to merge the names of the two `Placemark` objects during the merge operation.
-   * @return an optional merged `Placemark` or `None` if the names do not match or the feature is not a `Placemark`.
-   */
-  private def joinMatchingPlacemarks(name: String, feature: Feature, mergeName: Boolean) = feature match {
-    case q: Placemark if q.name.matches(name) => merge(q, mergeName)
-    // FIXME Issue #20 can result in this Placemark being lost if name doesn't match q.name
-    case _ => None
-  }
-}
-
-/**
- * Companion object to Placemark.
- */
-object Placemark extends Extractors with Renderers {
-  val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
-  implicit val extractor: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorPartial) ^^ "extractorPlacemark"
-  implicit val renderer: Renderer[Placemark] = renderer1Super(apply)(_.featureData) ^^ "rendererPlacemark"
-  implicit val rendererSeq: Renderer[Seq[Placemark]] = sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
-}
-
-/**
- * Case class Point which extends Geometry.
- *
- * See [[https://developers.google.com/kml/documentation/kmlreference#point Point]]
- *
- * @param coordinates  a sequence of Coordinates objects.
- * @param geometryData the other properties of the Point.
- */
-case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
-
-/**
- * Companion object for the case class Point.
- *
- * This object provides utilities for working with the Point type,
- * including extractors and renderers to handle serialization and parsing.
- *
- * Utilities:
- * - Provides an implicit extractor to parse Point objects from GeometryData.
- * - Provides an implicit renderer for serializing Point objects.
- * - Provides a renderer for sequences of Point objects.
- */
-object Point extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
-  implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
-  implicit val renderer: Renderer[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
-  implicit val rendererSeq: Renderer[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
-}
-
-/**
- * Case class LineString which extends Geometry.
- *
- * See [[https://developers.google.com/kml/documentation/kmlreference#linestring LineString]]
- *
- * @param tessellate  the tessellation.
- * @param coordinates a sequence of Coordinates objects.
- */
-case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry {
-
-  import Coordinates.empty
-
-  /**
-   * Merges this `LineString` instance with the given `Geometry` instance.
-   *
-   * This method attempts to merge the attributes and data of the current `LineString` instance
-   * with the provided `Geometry` instance if it is of type `LineString`.
-   * The merging process involves combining tessellations, geometry data, and coordinate sequences,
-   * with each step subject to specific merge rules.
-   *
-   * @param g         the `Geometry` instance to merge with.
-   * @param mergeName a Boolean indicating whether to merge names (default is true).
-   * @return an `Option` containing the merged `LineString` instance if successful, or `None` otherwise.
-   */
-  override def merge(g: Geometry, mergeName: Boolean = true): Option[Geometry] = g match {
-    case l@LineString(_, _) =>
-      for {
-        t <- tessellate merge l.tessellate
-        g <- geometryData merge l.geometryData
-        c <- mergeSequence(coordinates)(empty).headOption
-        d <- mergeSequence(l.coordinates)(empty).headOption
-        z <- c merge d
-      } yield LineString(t, Seq(z))(g)
-  }
-
-  /**
-   * Returns an inverted version of this `LineString`, where the order of the coordinates
-   * in each sequence is reversed.
-   *
-   * @return an `Option` containing the inverted `LineString` instance if successful.
-   */
-  override def invert: Option[LineString] = Some(LineString(tessellate, for (c <- coordinates) yield c.reverse)(geometryData))
-
-}
-
-/**
- * Object `LineString` serves as a companion to the `LineString` case class.
- * It provides extraction and rendering capabilities for `LineString` objects.
- *
- * The object includes implicit values for extraction and rendering to facilitate
- * seamless operations such as serialization, deserialization, and transformation
- * of `LineString` instances.
- *
- * This object is designed for internal configuration, such as connecting the
- * `Extractor` and `Renderer` abstractions with the `LineString` case class.
- */
-object LineString extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => LineString] = extractorPartial11(apply)
-  implicit val extractor: Extractor[LineString] = extractorPartial[GeometryData, LineString](extractorPartial) ^^ "extractorLineString"
-  implicit val renderer: Renderer[LineString] = renderer2Super(apply)(_.geometryData) ^^ "rendererLineString"
-  implicit val rendererSeq: Renderer[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
-}
-
-/**
- * Case class LineString which extends Geometry.
- *
- * See [[https://developers.google.com/kml/documentation/kmlreference#linestring LineString]]
- *
- * @param maybeTessellate the tessellation.
- * @param outerBoundaryIs an OuterBoundaryIs object.
- * @param innerBoundaryIs a sequence of InnerBoundaryIs objects.
- */
-case class Polygon(maybeTessellate: Option[Tessellate], outerBoundaryIs: OuterBoundaryIs, innerBoundaryIs: Seq[InnerBoundaryIs])(val geometryData: GeometryData) extends Geometry
-
-/**
- * Companion object for the `Polygon` case class.
- *
- * Provides extractors and renderers that are useful for working with the `Polygon` type.
- * Specifically, it allows for extracting `Polygon` instances from `GeometryData` and rendering
- * `Polygon` instances to their desired outputs.
- *
- * This object extends `Extractors` and `Renderers`, enabling integration with extraction
- * and rendering functionalities of the system.
- *
- * Members:
- *
- * - `extractorPartial`: A private partial extractor specifically for handling `Polygon` extraction logic.
- * - `extractor`: An implicit `Extractor[Polygon]` that utilizes `extractorPartial` for complete extraction functionality.
- * - `renderer`: An implicit `Renderer[Polygon]` that allows rendering a `Polygon` while leveraging its geometry data.
- */
-object Polygon extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => Polygon] = extractorPartial21(apply)
-  implicit val extractor: Extractor[Polygon] = extractorPartial[GeometryData, Polygon](extractorPartial) ^^ "extractorPolygon"
-  implicit val renderer: Renderer[Polygon] = renderer3Super(apply)(_.geometryData) ^^ "rendererPolygon"
-}
-
-/**
- * Represents the outer boundary of a polygon in KML format.
- * This case class holds a `LinearRing`, which defines the coordinates
- * that create the outer boundary.
- * See [[https://developers.google.com/kml/documentation/kmlreference#outerboundaryis outerBoundaryIs]]
- *
- * @param LinearRing the `LinearRing` instance that specifies the coordinates
- *                   of the outer boundary of a polygon.
- */
-case class OuterBoundaryIs(LinearRing: LinearRing)
-
-/**
- * Companion object for the `OuterBoundaryIs` case class.
- * This object provides utilities for extracting and rendering `OuterBoundaryIs` instances.
- *
- * The `extractor` is an implicit value utilized for extracting `OuterBoundaryIs` instances,
- * and it uses the `extractor10` combinator along with the `apply` method of `OuterBoundaryIs`.
- *
- * The `renderer` is an implicit value used for rendering `OuterBoundaryIs` instances into
- * their corresponding KML representations.
- * It employs the `renderer1` combinator with the `apply` method */
-object OuterBoundaryIs extends Extractors with Renderers {
-  implicit val extractor: Extractor[OuterBoundaryIs] = extractor10(apply) ^^ "extractorOuterBoundaryIs"
-  implicit val renderer: Renderer[OuterBoundaryIs] = renderer1(apply) ^^ "rendererOuterBoundaryIs"
+  implicit val extractor: Extractor[Icon] = extractor10(apply) ^^ "extractorIcon"
+  implicit val renderer: Renderer[Icon] = renderer1(apply) ^^ "rendererIcon"
 }
 
 /**
@@ -1379,254 +981,32 @@ object InnerBoundaryIs extends Extractors with Renderers {
 }
 
 /**
- * Case class LineString which extends Geometry.
+ * Case class representing an icon associated with an item, characterized by its state and a hyperlink reference.
  *
- * See [[https://developers.google.com/kml/documentation/kmlreference#linearring LinearRing]]
- *
- * @param maybeTessellate the (optional) tessellation.
- * @param coordinates     a sequence of Coordinates objects.
+ * @param state the state of the ItemIcon, which should ideally represent one of several possible enumerated statuses
+ *              such as "open," "closed," "error," "fetching0," "fetching1," or "fetching2."
+ * @param href  the hyperlink reference (represented as Text) associated with the ItemIcon.
  */
-case class LinearRing(maybeTessellate: Option[Tessellate], coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
+case class ItemIcon(state: State, href: Text)
 
 /**
- * Companion object for the LinearRing case class.
+ * Companion object for the ItemIcon case class that provides utilities for extracting,
+ * rendering, and optionally managing ItemIcon instances.
+ * This object facilitates the
+ * interaction and transformation of ItemIcon objects through predefined extractors and renderers.
  *
- * This object provides extraction and rendering functionalities for LinearRing instances.
- * It defines an implicit extractor and renderer for working with LinearRing objects.
- * The extractorPartial method is used to create a partial extractor specific to the LinearRing type.
- * The extractor is responsible for extracting LinearRing instances using GeometryData.
- * The renderer is responsible for rendering LinearRing instances back into a specific representation.
+ * Extractors and Renderers:
+ * - Provides implicit definitions for extracting values of type `ItemIcon` and `Option[ItemIcon]`.
+ * - Provides implicit definitions for rendering `ItemIcon` and `Option[ItemIcon]` objects.
  */
-object LinearRing extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => LinearRing] = extractorPartial11(apply)
-  implicit val extractor: Extractor[LinearRing] = extractorPartial[GeometryData, LinearRing](extractorPartial) ^^ "extractorLinearRing"
-  implicit val renderer: Renderer[LinearRing] = renderer2Super(apply)(_.geometryData) ^^ "rendererLinearRing"
-}
-
-/**
- * Case class ListStyle which extends ColorStyle.
- *
- * See [[https://developers.google.com/kml/documentation/kmlreference#liststyle List Style]]
- *
- * NOTE According to the current KML reference, this object extends SubStyle or ColorStyle (it's not clear which).
- *
- * @param bgColor           optional background color (maybe it isn't optional if there's no color element).
- * @param maybeListItemType optional ListItemType.
- * @param maybeItemIcon     the display mode.
- * @param colorStyleData    the (auxiliary) color style properties.
- */
-case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], maybeItemIcon: Option[ItemIcon])(val colorStyleData: ColorStyleData) extends ColorStyle
-
-/**
- * Companion object for the `ListStyle` case class, providing extractors and renderers.
- *
- * This object includes functionality for extracting and rendering `ListStyle` instances,
- * utilizing partial extractors and renderers.
- * This allows seamless integration with
- * serialization or transformation frameworks.
- *
- * Members:
- * - `extractorPartial`: A partial extractor for converting `ColorStyleData` to `ListStyle`.
- * - `extractor`: An implicit extractor for `ListStyle`,
- * providing the ability to transform data into a `ListStyle` instance.
- * - `renderer`: An implicit renderer for `ListStyle`, enabling transformation of `ListStyle` instances into a rendered format.
- */
-object ListStyle extends Extractors with Renderers {
-  val extractorPartial: Extractor[ColorStyleData => ListStyle] = extractorPartial30(apply) ^^ "extractorCSD2ListStyle"
-  implicit val extractor: Extractor[ListStyle] = extractorPartial[ColorStyleData, ListStyle](extractorPartial) ^^ "extractorListStyle"
-  implicit val renderer: Renderer[ListStyle] = renderer3Super(apply)(_.colorStyleData) ^^ "rendererListStyle"
-}
-
-/**
- * Case class LineStyle which extends ColorStyle.
- * See [[https://developers.google.com/kml/documentation/kmlreference#linestyle Line Style]]
- *
- * NOTE: the width is optional but I can't actually find an instance of LineStyle that doesn't have a width.
- *
- * @param maybeWidth     optional width of the line.
- * @param colorStyleData other properties.
- */
-case class LineStyle(maybeWidth: Option[Width])(val colorStyleData: ColorStyleData) extends ColorStyle
-
-/**
- * Companion object for the `LineStyle` case class, providing extractors and renderers.
- *
- * This object includes partial extractors, implicit extractors, and renderers for `LineStyle` instances.
- * It facilitates conversion to and from data structures in the context of `LineStyle`.
- *
- * Members:
- * - `extractorPartial`: Partial extractor for `ColorStyleData` */
-object LineStyle extends Extractors with Renderers {
-
-  val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
-  implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorPartial) ^^ "extractorLineStyle"
-  implicit val renderer: Renderer[LineStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLineStyle"
-  implicit val rendererOpt: Renderer[Option[LineStyle]] = optionRenderer[LineStyle] ^^ "rendererOptionLineStyle"
-}
-
-/**
- * ListItemType
- * - CONSIDER this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
- *
- * @param $ the value.
- */
-case class ListItemType($: CharSequence)
-
-/**
- * The `ListItemType` object provides extractors and renderers for the `ListItemType` case class.
- * It facilitates transformations to and from `ListItemType` instances.
- *
- * It includes implicit definitions for:
- * - `extractor`: Extracts `ListItemType` instances using the defined pattern.
- * - `extractorOpt`: Optionally extracts `ListItemType` instances.
- * - `renderer`: Converts `ListItemType` instances into their respective rendered form.
- * - `rendererOpt`: Renderers for optional `ListItemType` instances.
- */
-object ListItemType extends Extractors with Renderers {
+object ItemIcon extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[ListItemType] = extractor10(apply) ^^ "extractorListItemType"
-  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
-  implicit val renderer: Renderer[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
-  implicit val rendererOpt: Renderer[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
-}
-
-/**
- * A case class representing a key-style URL pair mapping in the KML document context.
- *
- * This class encapsulates a `Key` and a `StyleURL` to represent associations typically used
- * in KML processing frameworks for styling and representation of geographic data.
- *
- * @param key      the symbolic identifier as a `Key`, encapsulating a character sequence.
- * @param styleUrl the associated style reference as a `StyleURL`, providing a mapping to style definitions.
- */
-case class Pair(key: Key, styleUrl: StyleURL)
-
-/**
- * Companion object for the `Pair` case class, providing utilities for extraction and rendering.
- *
- * The `Pair` object extends `Extractors` and `Renderers`, offering implicit implementations
- * for extracting and rendering instances of `Pair`, as well as handling sequences of `Pair`.
- *
- * Implicit Utilities:
- * - `extractor`: Provides a mechanism to extract a single `Pair` instance.
- * - `extractorSeq`: Facilitates extraction of a sequence of `Pair` objects.
- * - `renderer`: Defines the rendering logic for a single `Pair` instance.
- * - `rendererSeq`: Handles the rendering of a sequence of `Pair` instances.
- */
-object Pair extends Extractors with Renderers {
-
-  implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
-  implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair](Positive) ^^ "multiExtractorPair"
-  implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
-  implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
-}
-
-/**
- * Case class representing a geographical longitude.
- *
- * @param $ the longitude value in degrees as a Double.
- */
-case class Longitude($: Double)
-
-/**
- * Object representing Longitude functionalities, such as rendering and extraction.
- * Provides implicit definitions for rendering and extracting longitude values,
- * as well as optional longitude values.
- * Extends `Extractors` and `Renderers` to provide utility methods for longitude manipulation.
- */
-object Longitude extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[Longitude] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Longitude]] = extractorOption[Longitude]
-  implicit val renderer: Renderer[Longitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Longitude]] = optionRenderer[Longitude]
-}
-
-/**
- * Represents a latitude value as a Double.
- *
- * Latitude values are commonly used in geographic coordinate systems
- * to specify the north-south position of a point on the Earth's surface.
- *
- * This case class is typically accompanied by extractors and renderers
- * to facilitate parsing and rendering operations as part of a larger system.
- */
-case class Latitude($: Double)
-
-/**
- * Companion object for the `Latitude` case class, providing utility methods
- * and implicit instances for extraction and rendering.
- *
- * This object includes:
- * - An extractor for parsing `Latitude` instances.
- * - An optional extractor for handling optional `Latitude` values.
- * - A renderer for converting `Latitude` instances into a specific format.
- * - An optional renderer for handling optional `Latitude` values.
- *
- * These utilities enable seamless integration of the `Latitude` type with
- * systems that require parsing, rendering, or manipulation of latitude values.
- */
-object Latitude extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[Latitude] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Latitude]] = extractorOption[Latitude]
-  implicit val renderer: Renderer[Latitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Latitude]] = optionRenderer[Latitude]
-}
-
-/**
- * Case class representing an altitude value.
- *
- * @param $ the altitude value, typically measured in meters.
- */
-case class Altitude($: Double)
-
-/**
- * Object representing utilities for working with the Altitude case class.
- *
- * Provides implementations for `Extractor` and `Renderer` type classes,
- * enabling extraction and rendering functionality for `Altitude` and `Option[Altitude]`.
- */
-object Altitude extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[Altitude] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Altitude]] = extractorOption[Altitude]
-  implicit val renderer: Renderer[Altitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Altitude]] = optionRenderer[Altitude]
-}
-
-/**
- * Case class PolyStyle which extends ColorStyle.
- * See [[https://developers.google.com/kml/documentation/kmlreference#polystyle Poly Style]]
- *
- * @param maybeFill      optional value of fill.
- * @param maybeOutline   optional value of outline.
- * @param colorStyleData the (auxiliary) color style properties.
- */
-case class PolyStyle(maybeFill: Option[Fill], maybeOutline: Option[Outline])(val colorStyleData: ColorStyleData) extends ColorStyle
-
-/**
- * Companion object for PolyStyle which provides extractor and renderer utilities.
- * This object combines Extractors and Renderers traits to facilitate the transformation
- * and rendering of PolyStyle instances.
- *
- * Members:
- * - extractorPartial: Extractor for transforming ColorStyleData into PolyStyle.
- * - extractor: Implicit Extractor instance for PolyStyle.
- * - renderer: Implicit Renderer instance for PolyStyle.
- */
-object PolyStyle extends Extractors with Renderers {
-  val extractorPartial: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(apply) ^^ "extractorCSD2PolyStyle"
-  implicit val extractor: Extractor[PolyStyle] = extractorPartial[ColorStyleData, PolyStyle](extractorPartial) ^^ "extractorPolyStyle"
-  implicit val renderer: Renderer[PolyStyle] = renderer2Super(apply)(_.colorStyleData) ^^ "rendererPolyStyle"
+  implicit val extractor: Extractor[ItemIcon] = extractor20(apply) ^^ "extractorItemIcon"
+  implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
+  implicit val renderer: Renderer[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
+  implicit val rendererOpt: Renderer[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
 }
 
 /**
@@ -1806,6 +1186,284 @@ object LabelStyle extends Extractors with Renderers {
 }
 
 /**
+ * Represents a latitude value as a Double.
+ *
+ * Latitude values are commonly used in geographic coordinate systems
+ * to specify the north-south position of a point on the Earth's surface.
+ *
+ * This case class is typically accompanied by extractors and renderers
+ * to facilitate parsing and rendering operations as part of a larger system.
+ */
+case class Latitude($: Double)
+
+/**
+ * Companion object for the `Latitude` case class, providing utility methods
+ * and implicit instances for extraction and rendering.
+ *
+ * This object includes:
+ * - An extractor for parsing `Latitude` instances.
+ * - An optional extractor for handling optional `Latitude` values.
+ * - A renderer for converting `Latitude` instances into a specific format.
+ * - An optional renderer for handling optional `Latitude` values.
+ *
+ * These utilities enable seamless integration of the `Latitude` type with
+ * systems that require parsing, rendering, or manipulation of latitude values.
+ */
+object Latitude extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Latitude] = extractor10(apply)
+  implicit val extractorOpt: Extractor[Option[Latitude]] = extractorOption[Latitude]
+  implicit val renderer: Renderer[Latitude] = renderer1(apply)
+  implicit val rendererOpt: Renderer[Option[Latitude]] = optionRenderer[Latitude]
+}
+
+/**
+ * Case class LineString which extends Geometry.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#linearring LinearRing]]
+ *
+ * @param maybeTessellate the (optional) tessellation.
+ * @param coordinates     a sequence of Coordinates objects.
+ */
+case class LinearRing(maybeTessellate: Option[Tessellate], coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
+
+/**
+ * Companion object for the LinearRing case class.
+ *
+ * This object provides extraction and rendering functionalities for LinearRing instances.
+ * It defines an implicit extractor and renderer for working with LinearRing objects.
+ * The extractorPartial method is used to create a partial extractor specific to the LinearRing type.
+ * The extractor is responsible for extracting LinearRing instances using GeometryData.
+ * The renderer is responsible for rendering LinearRing instances back into a specific representation.
+ */
+object LinearRing extends Extractors with Renderers {
+  private val extractorPartial: Extractor[GeometryData => LinearRing] = extractorPartial11(apply)
+  implicit val extractor: Extractor[LinearRing] = extractorPartial[GeometryData, LinearRing](extractorPartial) ^^ "extractorLinearRing"
+  implicit val renderer: Renderer[LinearRing] = renderer2Super(apply)(_.geometryData) ^^ "rendererLinearRing"
+}
+
+/**
+ * Case class LineString which extends Geometry.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#linestring LineString]]
+ *
+ * @param tessellate  the tessellation.
+ * @param coordinates a sequence of Coordinates objects.
+ */
+case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry {
+
+  import Coordinates.empty
+
+  /**
+   * Merges this `LineString` instance with the given `Geometry` instance.
+   *
+   * This method attempts to merge the attributes and data of the current `LineString` instance
+   * with the provided `Geometry` instance if it is of type `LineString`.
+   * The merging process involves combining tessellations, geometry data, and coordinate sequences,
+   * with each step subject to specific merge rules.
+   *
+   * @param g         the `Geometry` instance to merge with.
+   * @param mergeName a Boolean indicating whether to merge names (default is true).
+   * @return an `Option` containing the merged `LineString` instance if successful, or `None` otherwise.
+   */
+  override def merge(g: Geometry, mergeName: Boolean = true): Option[Geometry] = g match {
+    case l@LineString(_, _) =>
+      for {
+        t <- tessellate merge l.tessellate
+        g <- geometryData merge l.geometryData
+        c <- mergeSequence(coordinates)(empty).headOption
+        d <- mergeSequence(l.coordinates)(empty).headOption
+        z <- c merge d
+      } yield LineString(t, Seq(z))(g)
+  }
+
+  /**
+   * Returns an inverted version of this `LineString`, where the order of the coordinates
+   * in each sequence is reversed.
+   *
+   * @return an `Option` containing the inverted `LineString` instance if successful.
+   */
+  override def invert: Option[LineString] = Some(LineString(tessellate, for (c <- coordinates) yield c.reverse)(geometryData))
+
+}
+
+/**
+ * Object `LineString` serves as a companion to the `LineString` case class.
+ * It provides extraction and rendering capabilities for `LineString` objects.
+ *
+ * The object includes implicit values for extraction and rendering to facilitate
+ * seamless operations such as serialization, deserialization, and transformation
+ * of `LineString` instances.
+ *
+ * This object is designed for internal configuration, such as connecting the
+ * `Extractor` and `Renderer` abstractions with the `LineString` case class.
+ */
+object LineString extends Extractors with Renderers {
+  private val extractorPartial: Extractor[GeometryData => LineString] = extractorPartial11(apply)
+  implicit val extractor: Extractor[LineString] = extractorPartial[GeometryData, LineString](extractorPartial) ^^ "extractorLineString"
+  implicit val renderer: Renderer[LineString] = renderer2Super(apply)(_.geometryData) ^^ "rendererLineString"
+  implicit val rendererSeq: Renderer[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
+}
+
+/**
+ * Case class LineStyle which extends ColorStyle.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#linestyle Line Style]]
+ *
+ * NOTE: the width is optional but I can't actually find an instance of LineStyle that doesn't have a width.
+ *
+ * @param maybeWidth     optional width of the line.
+ * @param colorStyleData other properties.
+ */
+case class LineStyle(maybeWidth: Option[Width])(val colorStyleData: ColorStyleData) extends ColorStyle
+
+/**
+ * Companion object for the `LineStyle` case class, providing extractors and renderers.
+ *
+ * This object includes partial extractors, implicit extractors, and renderers for `LineStyle` instances.
+ * It facilitates conversion to and from data structures in the context of `LineStyle`.
+ *
+ * Members:
+ * - `extractorPartial`: Partial extractor for `ColorStyleData` */
+object LineStyle extends Extractors with Renderers {
+
+  val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
+  implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorPartial) ^^ "extractorLineStyle"
+  implicit val renderer: Renderer[LineStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLineStyle"
+  implicit val rendererOpt: Renderer[Option[LineStyle]] = optionRenderer[LineStyle] ^^ "rendererOptionLineStyle"
+}
+
+/**
+ * ListItemType
+ * - CONSIDER this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
+ *
+ * @param $ the value.
+ */
+case class ListItemType($: CharSequence)
+
+/**
+ * The `ListItemType` object provides extractors and renderers for the `ListItemType` case class.
+ * It facilitates transformations to and from `ListItemType` instances.
+ *
+ * It includes implicit definitions for:
+ * - `extractor`: Extracts `ListItemType` instances using the defined pattern.
+ * - `extractorOpt`: Optionally extracts `ListItemType` instances.
+ * - `renderer`: Converts `ListItemType` instances into their respective rendered form.
+ * - `rendererOpt`: Renderers for optional `ListItemType` instances.
+ */
+object ListItemType extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[ListItemType] = extractor10(apply) ^^ "extractorListItemType"
+  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
+  implicit val renderer: Renderer[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
+  implicit val rendererOpt: Renderer[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
+}
+
+/**
+ * Case class ListStyle which extends ColorStyle.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#liststyle List Style]]
+ *
+ * NOTE According to the current KML reference, this object extends SubStyle or ColorStyle (it's not clear which).
+ *
+ * @param bgColor           optional background color (maybe it isn't optional if there's no color element).
+ * @param maybeListItemType optional ListItemType.
+ * @param maybeItemIcon     the display mode.
+ * @param colorStyleData    the (auxiliary) color style properties.
+ */
+case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], maybeItemIcon: Option[ItemIcon])(val colorStyleData: ColorStyleData) extends ColorStyle
+
+/**
+ * Companion object for the `ListStyle` case class, providing extractors and renderers.
+ *
+ * This object includes functionality for extracting and rendering `ListStyle` instances,
+ * utilizing partial extractors and renderers.
+ * This allows seamless integration with
+ * serialization or transformation frameworks.
+ *
+ * Members:
+ * - `extractorPartial`: A partial extractor for converting `ColorStyleData` to `ListStyle`.
+ * - `extractor`: An implicit extractor for `ListStyle`,
+ * providing the ability to transform data into a `ListStyle` instance.
+ * - `renderer`: An implicit renderer for `ListStyle`,
+ * enabling transformation of `ListStyle` instances into a rendered format.
+ */
+object ListStyle extends Extractors with Renderers {
+  val extractorPartial: Extractor[ColorStyleData => ListStyle] = extractorPartial30(apply) ^^ "extractorCSD2ListStyle"
+  implicit val extractor: Extractor[ListStyle] = extractorPartial[ColorStyleData, ListStyle](extractorPartial) ^^ "extractorListStyle"
+  implicit val renderer: Renderer[ListStyle] = renderer3Super(apply)(_.colorStyleData) ^^ "rendererListStyle"
+}
+
+/**
+ * Case class representing a geographical longitude.
+ *
+ * @param $ the longitude value in degrees as a Double.
+ */
+case class Longitude($: Double)
+
+/**
+ * Object representing Longitude functionalities, such as rendering and extraction.
+ * Provides implicit definitions for rendering and extracting longitude values,
+ * as well as optional longitude values.
+ * Extends `Extractors` and `Renderers` to provide utility methods for longitude manipulation.
+ */
+object Longitude extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Longitude] = extractor10(apply)
+  implicit val extractorOpt: Extractor[Option[Longitude]] = extractorOption[Longitude]
+  implicit val renderer: Renderer[Longitude] = renderer1(apply)
+  implicit val rendererOpt: Renderer[Option[Longitude]] = optionRenderer[Longitude]
+}
+
+/**
+ * Represents a "LookAt" view element in a KML document, describing a position to look at from a specific viewpoint,
+ * with additional details like orientation, range, and optional altitude.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#lookat LookAt]]
+ *
+ * LookAt defines the geographic position (longitude, latitude), optional altitude, heading, tilt, and range
+ * parameters for setting up a view in a geographic visualization context such as Google Earth.
+ *
+ * @param longitude         the longitude of the LookAt position in degrees.
+ * @param latitude          the latitude of the LookAt position in degrees.
+ * @param maybeAltitude     an optional altitude value for the LookAt position.
+ * @param heading           the direction (in degrees) from the observer to the LookAt point.
+ * @param tilt              the tilt angle (in degrees) of the view relative to the surface.
+ * @param range             the distance (in meters) from the observer to the LookAt point.
+ * @param maybeAltitudeMode an optional altitude mode specifying how the altitude is interpreted.
+ * @param abstractViewData  additional data inherited from AbstractView.
+ */
+case class LookAt(longitude: Longitude, latitude: Latitude, maybeAltitude: Option[Altitude], heading: Heading, tilt: Tilt, range: Range, maybeAltitudeMode: Option[AltitudeMode])(val abstractViewData: AbstractViewData) extends AbstractView
+
+/**
+ * Companion object for the LookAt class, providing implicit extractors, renderers, and utilities
+ * for working with LookAt instances.
+ * LookAt represents a viewpoint in a KML visualization,
+ * describing location, orientation, and viewing distance.
+ *
+ * It extends the functionality of Extractors and Renderers to allow for convenient serialization,
+ * deserialization, and optional handling of LookAt objects.
+ *
+ * - `extractorPartial`: Defines a partial extractor for the LookAt class.
+ * - `extractor`: An implicit extractor for deserializing LookAt instances.
+ * - `extractorOpt`: An implicit extractor for handling optional LookAt instances.
+ * - `renderer`: An implicit renderer for serializing LookAt instances.
+ * - `rendererOpt`: An implicit renderer for serializing optional LookAt instances.
+ */
+object LookAt extends Extractors with Renderers {
+
+  val extractorPartial: Extractor[AbstractViewData => LookAt] = extractorPartial70(apply)
+  implicit val extractor: Extractor[LookAt] = extractorPartial[AbstractViewData, LookAt](extractorPartial)
+  implicit val extractorOpt: Extractor[Option[LookAt]] = extractorOption[LookAt]
+  implicit val renderer: Renderer[LookAt] = renderer7Super(apply)(_.abstractViewData)
+  implicit val rendererOpt: Renderer[Option[LookAt]] = optionRenderer[LookAt]
+}
+
+/**
  * Represents an Open element, usually capturing a character sequence.
  *
  * @param $ the content represented as a CharSequence
@@ -1827,6 +1485,32 @@ object Open extends Extractors with Renderers {
   implicit val extractorOpt: Extractor[Option[Open]] = extractorOption[Open]
   implicit val renderer: Renderer[Open] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
+}
+
+/**
+ * Represents the outer boundary of a polygon in KML format.
+ * This case class holds a `LinearRing`, which defines the coordinates
+ * that create the outer boundary.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#outerboundaryis outerBoundaryIs]]
+ *
+ * @param LinearRing the `LinearRing` instance that specifies the coordinates
+ *                   of the outer boundary of a polygon.
+ */
+case class OuterBoundaryIs(LinearRing: LinearRing)
+
+/**
+ * Companion object for the `OuterBoundaryIs` case class.
+ * This object provides utilities for extracting and rendering `OuterBoundaryIs` instances.
+ *
+ * The `extractor` is an implicit value utilized for extracting `OuterBoundaryIs` instances,
+ * and it uses the `extractor10` combinator along with the `apply` method of `OuterBoundaryIs`.
+ *
+ * The `renderer` is an implicit value used for rendering `OuterBoundaryIs` instances into
+ * their corresponding KML representations.
+ * It employs the `renderer1` combinator with the `apply` method */
+object OuterBoundaryIs extends Extractors with Renderers {
+  implicit val extractor: Extractor[OuterBoundaryIs] = extractor10(apply) ^^ "extractorOuterBoundaryIs"
+  implicit val renderer: Renderer[OuterBoundaryIs] = renderer1(apply) ^^ "rendererOuterBoundaryIs"
 }
 
 /**
@@ -1854,6 +1538,259 @@ object Outline extends Extractors with Renderers {
   implicit val extractorOpt: Extractor[Option[Outline]] = extractorOption[Outline] ^^ "extractMaybeOutline"
   implicit val renderer: Renderer[Outline] = renderer1(apply) ^^ "rendererOutline"
   implicit val rendererOpt: Renderer[Option[Outline]] = optionRenderer[Outline] ^^ "rendererOptionOutline"
+}
+
+/**
+ * A case class representing a key-style URL pair mapping in the KML document context.
+ *
+ * This class encapsulates a `Key` and a `StyleURL` to represent associations typically used
+ * in KML processing frameworks for styling and representation of geographic data.
+ *
+ * @param key      the symbolic identifier as a `Key`, encapsulating a character sequence.
+ * @param styleUrl the associated style reference as a `StyleURL`, providing a mapping to style definitions.
+ */
+case class Pair(key: Key, styleUrl: StyleURL)
+
+/**
+ * Companion object for the `Pair` case class, providing utilities for extraction and rendering.
+ *
+ * The `Pair` object extends `Extractors` and `Renderers`, offering implicit implementations
+ * for extracting and rendering instances of `Pair`, as well as handling sequences of `Pair`.
+ *
+ * Implicit Utilities:
+ * - `extractor`: Provides a mechanism to extract a single `Pair` instance.
+ * - `extractorSeq`: Facilitates extraction of a sequence of `Pair` objects.
+ * - `renderer`: Defines the rendering logic for a single `Pair` instance.
+ * - `rendererSeq`: Handles the rendering of a sequence of `Pair` instances.
+ */
+object Pair extends Extractors with Renderers {
+
+  implicit val extractor: Extractor[Pair] = extractor20(apply) ^^ "extractorPair"
+  implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair](Positive) ^^ "multiExtractorPair"
+  implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
+  implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
+}
+
+/**
+ * Placemark: subtype of Feature.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#placemark Placemark]].
+ *
+ * CONSIDER restricting the number of Geometry elements to one.
+ *
+ * @param Geometry    a sequence of Geometry elements (where Geometry is an abstract super-type).
+ * @param featureData the (auxiliary) FeatureData, shared by sub-elements.
+ */
+case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) extends Feature with HasName with Mergeable[Placemark] with Invertible[Placemark] {
+
+  /**
+   * Inverts the current Placemark instance by reversing the orientation or nature
+   * of its underlying geometric structure, if applicable.
+   * This is achieved by attempting to invert each associated Geometry.
+   *
+   * @return an Option containing a new Placemark with inverted Geometries,
+   *         or None if inversion is not possible.
+   */
+  def invert: Option[Placemark] = {
+    val gos: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
+    val gso: Option[Seq[Geometry]] = FP.sequence(gos)
+    for (gs <- gso) yield Placemark(gs)(featureData)
+  }
+
+  /**
+   * Merge this mergeable object with <code>t</code>.
+   *
+   * @param t the object to be merged with this.
+   * @return the merged value of T.
+   */
+  def merge(t: Placemark, mergeName: Boolean = true): Option[Placemark] = {
+    logger.info(s"joinPlacemarks: $name, ${t.name} with mergeName=$mergeName")
+    val los: Seq[Option[Geometry]] = for (gp <- this.Geometry; gq <- t.Geometry) yield gp.merge(gq)
+    val gs: Seq[Geometry] = los filter (_.isDefined) map (_.get)
+    for (fd <- featureData.merge(t.featureData, mergeName)) yield Placemark(gs)(fd)
+  }
+
+  override def toString: String = s"Placemark: name=${name.$} with ${Geometry.size} geometries: $Geometry"
+
+  /**
+   * Retrieves the name of the feature data.
+   *
+   * @return The name of the feature as a `Text` instance.
+   */
+  def name: Text = featureData.name
+
+  /**
+   * Method to edit this Feature, given a sequence of sibling Features such that we may be able to combine features.
+   *
+   * @param e  the edit which may (or may not) apply to <code>this</code>.
+   * @param fs a sequence of Features which are the children of <code>this</code>'s family (including <code>p</code> itself).
+   * @return an optional Feature.
+   */
+  def editToOptionOption(e: KmlEdit, fs: Seq[Feature]): Option[Option[Feature]] = e.operands match {
+    case 1 => editMatching1(e)
+    case 2 => editMatchingPlacemark2(e, fs)
+  }
+
+  /**
+   * Method to edit the given Placemark with zero additional Features.
+   *
+   * @param e the edit which may (or may not) apply to <code>this</code>.
+   * @return an optional Feature.
+   */
+  private def editMatching1(e: KmlEdit) = (name, e) match {
+    case (name, KmlEdit(KmlEdit.DELETE, _, Element(_, nameToMatch), None))
+      if name.matches(nameToMatch) =>
+      logger.info(s"delete: $nameToMatch")
+      Some(None)
+    case (_, KmlEdit(KmlEdit.DELETE, _, _, _)) =>
+      Some(Some(this))
+    case (_, KmlEdit(KmlEdit.INVERT, _, Element(_, nameToMatch), _))
+      if name.matches(nameToMatch) =>
+      Some(this.invert)
+    case _ =>
+      None
+  }
+
+  /**
+   * Method to process the given Placemark with one additional Features.
+   *
+   * @param e  the edit which may (or may not) apply to <code>p</code>.
+   * @param fs a sequence of Features which are the children of <code>p</code>'s family (including <code>p</code> itself).
+   * @return an optional optional Feature.
+   */
+  private def editMatchingPlacemark2(e: KmlEdit, fs: Seq[Feature]) =
+    e match {
+      case KmlEdit(command@(JOIN | JOINX), _, Element("Placemark", nameToMatch1), Some(Element("Placemark", nameToMatch2)))
+        if name.matches(nameToMatch1) =>
+        Some(joinMatchedPlacemarks(fs, nameToMatch2, command == JOIN))
+      case _ =>
+        None
+    }
+
+  /**
+   * Method to join two Placemarks together.
+   *
+   * @param fs          the potential features to be joined with <code>p</code>. These are the siblings of <code>p</code> itself.
+   * @param nameToMatch the name of the feature to be joined, as defined by the edit.
+   * @return an optional Feature which, if defined, is the new Placemark to be used instead of <code>p</code>.
+   */
+  private def joinMatchedPlacemarks(fs: Seq[Feature], nameToMatch: String, mergeName: Boolean) = {
+    val zz = for (f <- fs if f != this) yield joinMatchingPlacemarks(nameToMatch, f, mergeName)
+    for (z <- zz.find(_.isDefined); q <- z) yield q
+  }
+
+  /**
+   * Attempts to join a matching `Placemark` associated with the provided `Feature` based on the specified name.
+   * If the feature is a `Placemark` and its name matches the given string, it attempts to merge this `Placemark`
+   * with the given one.
+   * Otherwise, returns `None`.
+   *
+   * @param name      the name to match against the `Placemark`'s name.
+   * @param feature   the `Feature` which may or may not be a `Placemark` to attempt merging.
+   * @param mergeName a flag indicating whether to merge the names of the two `Placemark` objects during the merge operation.
+   * @return an optional merged `Placemark` or `None` if the names do not match or the feature is not a `Placemark`.
+   */
+  private def joinMatchingPlacemarks(name: String, feature: Feature, mergeName: Boolean) = feature match {
+    case q: Placemark if q.name.matches(name) => merge(q, mergeName)
+    // FIXME Issue #20 can result in this Placemark being lost if name doesn't match q.name
+    case _ => None
+  }
+}
+
+/**
+ * Companion object to Placemark.
+ */
+object Placemark extends Extractors with Renderers {
+  val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
+  implicit val extractor: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorPartial) ^^ "extractorPlacemark"
+  implicit val renderer: Renderer[Placemark] = renderer1Super(apply)(_.featureData) ^^ "rendererPlacemark"
+  implicit val rendererSeq: Renderer[Seq[Placemark]] = sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
+}
+
+/**
+ * Case class Point which extends Geometry.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#point Point]]
+ *
+ * @param coordinates  a sequence of Coordinates objects.
+ * @param geometryData the other properties of the Point.
+ */
+case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) extends Geometry
+
+/**
+ * Companion object for the case class Point.
+ *
+ * This object provides utilities for working with the Point type,
+ * including extractors and renderers to handle serialization and parsing.
+ *
+ * Utilities:
+ * - Provides an implicit extractor to parse Point objects from GeometryData.
+ * - Provides an implicit renderer for serializing Point objects.
+ * - Provides a renderer for sequences of Point objects.
+ */
+object Point extends Extractors with Renderers {
+  private val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
+  implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
+  implicit val renderer: Renderer[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
+  implicit val rendererSeq: Renderer[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
+}
+
+/**
+ * Case class Polygon which extends Geometry.
+ *
+ * See [[https://developers.google.com/kml/documentation/kmlreference#polygon Polygon]]
+ *
+ * @param maybeTessellate the tessellation.
+ * @param outerBoundaryIs an OuterBoundaryIs object.
+ * @param innerBoundaryIs a sequence of InnerBoundaryIs objects.
+ */
+case class Polygon(maybeTessellate: Option[Tessellate], outerBoundaryIs: OuterBoundaryIs, innerBoundaryIs: Seq[InnerBoundaryIs])(val geometryData: GeometryData) extends Geometry
+
+/**
+ * Companion object for the `Polygon` case class.
+ *
+ * Provides extractors and renderers that are useful for working with the `Polygon` type.
+ * Specifically, it allows for extracting `Polygon` instances from `GeometryData` and rendering
+ * `Polygon` instances to their desired outputs.
+ *
+ * This object extends `Extractors` and `Renderers`, enabling integration with extraction
+ * and rendering functionalities of the system.
+ *
+ * Members:
+ *
+ * - `extractorPartial`: A private partial extractor specifically for handling `Polygon` extraction logic.
+ * - `extractor`: An implicit `Extractor[Polygon]` that utilizes `extractorPartial` for complete extraction functionality.
+ * - `renderer`: An implicit `Renderer[Polygon]` that allows rendering a `Polygon` while leveraging its geometry data.
+ */
+object Polygon extends Extractors with Renderers {
+  private val extractorPartial: Extractor[GeometryData => Polygon] = extractorPartial21(apply)
+  implicit val extractor: Extractor[Polygon] = extractorPartial[GeometryData, Polygon](extractorPartial) ^^ "extractorPolygon"
+  implicit val renderer: Renderer[Polygon] = renderer3Super(apply)(_.geometryData) ^^ "rendererPolygon"
+}
+
+/**
+ * Case class PolyStyle which extends ColorStyle.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#polystyle Poly Style]]
+ *
+ * @param maybeFill      optional value of fill.
+ * @param maybeOutline   optional value of outline.
+ * @param colorStyleData the (auxiliary) color style properties.
+ */
+case class PolyStyle(maybeFill: Option[Fill], maybeOutline: Option[Outline])(val colorStyleData: ColorStyleData) extends ColorStyle
+
+/**
+ * Companion object for PolyStyle which provides extractor and renderer utilities.
+ * This object combines Extractors and Renderers traits to facilitate the transformation
+ * and rendering of PolyStyle instances.
+ *
+ * Members:
+ * - extractorPartial: Extractor for transforming ColorStyleData into PolyStyle.
+ * - extractor: Implicit Extractor instance for PolyStyle.
+ * - renderer: Implicit Renderer instance for PolyStyle.
+ */
+object PolyStyle extends Extractors with Renderers {
+  val extractorPartial: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(apply) ^^ "extractorCSD2PolyStyle"
+  implicit val extractor: Extractor[PolyStyle] = extractorPartial[ColorStyleData, PolyStyle](extractorPartial) ^^ "extractorPolyStyle"
+  implicit val renderer: Renderer[PolyStyle] = renderer2Super(apply)(_.colorStyleData) ^^ "rendererPolyStyle"
 }
 
 /**
@@ -2249,6 +2186,35 @@ object TextColor extends Extractors with Renderers {
 }
 
 /**
+ * Represents a tilt with a single numeric value.
+ *
+ * This case class is utilized to model the notion of tilt in a KML or similar domain representation.
+ * It includes a single parameter `$` which stores the tilt value.
+ * The class is utilized along with its
+ * companion object that provides implicit extractors and renderers for serialization and deserialization purposes.
+ */
+case class Tilt($: Double)
+
+/**
+ * Companion object for the Tilt case class.
+ *
+ * Provides implicit extractors and renderers for the Tilt type, allowing for convenient
+ * serialization and deserialization of Tilt instances.
+ * This includes support for optional Tilt values.
+ * The extractors and renderers are defined in terms of the base traits and
+ * utilities provided, ensuring seamless integration with parsing and rendering pipelines.
+ */
+object Tilt extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Tilt] = extractor10(apply)
+  implicit val extractorOpt: Extractor[Option[Tilt]] = extractorOption[Tilt]
+  implicit val renderer: Renderer[Tilt] = renderer1(apply)
+  implicit val rendererOpt: Renderer[Option[Tilt]] = optionRenderer[Tilt]
+}
+
+/**
  * A case class representing visibility in KML documents.
  *
  * This case class encapsulates a `CharSequence` value that signifies visibility attributes in KML data.
@@ -2303,33 +2269,4 @@ object Width extends Extractors with Renderers {
   implicit val extractorOpt: Extractor[Option[Width]] = extractorOption[Width] ^^ "extractMaybeWidth"
   implicit val renderer: Renderer[Width] = renderer1(apply) ^^ "rendererWidth"
   implicit val rendererOpt: Renderer[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
-}
-
-/**
- * Represents a tilt with a single numeric value.
- *
- * This case class is utilized to model the notion of tilt in a KML or similar domain representation.
- * It includes a single parameter `$` which stores the tilt value.
- * The class is utilized along with its
- * companion object that provides implicit extractors and renderers for serialization and deserialization purposes.
- */
-case class Tilt($: Double)
-
-/**
- * Companion object for the Tilt case class.
- *
- * Provides implicit extractors and renderers for the Tilt type, allowing for convenient
- * serialization and deserialization of Tilt instances.
- * This includes support for optional Tilt values.
- * The extractors and renderers are defined in terms of the base traits and
- * utilities provided, ensuring seamless integration with parsing and rendering pipelines.
- */
-object Tilt extends Extractors with Renderers {
-
-  import Renderers._
-
-  implicit val extractor: Extractor[Tilt] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Tilt]] = extractorOption[Tilt]
-  implicit val renderer: Renderer[Tilt] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Tilt]] = optionRenderer[Tilt]
 }
