@@ -54,7 +54,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    * TESTME
    *
    * @tparam P the type of the alternative `Extractor`.
-   *           `P` must provide implicit evidence of `Extractor[P]` and `P` must be a sub-class of `T`.
+   *           `P` must provide implicit evidence of `Extractor[P]` and `P` must be a subclass of `T`.
    * @return an `Extractor[T]`.
    */
   def |[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
@@ -226,29 +226,41 @@ object Extractor {
   def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
     val explicitChildren: NodeSeq = node / member
     if (explicitChildren.nonEmpty || TagProperties.mustMatch(member))
-      extractMulti(explicitChildren)
+      extractMulti(explicitChildren) // requires implicit MultiExtractor[P]
     else
       extractAll(node) match {
         case Success(Nil) =>
-          // CONSIDER use Flog logging
-          val ts = ChildNames.translate(member)
-          logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-          if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-          val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-          if (nodeSeq.nonEmpty) {
-            logger.debug(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
-            extractMulti(nodeSeq)
-          }
-          else {
-            logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-            Try(Nil.asInstanceOf[P])
-          }
+          extractChildless(node, member)
         case Success(x) =>
           logger.debug(s"extractChildren extracted $x using extractAll")
           Success(x)
         case Failure(x) =>
           Failure(x)
       }
+  }
+
+  /**
+   * Extracts childless nodes of a given type from the specified parent XML `node`.
+   * Uses a translation of the member name to identify the target child elements.
+   *
+   * @param node   the parent XML node from which childless nodes are to be extracted
+   * @param member the name of the member whose corresponding child elements are targeted
+   * @tparam P the type of elements to extract, enabled by the context-bound `MultiExtractor`
+   */
+  private def extractChildless[P: MultiExtractor](node: Node, member: String): Try[P] = {
+    // CONSIDER use Flog logging
+    val ts = ChildNames.translate(member)
+    logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+    if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+    val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
+    if (nodeSeq.nonEmpty) {
+      logger.debug(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+      extractMulti(nodeSeq)
+    }
+    else {
+      logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+      Try(Nil.asInstanceOf[P])
+    }
   }
 
   /**
@@ -335,12 +347,12 @@ object Extractor {
     }
 
   /**
-   * Regular expression to match a plural name, viz. .....s
+   * Regular expression to match a plural name, viz. ...s
    */
   val plural: Regex = """(\w+)s""".r
 
   /**
-   * Regular expression to match an attribute name, viz. _.....
+   * Regular expression to match an attribute name, viz. _...
    */
   val attribute: Regex = """_(\w+)""".r
 
@@ -580,8 +592,6 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
    * A MultiExtractor instance used for extracting a sequence of type `T` from an XML `NodeSeq`.
    * This value represents a reusable mechanism to perform the extraction process
    * based on specific tags or identifiers within the XML structure.
-   *
-   * @tparam T the underlying type of the sequence to be extracted.
    */
   val tsm: MultiExtractor[Seq[T]]
 }
