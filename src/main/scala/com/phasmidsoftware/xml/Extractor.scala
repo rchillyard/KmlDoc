@@ -122,8 +122,10 @@ object Extractor {
     implicitly[Extractor[T]].extract(node)
 
   /**
-   * Method to extract a Try[T] from the implicitly defined multi-extractor operating on the given nodes.
-   * Usually, T is itself an Iterable type.
+   * Method to extract a `Try[T]` from the implicitly defined multi-extractor operating on the given nodes.
+   * Usually, `T` is itself an `Iterable` type.
+   *
+   * NOTE that each implicit instanced of a `MultiExtractor[T]` has its own definition of Range.
    *
    * @param nodeSeq the nodes on which the extractor will work.
    * @tparam T the underlying result type.
@@ -131,7 +133,6 @@ object Extractor {
    * @return a Try[T].
    */
   def extractMulti[T: MultiExtractor](nodeSeq: NodeSeq): Try[T] =
-//        s"extractMulti: ${name[MultiExtractor[T]]} from ${renderNodes(nodeSeq)}" !!
     implicitly[MultiExtractor[T]].extract(nodeSeq)
 
   /**
@@ -480,15 +481,22 @@ case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor
   def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
     sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
       case x@Success(ps) if range.contains(ps.size) => x
-      case Success(ps) => Failure(XmlException(s"MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range"))
+      case Success(ps) => Failure(XmlException(
+        s"""MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range
+           |Consider changing the Range in the appropriate call to multiExtractorBase.""".stripMargin))
       case x@Failure(_) => x
     }
 
   /**
-   * Logs a warning message or takes appropriate action based on the type of exception encountered during XML processing.
+   * Logs warnings for specific exceptions encountered during the extraction process.
    *
-   * @param x the exception to evaluate and log if necessary.
-   * @return Unit, as this method is side-effecting and logs messages without returning a value.
+   * This method handles different types of `Throwable` instances based on certain conditions:
+   * - If the exception is a `MissingFieldException` for a "singleton" field and the range's start is less than or equal to zero,
+   * it considers the situation acceptable and does not log anything.
+   * - If the exception is an `XmlException`, it logs the associated message and localized message using the logger.
+   *
+   * @param x the `Throwable` to be examined and potentially logged as a warning
+   * @return Unit, the method does not produce any value
    */
   private def logWarning(x: Throwable): Unit = x match {
     case MissingFieldException(_, "singleton", _) if range.start <= 0 => // NOTE: OK -- no need to log anything.
@@ -496,6 +504,10 @@ case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor
   }
 }
 
+/**
+ * Companion object for the MultiExtractorBase class. This object provides predefined ranges
+ * that can be used when working with extractors or other numerical validations.
+ */
 object MultiExtractorBase {
   /**
    * All integers greater than zero (the "counting numbers" or Z+).
@@ -519,8 +531,10 @@ object MultiExtractorBase {
 }
 
 /**
- * Trait which extends a function of type `String => Extractor[T]`.
- * When the `apply` method is invoked with a particular label, an appropriate `Extractor[T]` is returned.
+ * Trait which extends a function of type String => Extractor[T].
+ * When the apply method is invoked with a particular label, an appropriate Extractor[T] is returned.
+ *
+ * CONSIDER renaming this because it isn't an extractor, but a function which creates an extractor from a String.
  *
  * @tparam T the underlying type of the result of invoking apply. T may be an Iterable type.
  */
@@ -542,21 +556,23 @@ trait TagToExtractorFunc[T] extends (String => Extractor[T]) {
  */
 trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
   /**
-   * A sequence of tag names used to identify or categorize elements in the context of the trait.
+   * A sequence of tags associated with the extractor function.
+   * This is used to describe or qualify the type of sequences that the extractor handles.
    */
   val tags: Seq[String]
 
   /**
-   * A string representing a pseudo identifier or key relevant to the context of the trait.
-   * This value is used as part of the trait functionality, such as validation or categorization.
+   * A string that represents a pseudo tag or identifier.
+   * It serves as a default or auxiliary string used in the context of sequence extraction
+   * within the TagToSequenceExtractorFunc trait.
    */
   val pseudo: String
 
   /**
-   * Validates if the input string matches the pseudo identifier.
+   * Determines if the provided string matches the pseudo tag or identifier.
    *
-   * @param w the input string to validate.
-   * @return true if the input string matches the pseudo identifier, false otherwise.
+   * @param w the string to be checked against the pseudo tag.
+   * @return true if the provided string matches the pseudo tag, otherwise false.
    */
   def valid(w: String): Boolean = w == pseudo
 

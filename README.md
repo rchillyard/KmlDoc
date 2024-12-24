@@ -13,7 +13,7 @@ https://developers.google.com/kml/documentation/kmlreference
 
 Versions
 ========
-Version 1.0.3 
+Version 1.0.3 Fixed Issue #19, various other mostly cosmetic changes.
 
 Version 1.0.2 Improvements to rendering and extraction with more KML objects possible.
 
