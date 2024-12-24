@@ -8,10 +8,14 @@
 # KML Doctor
 
 Utilities to parse, doctor, and render KML files.
+The reference documentation for KML is here:
+https://developers.google.com/kml/documentation/kmlreference
 
 Versions
 ========
-Version 1.0.2 Cleaning up after an (unfortunate) required merge. Improvements to rendering.
+Version 1.0.3 Fixed Issue #19, various other mostly cosmetic changes.
+
+Version 1.0.2 Improvements to rendering and extraction with more KML objects possible.
 
 Version 1.0.1 Improvements: first round-trip extract/render of minisample.kml
 

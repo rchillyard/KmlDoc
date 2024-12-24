@@ -163,7 +163,7 @@ object Renderer {
  *
  * @param maybeName  an optional String.
  * @param attributes a (private) SmartBuffer: accessible via addAttribute or getAttributes.
- * @param interior   false if we are at the top level of an element; false if we have been invoked from above.
+ * @param interior   false if we are at the top level of an element; true if we have been invoked from above.
  */
 case class StateR(maybeName: Option[String], private val attributes: SmartBuffer, interior: Boolean) extends AutoCloseable {
 

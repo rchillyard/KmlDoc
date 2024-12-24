@@ -1,10 +1,10 @@
 package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.Utilities.parseUnparsed
-import com.phasmidsoftware.core.{Text, TryUsing, XmlException}
+import com.phasmidsoftware.core.{CDATA, Text, TryUsing, XmlException}
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
-import com.phasmidsoftware.xml.{CDATA, Extractor, Extractors, RichXml}
+import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
 import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -89,7 +89,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case Style(styles) =>
             styles.size shouldBe 1
             styles.head match {
-              case b@BalloonStyle(text, maybeBgColor, maybeTextColor, maybeDisplayMode) =>
+              case b@BalloonStyle(text, _, _, _) =>
                 val expectedText =
                   """
                     |          <b>$[name]</b>
@@ -224,8 +224,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </Point>
     </xml>
     extractMulti[Seq[Geometry]](xml / "_") match {
-      case Success(gs) => fail("should not succeed")
-      case Failure(x) =>
+      case Success(_) => fail("should not succeed")
+      case Failure(_) =>
     }
   }
 
@@ -702,9 +702,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       |  <Icon>
       |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
       |  </Icon>
-      |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+      |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
       |</IconStyle>""".stripMargin
-  private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"></hotSpot>\n  </IconStyle>"
+  private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"/>\n  </IconStyle>"
   private val balloonStyleText = "<BalloonStyle>\n    <text>\n<![CDATA[<h3>$[name]</h3>]]>\n</text>\n  </BalloonStyle>"
   private val labelStyleText = "<LabelStyle>\n    <scale>0</scale>\n  </LabelStyle>"
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
@@ -732,7 +732,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
             maybeHeading shouldBe None
             x.colorStyleData match {
-              case c@ColorStyleData(maybeColor, maybeColorMode) =>
+              case c@ColorStyleData(_, _) =>
                 println(c)
             }
         }
@@ -744,7 +744,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
              |  <Icon>
              |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
              |  </Icon>
-             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
              |</IconStyle>""".stripMargin)
       case Failure(x) => fail(x)
     }
@@ -809,7 +809,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
               case x@LabelStyle(scale) =>
                 scale shouldBe Scale(0)(KmlData.nemo)
                 x.colorStyleData match {
-                  case c@ColorStyleData(color, maybeColorMode) =>
+                  case c@ColorStyleData(_, _) =>
                     println(c)
                 }
             }
@@ -820,7 +820,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
                 maybeHeading shouldBe None
                 x.colorStyleData match {
-                  case c@ColorStyleData(color, maybeColorMode) =>
+                  case c@ColorStyleData(_, _) =>
                     println(c)
                 }
             }
@@ -833,7 +833,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 maybeTextColor shouldBe None
                 maybeDisplayMode shouldBe None
                 x.colorStyleData match {
-                  case c@ColorStyleData(color, maybeColorMode) =>
+                  case c@ColorStyleData(_, _) =>
                     println(c)
                 }
             }
@@ -850,14 +850,14 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                  |    <Icon>
                  |      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
                  |    </Icon>
-                 |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>
+                 |    <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
                  |  </IconStyle>
                  |  <BalloonStyle>
                  |    <text>$cdata</text>
                  |  </BalloonStyle>
                  |</Style>""".stripMargin
             wy.get shouldBe expected
-          case m@StyleMap(pairs) =>
+          case StyleMap(pairs) =>
             pairs.size shouldBe 2
             pairs.head match {
               case Pair(key, styleUrl) =>
@@ -979,7 +979,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       </StyleMap>
     </xml>
     extractMulti[Seq[StyleSelector]](xml / "StyleMap") match {
-      case Failure(x: XmlException) =>
+      case Failure(_: XmlException) =>
       case z => fail(s"should be at least one Pair: $z")
     }
   }
@@ -4044,7 +4044,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         containers.head match {
           case document@Document(features) =>
             document.containerData.featureData match {
-              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors, abstractView) =>
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, _, styleSelectors, _) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW). Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
@@ -4103,7 +4103,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         containers.head match {
           case document@Document(features) =>
             document.containerData.featureData match {
-              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, maybeVisibility, styleSelectors, abstractView) =>
+              case FeatureData(name, maybeDescription, maybeStyleUrl, maybeOpen, _, styleSelectors, _) =>
                 name shouldBe Text("MA - Boston NE: Historic New England Railroads")
                 maybeDescription shouldBe Some(Text("See description of Historic New England Railroads (MA - Boston NW).  Full index: https://www.rubecula.com/RRMaps/"))
                 maybeStyleUrl shouldBe None
@@ -4113,7 +4113,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             features.size shouldBe 1
             features.head match {
               case folder@Folder(features) =>
-                folder.containerData.featureData.name shouldBe Text("Untitled layer")
+                folder.containerData.featureData.name shouldBe Text("MA-Boston NE")
                 println(features)
                 features.size shouldBe 34
                 features.head match {
@@ -4152,7 +4152,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
-  it should "extract and render sample Kml from file" in {
+  it should "extract and get debug version of sample Kml from file" in {
     val url = KML.getClass.getResource("sample.kml")
     val xml = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4161,12 +4161,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val kml: KML = ks.head
         val w = kml.toString
         println(w)
-        w.length shouldBe 73525
+        w.length shouldBe 88
       case Failure(x) => fail(x)
     }
   }
 
-  it should "extract and render mini sample Kml from file" in {
+  it should "extract and get debug string from mini sample Kml from file" in {
     val url = KML.getClass.getResource("minisample.kml")
     val xml = XML.loadFile(url.getFile)
     extractMulti[Seq[KML]](xml) match {
@@ -4175,7 +4175,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val kml: KML = ks.head
         val w = kml.toString
         println(w)
-        w.length shouldBe 3558
+        w.length shouldBe 88
       case Failure(x) => fail(x)
     }
   }
@@ -4250,5 +4250,82 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Failure(x) => fail(x)
     }
   }
+
+  it should "extract and render placemarks without descriptor" in {
+    val url = KML.getClass.getResource("/emptyDescriptor.kml")
+    val xml: Elem = XML.loadFile(url.getFile)
+    extractMulti[Seq[KML]](xml) match {
+      case Success(ks) =>
+        ks.size shouldBe 0
+      //        val kml = KML_Binding(ks.head, xml.scope)
+      //        val filename = "emptyDescriptor_out.kml"
+      //        val fw = new FileWriter(filename)
+      //        fw.write(
+      //          """<?xml version="1.0" encoding="UTF-8"?>
+      //            |""".stripMargin)
+      //        Renderer.render(kml, FormatXML(), StateR().setName("kml")) match {
+      //          case Success(w) =>
+      //            fw.write(w)
+      //            fw.close()
+      //            val copy: Elem = parseUnparsed(w)
+      //            val ksy: Try[scala.Seq[KML]] = extractMulti[Seq[KML]](copy)
+      //            ksy should matchPattern { case Success(_ :: Nil) => }
+      //          case Failure(x) =>
+      //            x.printStackTrace()
+      //            fail("see exception above")
+      //        }
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "merge"
+
+  val kd: KmlData = KmlData(None)
+  val gd: GeometryData = GeometryData(None, None)(kd)
+  val fd1: FeatureData = FeatureData(Text("junk"), None, None, None, None, Nil, Nil)(kd)
+  val fd2: FeatureData = FeatureData(Text("junk junk"), None, None, None, None, Nil, Nil)(kd)
+  val cs1: Seq[Coordinate] = Seq(Coordinate("1", "0", "0"), Coordinate("1", "1", "0"))
+  val cs2: Seq[Coordinate] = Seq(Coordinate("1", "1", "0"), Coordinate("1", "2", "0"))
+  val cs2a: Seq[Coordinate] = cs2.reverse
+  val coordinates1: Seq[Coordinates] = Seq(Coordinates(cs1))
+  val coordinates2: Seq[Coordinates] = Seq(Coordinates(cs2))
+  val coordinates2a: Seq[Coordinates] = Seq(Coordinates(cs2a))
+  val tessellate: Tessellate = Tessellate("1")
+  val p1: Placemark = Placemark(Seq(LineString(tessellate, coordinates1)(gd)))(fd1)
+  val p2: Placemark = Placemark(Seq(LineString(tessellate, coordinates2)(gd)))(fd1)
+  val p2a: Placemark = Placemark(Seq(LineString(tessellate, coordinates2a)(gd)))(fd1)
+  val p12: Placemark = Placemark(Seq(LineString(tessellate, Seq(Coordinates(cs1 ++ cs2)))(gd)))(fd2)
+  val p12a: Placemark = Placemark(Seq(LineString(tessellate, Seq(Coordinates(cs2a ++ cs1.reverse)))(gd)))(fd2)
+
+  it should "merge Placemarks 1" in {
+    val maybePlacemark = p1 merge p2
+    maybePlacemark.isDefined shouldBe true
+    val pz = maybePlacemark.get
+    pz shouldBe p12
+  }
+
+  it should "merge Placemarks 2" in {
+    val maybePlacemark = p2 merge p1
+    maybePlacemark.isDefined shouldBe true
+    val pz = maybePlacemark.get
+    pz.Geometry.head match {
+      case LineString(_, cs) => cs shouldBe Seq(Coordinates(cs1 ++ cs2))
+    }
+    pz shouldBe p12
+  }
+
+//  it should "merge Placemarks 3" in {
+//    val maybePlacemark = p1 merge p2a
+//    maybePlacemark.isDefined shouldBe true
+//    val pz = maybePlacemark.get
+//    pz shouldBe p12
+//  }
+//
+//  it should "merge Placemarks 4" in {
+//    val maybePlacemark = p2a merge p1
+//    maybePlacemark.isDefined shouldBe true
+//    val pz = maybePlacemark.get
+//    pz shouldBe p12a
+//  }
 }
 

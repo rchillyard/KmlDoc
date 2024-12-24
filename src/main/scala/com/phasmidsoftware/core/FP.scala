@@ -18,6 +18,8 @@ object FP {
   /**
    * Sequence method to combine elements of Try.
    *
+   * TESTME
+   *
    * @param xys an Iterator of Try[X]
    * @tparam X the underlying type
    * @return a Try of Iterator[X]
@@ -26,8 +28,6 @@ object FP {
 
   /**
    * Method to transform a Seq of Try[X] into a Try of Seq[X].
-   *
-   * TODO move this to FP.
    *
    * @param xys a Seq of Try[X].
    * @tparam X the underlying type.
@@ -38,12 +38,22 @@ object FP {
   }
 
   /**
+   * Method to transform a `Seq[Option[X]]` into an `Option[Seq[X]]`.
+   * NOTE this is pessimistic.
+   *
+   * @param xos a `Seq[Option[X]]`].
+   * @tparam X the underlying type.
+   * @return an `Option[Seq[X]]` which is defined only if all elements of the input were defined.
+   */
+  def sequence[X](xos: Iterable[Option[X]]): Option[Seq[X]] = xos.foldLeft(Option(Seq[X]())) {
+    (xso, xo) => for (xs <- xso; x <- xo) yield xs :+ x
+  }
+
+  /**
    * Method to transform a Seq of Try[X] into a Try of Seq[X].
    *
    * Non-fatal failures are eliminated from consideration, although each one invokes the function f.
    * Fatal failures are retained so that the result will be a Failure.
-   *
-   * TODO move this to FP.
    *
    * @param f   a function Throwable => Unit which will process each non-fatal failure.
    * @param xys a Seq of Try[X].
@@ -96,6 +106,8 @@ object FP {
   /**
    * Method to partition an  method to combine elements of Try as an Iterator.
    *
+   * TESTME
+   *
    * @param xys an Iterator of Try[X].
    * @tparam X the underlying type.
    * @return a tuple of two iterators of Try[X], the first one being successes, the second one being failures.
@@ -105,6 +117,8 @@ object FP {
   /**
    * Method to partition an  method to combine elements of Try.
    *
+   * TESTME
+   *
    * @param xys a Seq of Try[X].
    * @tparam X the underlying type.
    * @return a tuple of two Seqs of Try[X], the first one being successes, the second one being failures.
@@ -113,6 +127,8 @@ object FP {
 
   /**
    * Method to yield a URL for a given resourceForClass in the classpath for C.
+   *
+   * TESTME
    *
    * @param resourceName the name of the resourceForClass.
    * @tparam C a class of the package containing the resourceForClass.
@@ -145,13 +161,13 @@ object FP {
   }
 
   /**
-   * Method to transform a a Try[X] into an Option[X].
+   * Method to transform a `Try[X]` into an `Option[X]`.
    * But, unlike "toOption," a Failure can be logged.
    *
    * @param f  a function to process any Exception (typically a logging function).
-   * @param xy the input Try[X}.
+   * @param xy the input `Try[X]`.
    * @tparam X the underlying type.
-   * @return an Option[X].
+   * @return an `Option[X]`.
    */
   def tryToOption[X](f: Throwable => Unit)(xy: Try[X]): Option[X] = xy match {
     case Success(x) => Some(x)
@@ -159,28 +175,79 @@ object FP {
     case Failure(x) => throw x
   }
 
-  def optionToTry[X](xo: Option[X]): Try[X] = xo match {
+  /**
+   * Converts an `Option[X]` to a `Try[X]`.
+   * If the `Option` is `Some`, it returns a `Success` containing the value.
+   * If the `Option` is `None`, it returns a `Failure` containing the provided or default `Throwable`.
+   *
+   * TESTME
+   *
+   * @param xo        the input `Option[X]` to convert.
+   * @param throwable the `Throwable` to use if the input is `None`. Defaults to `NoSuchElementException`.
+   * @tparam X the underlying type of the `Option` and `Try`.
+   * @return a `Try[X]` representing either the success or failure of the conversion.
+   */
+  def optionToTry[X](xo: Option[X], throwable: Throwable = new NoSuchElementException("optionToTry: None")): Try[X] = xo match {
     case Some(x) => Success(x)
-    case None => Failure(new NoSuchElementException("optionToTry: None"))
+    case None => Failure(throwable)
   }
 
+  /**
+   * Attempts to evaluate the provided expression and wraps the result in a `Success` if it is non-null.
+   * If the value is `null`, a `Failure` wrapping a `NoSuchElementException` with the provided message is returned.
+   *
+   * TESTME
+   *
+   * @param x   a lazily-evaluated expression of type `X`.
+   * @param msg a message to include in the exception if the result is `null`.
+   * @tparam X the type of the expression's result.
+   * @return a `Try[X]` containing `Success(x)` if `x` is non-null, or `Failure` if `x` is `null`.
+   */
   def tryNotNull[X](x: => X)(msg: String): Try[X] = Option(x) match {
     case Some(x) => Success(x)
     case None => Failure(new NoSuchElementException(s"tryNotNull: null: $msg"))
   }
 
   /** Uncurrying for functions of arity 6.
+   *
+   * TESTME
    */
   def uncurried[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = {
     (x1, x2, x3, x4, x5, x6) => f(x1)(x2)(x3)(x4)(x5)(x6)
   }
+
+  /**
+   * Applies a transformation function to the successful value of a Try if the value satisfies a predicate.
+   * If the predicate fails, it returns a Failure with an exception indicating the reason.
+   *
+   * TESTME
+   *
+   * @param p         a predicate function to test the successful value of the input Try.
+   * @param predicate a descriptive string used in the exception message if the predicate fails. Default is "predicate".
+   * @param f         a transformation function applied to the value if the predicate passes.
+   * @tparam X the input type of the Try.
+   * @tparam Y the output type after applying the transformation function.
+   * @return a function that transforms a Try[X] to a Try[Y] based on the predicate and transformation function.
+   */
+  def mapTryGuarded[X, Y](p: X => Boolean, predicate: String = "predicate")(f: X => Y): Try[X] => Try[Y] = {
+    case Success(x) if p(x) => Success(f(x))
+    case Success(x) => Failure(FPException(s"mapTryGuarded: $predicate failed for $x"))
+    case Failure(x) => Failure(x)
+  }
 }
 
+/**
+ * The `TryUsing` object provides utility methods to manage resources safely
+ * and effectively using Scala's `Using` and `Try`.
+ * It encapsulates resource management in a functional way, ensuring proper release of resources.
+ * The methods in this object extend the functionality of `Using.apply`
+ * by offering flattening operations over nested `Try`.
+ */
 object TryUsing {
   /**
-   * This method is to Using.apply as flatMap is to Map.
+   * This method is to `Using.apply` as `flatMap` is to `map`.
    *
-   * @param resource a resource which is used by f and will be managed via Using.apply
+   * @param resource a resource which is used by f and will be managed via `Using.apply`
    * @param f        a function of R => Try[A].
    * @tparam R the resource type.
    * @tparam A the underlying type of the result.
@@ -189,10 +256,12 @@ object TryUsing {
   def apply[R: Releasable, A](resource: => R)(f: R => Try[A]): Try[A] = Using(resource)(f).flatten
 
   /**
-   * This method is similar to apply(r) but it takes a Try[R] as its parameter.
-   * The definition of f is the same as in the other apply, however.
+   * This method is similar to `apply(r)` but it takes a `Try[R]` as its parameter.
+   * The definition of `f` is the same as in the other apply, however.
    *
-   * @param ry a Try[R] which is passed into f and will be managed via Using.apply
+   * TESTME
+   *
+   * @param ry a Try[R] which is passed into f and will be managed via `Using.apply`
    * @param f  a function of R => Try[A].
    * @tparam R the resource type.
    * @tparam A the underlying type of the result.
@@ -201,4 +270,10 @@ object TryUsing {
   def apply[R: Releasable, A](ry: Try[R])(f: R => Try[A]): Try[A] = for (r <- ry; a <- apply(r)(f)) yield a
 }
 
+/**
+ * This class represents an exception related to functional programming operations.
+ *
+ * @param msg A message describing the exception.
+ * @param eo  An optional underlying cause for the exception, as a Throwable.
+ */
 case class FPException(msg: String, eo: Option[Throwable] = None) extends Exception(msg, eo.orNull)
