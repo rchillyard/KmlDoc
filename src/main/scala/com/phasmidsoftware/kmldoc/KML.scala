@@ -595,9 +595,9 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    *         or None if inversion is not possible.
    */
   def invert: Option[Placemark] = {
-    val gs: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
-    val lso: Option[Seq[Geometry]] = FP.sequence(gs)
-    for (ls <- lso) yield Placemark(ls)(featureData)
+    val gos: Seq[Option[Geometry]] = for (g <- Geometry) yield g.invert
+    val gso: Option[Seq[Geometry]] = FP.sequence(gos)
+    for (gs <- gso) yield Placemark(gs)(featureData)
   }
 
   /**
@@ -690,7 +690,8 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    */
   private def joinMatchingPlacemarks(name: String, feature: Feature, mergeName: Boolean) = feature match {
     case q: Placemark if q.name.matches(name) => merge(q, mergeName)
-    case _ => None // FIXME can result in this Placemark being lost if name doesn't match q.name
+    // FIXME Issue #20 can result in this Placemark being lost if name doesn't match q.name
+    case _ => None
   }
 }
 

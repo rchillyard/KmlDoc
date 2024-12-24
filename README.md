@@ -8,6 +8,8 @@
 # KML Doctor
 
 Utilities to parse, doctor, and render KML files.
+The reference documentation for KML is here:
+https://developers.google.com/kml/documentation/kmlreference
 
 Versions
 ========

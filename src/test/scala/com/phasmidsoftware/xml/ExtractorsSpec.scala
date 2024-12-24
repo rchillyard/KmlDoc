@@ -250,7 +250,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     extracted shouldBe Success(Document3(1, None, List(Empty, Empty)))
   }
 
-  // TODO this should be just like the previous test
+  // TODO Issue #22 this should be just like the previous test
   ignore should "extractor3B" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
@@ -352,6 +352,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     implicit val extractorSeq: MultiExtractor[Seq[Simple4]] = multiExtractorBase[Simple4](Positive)
   }
 
+  // TODO Issue #23
   ignore should "extract MyContainer without inner boundary" in {
     val xml = <xml>
       <Polygon>
