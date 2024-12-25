@@ -1,7 +1,6 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP
-import org.scalatest.Assertion
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import scala.util.{Failure, Try}

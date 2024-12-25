@@ -16,50 +16,52 @@ import scala.xml.{Node, NodeSeq}
 trait Extractors {
 
   /**
-   * Method to yield an Extractor of Option[P] where there is evidence of Extractor[P].
-   * This is generally used in conjunction with naming a case class member as "maybe"name.
+   * Transforms an `Extractor` for a type `P` into an `Extractor` for `Option[P]`.
    *
-   * CONSIDER re-writing this as it appear to force evaluation of the implicit evidence of Extractor[P].
-   *
-   * @tparam P the underlying type of the result.
-   *           Required: implicit evidence of type Extractor[P].
-   * @return an Extractor of Option[P].
+   * @return An `Extractor` that can extract an `Option[P]`, which will contain
+   *         a value if extraction for type `P` succeeds or be None if it fails.
    */
   def extractorOption[P: Extractor]: Extractor[Option[P]] = implicitly[Extractor[P]] map (p => Option(p))
 
   /**
-   * Method to yield an Extractor which will convert an Xml Node into a sequence of P objects where there is evidence of Extractor[P].
-   * When invoked, the Extractor uses extractSequence on a NodeSeq formed from matching label on the given node.
+   * Method to yield an `Extractor` which will convert an Xml `Node` into a sequence of `P` objects
+   * where there is evidence of `Extractor[P]`.
+   * When invoked, the extractor uses `extractSequence` on a `NodeSeq` formed from matching `label` on the given node.
    *
-   * NOTE This method is used you to create an Extractor that will extract an iterable from a Node, whereas we use MultiExtractor to extract an iterable from a NodeSeq.
+   * NOTE This method is used to create an extractor that will extract an `Iterable` from a `Node`,
+   * whereas we use `MultiExtractor` to extract an `Iterable` from a `NodeSeq`.
    *
    * CONSIDER there must be an alternative to this code.
    *
    * @param label the label of each of the child nodes to be extracted.
    * @tparam P the underlying type of the result.
-   *           Required: implicit evidence of type Extractor[P].
-   * @return an Extractor of Iterable[P].
+   *           Required: implicit evidence of type `Extractor[P]`.
+   * @return an Extractor of `Iterable[P]`.
    */
   def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => Extractor.extractSequence[P](node / label))
 
   /**
-   * Method to create a new MultiExtractor based on type P such that the underlying type of the result
-   * is Seq[P].
+   * Creates a new instance of `MultiExtractorBase` for the specified range,
+   * adapting the extracted elements
+   * to the type parameter `P` using the implicit `Extractor`.
    *
-   * @tparam P the underlying (Extractor) type.
-   * @return a MultiExtractor of Seq[P]
+   * @param range the range of elements to extract
+   * @tparam P the underlying type for which there must be evidence of `Extractor[P]`.
+   * @return a new `MultiExtractor` instance for sequences of type `P`.
    */
   def multiExtractorBase[P: Extractor](range: Range): MultiExtractor[Seq[P]] = new MultiExtractorBase[P](range)
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
+   * Method to yield a `MultiExtractor` of `Seq[T]` such that `T` is the super-type of `P0`.
    *
-   * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
-   * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.
-   * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+   * @param construct a function whose sole purpose is to enable type inference
+   *                  (`construct` is never referenced in the code).
+   * @param labels    the label of the elements we wish to extract (wrapped in `Seq`).
+   *                  The one label must correspond to P0.
+   * @tparam T  the ultimate underlying type of the resulting `MultiExtractor`.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P]` and `ClassTag[P]`.
+   * @return `MultiExtractor of Seq[T]`.
    */
   def multiExtractor1[T, U <: Product, P0 <: T : Extractor : ClassTag](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
     labels match {
@@ -68,7 +70,7 @@ trait Extractors {
     }
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of P0.
+   * Method to yield a MultiExtractor of `Seq[T]` such that T is the super-type of P0.
    *
    * TESTME
    *
@@ -76,21 +78,21 @@ trait Extractors {
    * @param labels    the label of the elements we wish to extract (wrapped in Seq). The one label must correspond to P0.
    * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P]` and `ClassTag[P]`.
+   * @return MultiExtractor of `Seq[T]`.
    */
   def subclassExtractor1[T, U <: Product, P0 <: T : Extractor : ClassTag](construct: P0 => U, labels: Seq[String]): SubclassExtractor[T] = new SubclassExtractor[T](labels)(multiExtractor1(construct, labels))
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of two P-types.
+   * Method to yield a MultiExtractor of `Seq[T]` such that T is the super-type of two P-types.
    *
    * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
    * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
    * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @tparam P1 the second (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P]` and `ClassTag[P]`.
+   * @tparam P1 the second (Extractor-enabled) subtype of T.
+   * @return MultiExtractor of `Seq[T]`.
    */
   def multiExtractor2[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
     labels match {
@@ -101,7 +103,7 @@ trait Extractors {
     }
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of three P-types.
+   * Method to yield a MultiExtractor of `Seq[T]` such that T is the super-type of three P-types.
    * The labels are "translated" according to the translation table, which may produce more labels than in the original.
    * The first label is used to filter the P0-type child nodes of nodeSeq (the input of the resulting MultiExtractor).
    * Then, the resulting
@@ -110,10 +112,10 @@ trait Extractors {
    * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
    * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @tparam P1 the second (Extractor) sub-type of T.
-   * @tparam P2 the third (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P]` and `ClassTag[P]`.
+   * @tparam P1 the second (Extractor-enabled) subtype of T.
+   * @tparam P2 the third (Extractor-enabled) subtype of T.
+   * @return MultiExtractor of `Seq[T]`.
    */
   def multiExtractor3[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
     labels match {
@@ -124,17 +126,18 @@ trait Extractors {
     }
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of four P-types.
+   * Method to yield a `MultiExtractor` of `Seq[T]` such that `T` is the super-type of four P-types.
    *
    * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
-   * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
-   * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
+   * @param labels    the labels of the elements we wish to extract.
+   *                  These must be in the same sequence as the corresponding P-types.
+   * @tparam T  the ultimate underlying type of the resulting `MultiExtractor`.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @tparam P1 the second (Extractor) sub-type of T.
-   * @tparam P2 the third (Extractor) sub-type of T.
-   * @tparam P3 the fourth (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P0]` and `ClassTag[P0]`.
+   * @tparam P1 the second (Extractor-enabled) subtype of T.
+   * @tparam P2 the third (Extractor-enabled) subtype of T.
+   * @tparam P3 the fourth (Extractor-enabled) subtype of T.
+   * @return MultiExtractor of `Seq[T]`.
    */
   def multiExtractor4[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag, P3 <: T : Extractor : ClassTag](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
     labels match {
@@ -145,18 +148,18 @@ trait Extractors {
     }
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of five P-types.
+   * Method to yield a MultiExtractor of `Seq[T]` such that T is the super-type of five P-types.
    *
    * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
    * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
    * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @tparam P1 the second (Extractor) sub-type of T.
-   * @tparam P2 the third (Extractor) sub-type of T.
-   * @tparam P3 the fourth (Extractor) sub-type of T.
-   * @tparam P4 the fifth (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P0]` and `ClassTag[P0]`.
+   * @tparam P1 the second (Extractor-enabled) subtype of T.
+   * @tparam P2 the third (Extractor-enabled) subtype of T.
+   * @tparam P3 the fourth (Extractor-enabled) subtype of T.
+   * @tparam P4 the fifth (Extractor-enabled) subtype of T.
+   * @return MultiExtractor of `Seq[T]`.
    */
   def multiExtractor5[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag, P3 <: T : Extractor : ClassTag, P4 <: T : Extractor : ClassTag](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
     labels match {
@@ -167,19 +170,19 @@ trait Extractors {
     }
 
   /**
-   * Method to yield a MultiExtractor of Seq[T] such that T is the super-type of six P-types.
+   * Method to yield a MultiExtractor of `Seq[T]` such that T is the super-type of six P-types.
    *
    * @param construct a function whose sole purpose is to enable type inference (construct is never referenced in the code).
    * @param labels    the labels of the elements we wish to extract. These must be in the same sequence as the corresponding P-types.
    * @tparam T  the ultimate underlying type of the resulting MultiExtractor.
    * @tparam U  a tuple whose only purpose is type inference.
-   * @tparam P0 the first (Extractor) sub-type of T.
-   * @tparam P1 the second (Extractor) sub-type of T.
-   * @tparam P2 the third (Extractor) sub-type of T.
-   * @tparam P3 the fourth (Extractor) sub-type of T.
-   * @tparam P4 the fifth (Extractor) sub-type of T.
-   * @tparam P5 the sixth (Extractor) sub-type of T.
-   * @return MultiExtractor of Seq[T].
+   * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P0]` and `ClassTag[P0]`.
+   * @tparam P1 the second (Extractor-enabled) subtype of T.
+   * @tparam P2 the third (Extractor-enabled) subtype of T.
+   * @tparam P3 the fourth (Extractor-enabled) subtype of T.
+   * @tparam P4 the fifth (Extractor-enabled) subtype of T.
+   * @tparam P5 the sixth (Extractor-enabled) subtype of T.
+   * @return MultiExtractor of `Seq[T]`.
    */
   def multiExtractor6[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag, P3 <: T : Extractor : ClassTag, P4 <: T : Extractor : ClassTag, P5 <: T : Extractor : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] = nodeSeq =>
     labels match {
@@ -199,7 +202,8 @@ trait Extractors {
    * CONSIDER inverting the parametric types so that the resulting type (T) is first.
    *
    * @param extractorBtoT an extractor for the type B => T.
-   * @tparam B the type of the value in the additional parameter set of T.
+   * @tparam B the type of the value in the additional parameter set of T,
+   *           for which there must be evidence of Extractor[B].
    * @tparam T the underlying type of the resulting extractor.
    * @return an Extractor[T] whose method extract will convert a Node into a T.
    */
@@ -228,7 +232,7 @@ trait Extractors {
    * This is because the compiler gets a little confused, otherwise.
    *
    * @param construct a function B => T, an explicitly declared function.
-   * @tparam B the type of the non-member parameter of T.
+   * @tparam B the type of the value in the additional parameter set of T.
    * @tparam T the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -241,7 +245,7 @@ trait Extractors {
    * CONSIDER adding logging to the other extractors.
    *
    * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
+   * @tparam P0 the (Extractor-enabled) type of the first (only) member of the Product type T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -252,7 +256,7 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with one member.
    *
    * @param construct a function (P0) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
+   * @tparam P0 the (MultiExtractor-enabled) type of the first (only) member of the Product type T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -263,8 +267,8 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first (only) member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @tparam P0 the (Extractor-enabled) type of the first (only) member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -272,13 +276,16 @@ trait Extractors {
     extractorPartial1(fTagToFieldExtractor, construct, dropLast = true, fields).extract(node)
 
   /**
-   * Extractor which will convert an Xml Node into an instance of a case class with one member and one auxiliary (non-member) parameter.
+   * Creates an extractor that constructs an instance of type T from a node in an abstract syntax tree.
    *
-   * @param construct a function (P0) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first (only) member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
-   * @tparam T  the underlying type of the result, a Product.
-   * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
+   * @param construct a function that takes an extracted parameter of type P0 and returns a function
+   *                  that takes an argument of type B and produces an instance of type T
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the type of the extracted input that serves as the first parameter for construct
+   * @tparam B  the input type required to produce the final result of type T
+   * @tparam T  the resulting type produced by the extractor
+   * @return an extractor function that takes a Node and returns a function of type B => T
    */
   def extractorPartial01[P0: MultiExtractor, B, T <: Product : ClassTag](construct: P0 => B => T, fields: Seq[String] = Nil): Extractor[B => T] = (node: Node) =>
     extractorPartial1[P0, B, T](childrenExtractor, construct, dropLast = true, fields).extract(node) // XXX Three empties
@@ -287,8 +294,10 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with two members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -299,8 +308,10 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with two members.
    *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -313,8 +324,10 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -325,9 +338,11 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with two members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -338,9 +353,11 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with two members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -351,9 +368,11 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with two members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P1, P2) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -368,9 +387,11 @@ trait Extractors {
    * See the commented code for how this should be done (but with the change mentioned).
    *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -381,9 +402,11 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with three members.
    *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -396,9 +419,11 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -411,9 +436,11 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with three members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -424,10 +451,12 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -438,10 +467,12 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -452,10 +483,12 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with three members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -468,10 +501,12 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -482,10 +517,12 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with four members.
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -498,10 +535,12 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -514,10 +553,12 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -530,10 +571,12 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -546,10 +589,12 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with four members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -560,11 +605,13 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -577,11 +624,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -592,11 +641,13 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with four members and one auxiliary (non-member) parameter.
    *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -609,11 +660,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
    */
@@ -626,11 +679,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -641,11 +696,13 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -658,11 +715,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -673,11 +732,13 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with five members.
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -690,11 +751,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -707,11 +770,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -724,11 +789,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -741,12 +808,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam B  the type of the non-member parameter of T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam B  the type of the value in the additional parameter set of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -759,11 +828,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -777,11 +848,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -795,11 +868,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -813,11 +888,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -831,11 +908,13 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -849,12 +928,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (Extractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (Extractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with six members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -867,12 +948,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with six members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -885,12 +968,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with six members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -901,12 +986,14 @@ trait Extractors {
    * Extractor which will convert an Xml Node into an instance of a case class with six members.
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with six members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -919,12 +1006,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with six members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -937,12 +1026,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with six members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -955,12 +1046,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0,P1,P2,P3,P4,P5) => T, usually the apply method of a case class.
-   * @tparam P0 the (MultiExtractor) type of the first member of the Product type T.
-   * @tparam P1 the (MultiExtractor) type of the second member of the Product type T.
-   * @tparam P2 the (MultiExtractor) type of the third member of the Product type T.
-   * @tparam P3 the (MultiExtractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (MultiExtractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (MultiExtractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (MultiExtractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (MultiExtractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam T  the underlying type of the result, a Product with five members.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
    */
@@ -973,12 +1066,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (Extractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (Extractor-enabled) type of the sixth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -992,12 +1087,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -1011,12 +1108,14 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (MultiExtractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (MultiExtractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -1030,13 +1129,15 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5, P6) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (Extractor) type of the sixth member of the Product type T.
-   * @tparam P6 the (Extractor) type of the seventh member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (Extractor-enabled) type of the sixth member of the Product type T.
+   * @tparam P6 the (Extractor-enabled) type of the seventh member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -1050,13 +1151,15 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5, P6) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (Extractor) type of the sixth member of the Product type T.
-   * @tparam P6 the (MultiExtractor) type of the seventh member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (Extractor-enabled) type of the sixth member of the Product type T.
+   * @tparam P6 the (MultiExtractor-enabled) type of the seventh member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -1070,13 +1173,15 @@ trait Extractors {
    * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5, P6) => B => T, usually the apply method of a case class.
-   * @tparam P0 the (Extractor) type of the first member of the Product type T.
-   * @tparam P1 the (Extractor) type of the second member of the Product type T.
-   * @tparam P2 the (Extractor) type of the third member of the Product type T.
-   * @tparam P3 the (Extractor) type of the fourth member of the Product type T.
-   * @tparam P4 the (Extractor) type of the fifth member of the Product type T.
-   * @tparam P5 the (MultiExtractor) type of the sixth member of the Product type T.
-   * @tparam P6 the (MultiExtractor) type of the seventh member of the Product type T.
+   * @param fields    an optional sequence of field names to guide the extraction process,
+   *                  defaults to an empty sequence
+   * @tparam P0 the (Extractor-enabled) type of the first member of the Product type T.
+   * @tparam P1 the (Extractor-enabled) type of the second member of the Product type T.
+   * @tparam P2 the (Extractor-enabled) type of the third member of the Product type T.
+   * @tparam P3 the (Extractor-enabled) type of the fourth member of the Product type T.
+   * @tparam P4 the (Extractor-enabled) type of the fifth member of the Product type T.
+   * @tparam P5 the (MultiExtractor-enabled) type of the sixth member of the Product type T.
+   * @tparam P6 the (MultiExtractor-enabled) type of the seventh member of the Product type T.
    * @tparam B  the type of the non-member parameter of T.
    * @tparam T  the underlying type of the result, a Product.
    * @return an Extractor[T] whose method extract will convert a Node into a Try[T].
@@ -1092,7 +1197,7 @@ trait Extractors {
    * @param construct  a function P0 => T, usually the apply method of a case class.
    * @param dropLast   if true, then we drop the last declared field (used when T has an auxiliary member)
    * @param fields     a list of field names which, if not empty, is to be used instead of the reflected fields of T (defaults to Nil).
-   * @tparam P the (Extractor) type of the first (only) member of the Product type T.
+   * @tparam P the (Extractor-enabled) type of the first (only) member of the Product type T.
    * @tparam B the type of the auxiliary parameter of T.
    * @tparam T the underlying type of the result, a Product.
    * @return an Extractor[B => T] whose method extract will convert a Node into a Try[B => T].
@@ -1243,7 +1348,6 @@ trait Extractors {
       case _ => Failure(XmlException(s"extractorPartial6: logic error"))
     }
 
-
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with seven members plus
    * an "auxiliary" parameter of type B, declared in its own parameter set.
@@ -1279,7 +1383,7 @@ trait Extractors {
   /**
    * Method to yield an TagToExtractorFunc[P] which in turns invokes fieldExtractor with the given tag.
    *
-   * @tparam P the underlying (Extractor) type of the result.
+   * @tparam P the underlying (Extractor-enabled) type of the result.
    * @return an TagToExtractorFunc[P] based on fieldExtractor.
    */
   private def fTagToFieldExtractor[P: Extractor]: TagToExtractorFunc[P] = (tag: String) => fieldExtractor[P](tag)
@@ -1287,20 +1391,20 @@ trait Extractors {
   /**
    * Method to yield an TagToExtractorFunc[P] which in turns invokes extractChildrenDeprecated with the given tag.
    *
-   * @tparam P the underlying (MultiExtractor) type of the result.
+   * @tparam P the underlying (MultiExtractor-enabled) type of the result.
    * @return an TagToExtractorFunc[P] based on fieldExtractor.
    */
   private def childrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] = (tag: String) => extractChildren[P](tag)
 
   /**
-   * Method to yield an Extractor of Seq[T] where each result arises from one of the labels (tags) given.
+   * Method to yield an Extractor of `Seq[T]` where each result arises from one of the labels (tags) given.
    *
    * TESTME
    *
    * @param tag    this is a pseudo-tag--not actually present in any XML element but corresponds to a case class member.
    * @param labels the labels of the elements we wish to extract (wrapped in Seq).
    * @tparam T the ultimate underlying type of the resulting MultiExtractor.
-   * @return Extractor of Seq[T].
+   * @return Extractor of `Seq[T]`.
    */
   private def seqExtractorByTag[T](tag: String, labels: Seq[String])(implicit multiExtractor: MultiExtractor[Seq[T]]): Extractor[Seq[T]] = new TagToSequenceExtractorFunc[T] {
 
@@ -1317,7 +1421,7 @@ trait Extractors {
         sequence(ws) map (tss => tss.flatten)
       }
     }
-    else (node: Node) => Success(Nil)
+    else (_: Node) => Success(Nil)
 
     val tags: Seq[String] = labels
     val tsm: MultiExtractor[Seq[T]] = multiExtractor
@@ -1463,9 +1567,9 @@ object Extractors extends Extractors {
    *
    * TESTME: not currently used.
    *
-   * @param fExtractor a TagToSequenceExtractorFunc[T]
+   * @param fExtractor a `TagToSequenceExtractorFunc[T]`
    * @tparam T an iterable type.
-   * @return a TagToExtractorFunc of Seq[T]
+   * @return a TagToExtractorFunc of `Seq[T]`
    */
   def tagToSequenceExtractorFunc[T <: Iterable[_]](fExtractor: TagToSequenceExtractorFunc[T]): TagToExtractorFunc[Seq[T]] =
     (label: String) => if (fExtractor.valid(label)) fExtractor(label) else Extractor.none
