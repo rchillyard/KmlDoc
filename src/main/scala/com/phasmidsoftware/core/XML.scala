@@ -53,9 +53,28 @@ object Text extends Extractors {
 
 }
 
+/**
+ * Object TagProperties provides functionality to manage and query a collection
+ * of tags that must match a specified condition.
+ *
+ * This object allows adding tags to an internal collection and checking
+ * whether a given tag exists within that collection.
+ */
 object TagProperties {
+  /**
+   * Adds a specified tag to the internal collection of tags that must match.
+   *
+   * @param tag the tag to be added to the must-match list
+   * @return Unit
+   */
   def addMustMatch(tag: String): Unit = mustMatchList += tag
 
+  /**
+   * Checks if the specified tag exists in the collection of tags that must match.
+   *
+   * @param tag the tag to check for a match in the must-match list
+   * @return true if the tag exists in the must-match list, false otherwise
+   */
   def mustMatch(tag: String): Boolean = mustMatchList.contains(tag)
 
   private val mustMatchList = mutable.Set[String]()

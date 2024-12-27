@@ -54,7 +54,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    * TESTME
    *
    * @tparam P the type of the alternative `Extractor`.
-   *           `P` must provide implicit evidence of `Extractor[P]` and `P` must be a sub-class of `T`.
+   *           `P` must provide implicit evidence of `Extractor[P]` and `P` must be a subclass of `T`.
    * @return an `Extractor[T]`.
    */
   def |[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
@@ -181,7 +181,28 @@ object Extractor {
     sequence(for (node <- nodeSeq) yield Extractor.extract[P](node))
 
   /**
-   * Method to yield a Try[P] for a particular child or attribute of the given node.
+   * Extracts a key-value pair from a given XML/HTML node based on the specified key and type.
+   *
+   * @param k The key used to extract the value from the node.
+   * @tparam T The type of the value to be extracted, constrained by the provided Extractor context.
+   * @return A function that takes a Node and returns a tuple containing the key and a Try wrapper with either the extracted value or an exception if the extraction fails.
+   */
+  def extractorKeyValuePair[T: Extractor](k: String): Node => (String, Try[T]) =
+    node => doExtractField[T](k, node)
+
+  /**
+   * Extracts a value of type `T` from a `Node` by a given key and applies a specified partial function to the extracted key-value pair.
+   *
+   * @param k The key to be used for extracting the value from the node.
+   * @param f A partial function that operates on a tuple containing the key and the result of the extraction attempt.
+   * @tparam T The type of the value to be extracted, for which an implicit `Extractor` must be available.
+   * @return A function that takes a `Node` and returns a `Try[T]` representing the result of the extraction and processing.
+   */
+  def extractorByKey[T: Extractor](k: String)(f: PartialFunction[(String, Try[T]), Try[T]]): Node => Try[T] =
+    node => f(extractorKeyValuePair[T](k).apply(node))
+
+  /**
+   * Method to yield a `Try[P]` for a particular child or attribute of the given node.
    *
    * NOTE: Plural members should use extractChildren and not extractField.
    *
@@ -193,19 +214,18 @@ object Extractor {
    *              if an attribute, then field should begin with "_";
    *              if an optional child, then field should begin with "maybe".
    * @tparam P the type to which Node should be converted.
-   *           Required: implicit evidence of type Extractor[P].
-   * @return a Try[P].
+   *           Required: implicit evidence of type `Extractor[P]`.
+   * @return a `Try[P]`.
    */
-  def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(node => doExtractField[P](field, node) match {
+  def fieldExtractor[P: Extractor](field: String): Extractor[P] = Extractor(extractorByKey[P](field) {
     case _ -> Success(p) => Success(p)
     case m -> Failure(x) => x match {
       case _: NoSuchFieldException => Success(None.asInstanceOf[P])
       case _ =>
-        val message = s"fieldExtractor(field=$field) from node (${renderNode(node)}) using (${implicitly[Extractor[P]].name}): (field type = $m)"
+        val message = s"fieldExtractor(field=$field) using (${implicitly[Extractor[P]].name}): (field type = $m)"
         Failure(MissingFieldException(message, m, x))
     }
-  }
-  )
+  })
 
   /**
    * Method to extract child elements from a node.
@@ -226,29 +246,41 @@ object Extractor {
   def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
     val explicitChildren: NodeSeq = node / member
     if (explicitChildren.nonEmpty || TagProperties.mustMatch(member))
-      extractMulti(explicitChildren)
+      extractMulti(explicitChildren) // requires implicit MultiExtractor[P]
     else
       extractAll(node) match {
         case Success(Nil) =>
-          // CONSIDER use Flog logging
-          val ts = ChildNames.translate(member)
-          logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
-          if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
-          val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
-          if (nodeSeq.nonEmpty) {
-            logger.debug(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
-            extractMulti(nodeSeq)
-          }
-          else {
-            logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
-            Try(Nil.asInstanceOf[P])
-          }
+          extractChildless(node, member)
         case Success(x) =>
           logger.debug(s"extractChildren extracted $x using extractAll")
           Success(x)
         case Failure(x) =>
           Failure(x)
       }
+  }
+
+  /**
+   * Extracts childless nodes of a given type from the specified parent XML `node`.
+   * Uses a translation of the member name to identify the target child elements.
+   *
+   * @param node   the parent XML node from which childless nodes are to be extracted
+   * @param member the name of the member whose corresponding child elements are targeted
+   * @tparam P the type of elements to extract, enabled by the context-bound `MultiExtractor`
+   */
+  private def extractChildless[P: MultiExtractor](node: Node, member: String): Try[P] = {
+    // CONSIDER use Flog logging
+    val ts = ChildNames.translate(member)
+    logger.debug(s"extractChildren(${name[MultiExtractor[P]]})($member)(${renderNode(node)}): get $ts")
+    if (ts.isEmpty) logger.warn(s"extractChildren: logic error: no suitable tags found for children of member $member in ${renderNode(node)}")
+    val nodeSeq: Seq[Node] = for (t <- ts; w <- node / t) yield w
+    if (nodeSeq.nonEmpty) {
+      logger.debug(s"extractChildren extracting ${nodeSeq.size} nodes for ($member)")
+      extractMulti(nodeSeq)
+    }
+    else {
+      logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+      Try(Nil.asInstanceOf[P])
+    }
   }
 
   /**
@@ -300,19 +332,26 @@ object Extractor {
   private def doExtractField[P: Extractor](field: String, node: Node): (String, Try[P]) =
     field match {
       // NOTE special name for the (text) content of a node.
-      case "$" => "$" -> extractText[P](node)
+      case "$" =>
+        "$" -> extractText[P](node)
       // NOTE attributes must match names where the case class member name starts with "_"
-      case attribute("xmlns") => "attribute xmlns" -> Failure(XmlException("it isn't documented by xmlns is a reserved attribute name"))
-      case optionalAttribute(x) => s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
-      case attribute(x) => s"attribute: $x" -> extractAttribute[P](node, x)
+      case attribute("xmlns") =>
+        "attribute xmlns" -> Failure(XmlException("it isn't documented but xmlns is a reserved attribute name"))
+      case optionalAttribute(x) =>
+        s"optional attribute: $x" -> extractAttribute[P](node, x, optional = true)
+      case attribute(x) =>
+        s"attribute: $x" -> extractAttribute[P](node, x)
       // NOTE child nodes are extracted using extractChildren, not here, but if the plural-sounding name is present in node, then we are OK
-      case plural(x) if (node \ field).isEmpty => // NOTE: TESTME: this mechanism is to allow for field names to end in "s" without being plural (such as OuterBoundaryIs).
+      case plural(x) if (node \ field).isEmpty =>
+        // NOTE: TESTME: this mechanism is to allow for field names to end in "s" without being plural (such as OuterBoundaryIs).
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
       // NOTE optional members such that the name begins with "maybe"
-      case optional(x) => s"optional: $x" -> extractOptional[P](node / x)
+      case optional(x) =>
+        s"optional: $x" -> extractOptional[P](node / x)
       // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
       // TODO Issue #21 why would we be looking for a singleton LinearRing in a node which is an extrude node?
-      case x => s"singleton: $x" -> extractSingleton[P](node / x)
+      case x =>
+        s"singleton: $x" -> extractSingleton[P](node / x)
     }
 
   /**
@@ -335,12 +374,12 @@ object Extractor {
     }
 
   /**
-   * Regular expression to match a plural name, viz. .....s
+   * Regular expression to match a plural name, viz. ...s
    */
   val plural: Regex = """(\w+)s""".r
 
   /**
-   * Regular expression to match an attribute name, viz. _.....
+   * Regular expression to match an attribute name, viz. _...
    */
   val attribute: Regex = """_(\w+)""".r
 
@@ -357,7 +396,17 @@ object Extractor {
    */
   val optional: Regex = new LowerCaseInitialRegex("""maybe(\w+)""")
 
-  private def extractText[P: Extractor](node: Node): Try[P] = Extractor.extract[P](node)
+  /**
+   * Extracts text content from the provided Node and attempts to parse it into a value of type `P`.
+   *
+   * CONSIDER what's the point of this method? Couldn't we just inline it as `extract`?
+   *
+   * @param node The `Node` from which text content is to be extracted.
+   * @tparam P The expected type of the extracted content, which must have an associated `Extractor`.
+   * @return A `Try` containing the extracted value of type `P` if extraction is successful,
+   *         or a `Failure` if it is not.
+   */
+  private def extractText[P: Extractor](node: Node): Try[P] = extract[P](node)
 
   /**
    * Unit extractor.
@@ -368,6 +417,18 @@ object Extractor {
    * CharSequence extractor.
    */
   implicit object charSequenceExtractor extends Extractor[CharSequence] {
+
+    /**
+     * Extracts a `CharSequence` from an XML `Node`.
+     *
+     * The method attempts to decode the content of the provided `Node`.
+     * If the `Node` is of type `Text` or `CDATA`, the content is extracted directly.
+     * Otherwise, it attempts to retrieve the single child node's text content.
+     * If the node cannot be decoded into a `CharSequence`, a failure is returned.
+     *
+     * @param node the XML `Node` to extract the `CharSequence` from.
+     * @return a `Try` containing a `CharSequence` if successfully extracted, or a `Failure` with an `XmlException` if decoding fails.
+     */
     def extract(node: Node): Try[CharSequence] = node match {
       case x: xml.Text => Success(x.data)
       case CDATA(x) => Success(x)
@@ -580,8 +641,6 @@ trait TagToSequenceExtractorFunc[T] extends TagToExtractorFunc[Seq[T]] {
    * A MultiExtractor instance used for extracting a sequence of type `T` from an XML `NodeSeq`.
    * This value represents a reusable mechanism to perform the extraction process
    * based on specific tags or identifiers within the XML structure.
-   *
-   * @tparam T the underlying type of the sequence to be extracted.
    */
   val tsm: MultiExtractor[Seq[T]]
 }
@@ -618,8 +677,23 @@ object ChildNames {
   // CONSIDER make this immutable.
   val map: mutable.HashMap[String, Seq[String]] = new mutable.HashMap()
 
+  /**
+   * Adds a translation mapping a key to a sequence of values.
+   *
+   * @param key   the key for the translation mapping
+   * @param value the sequence of strings that corresponds to the key
+   * @return Unit, as the method modifies the mutable map in place
+   */
   def addTranslation(key: String, value: Seq[String]): Unit = map += key -> value
 
+  /**
+   * Translates a given member string to a sequence of strings based on predefined mappings
+   * or certain extraction rules. If no mapping or rule applies, the method returns the input
+   * string wrapped in a sequence.
+   *
+   * @param member the input string to be translated
+   * @return a sequence of strings corresponding to the translation of the input member
+   */
   def translate(member: String): Seq[String] =
     map.getOrElse(member,
       member match {

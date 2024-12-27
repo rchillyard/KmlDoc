@@ -1,7 +1,7 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.xml.Extractor._
-import com.phasmidsoftware.xml.MultiExtractorBase.Positive
+import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import java.util.regex.Matcher
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
@@ -341,7 +341,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
 
   object MyContainer {
     implicit val extractor: Extractor[MyContainer] = extractor21(apply)
-    implicit val extractorSeq: MultiExtractor[Seq[MyContainer]] = multiExtractorBase[MyContainer](Positive)
+    implicit val extractorSeq: MultiExtractor[Seq[MyContainer]] = multiExtractorBase[MyContainer](NonNegative)
   }
 
 
@@ -352,8 +352,8 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     implicit val extractorSeq: MultiExtractor[Seq[Simple4]] = multiExtractorBase[Simple4](Positive)
   }
 
-  // TODO Issue #23
-  ignore should "extract MyContainer without inner boundary" in {
+  // TODO Issue #23 --Solved by changing line 344 Positive to NonNegative
+  it should "extract MyContainer without inner boundary" in {
     val xml = <xml>
       <Polygon>
         <simple1>1</simple1>
