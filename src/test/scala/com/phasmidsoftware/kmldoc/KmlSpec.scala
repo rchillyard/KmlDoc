@@ -699,9 +699,15 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         os.size shouldBe 1
         val overlay: Overlay = os.head
         overlay match {
-          case g@GroundOverlay(icon, maybeDrawOrder, maybeColor) =>
-            println(s"got GroundOverlay($icon, $maybeDrawOrder, $maybeColor)(${g.overlayData})")
+          case g@GroundOverlay(maybeAltitude, maybeAltitudeMode, latLonBox) =>
             g.name shouldBe Text("Large-scale overlay on terrain")
+            maybeAltitude shouldBe None
+            maybeAltitudeMode shouldBe None
+            latLonBox.north shouldBe Latitude(37.91904192681665)
+            latLonBox.south shouldBe Latitude(37.46543388598137)
+            latLonBox.east shouldBe Longitude(15.35832653742206)
+            latLonBox.west shouldBe Longitude(14.60128369746704)
+            latLonBox.rotation shouldBe Rotation(-0.1556640799496235)
             g.maybeDrawOrder shouldBe None
             g.maybeColor shouldBe None
             g.Icon shouldBe Icon(Text("http://developers.google.com/kml/documentation/images/etna.jpg"))

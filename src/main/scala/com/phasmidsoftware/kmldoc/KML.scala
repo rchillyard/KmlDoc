@@ -910,15 +910,7 @@ object GeometryData extends Extractors with Renderers {
  * @param maybeColor     Optional color filter to be applied to the overlay image.
  * @param overlayData    Supplementary data inheriting from `OverlayData`.
  */
-case class GroundOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColor: Option[Color])(val overlayData: OverlayData) extends Overlay with HasName {
-
-  /**
-   * Retrieves the name as a `Text` value.
-   *
-   * @return the name represented as a `Text` instance.
-   */
-  override def name: Text = overlayData.featureData.name
-}
+case class GroundOverlay(maybeAltitude: Option[Altitude], maybeAltitudeMode: Option[AltitudeMode], LatLonBox: LatLonBox)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * The `GroundOverlay` object serves as a companion to the `GroundOverlay` case class and
@@ -1267,7 +1259,7 @@ object LabelStyle extends Extractors with Renderers {
 }
 
 /**
- * Represents a latitude value as a Double.
+ * Represents a latitude value as a Double, an angle90.
  *
  * Latitude values are commonly used in geographic coordinate systems
  * to specify the north-south position of a point on the Earth's surface.
@@ -1300,6 +1292,35 @@ object Latitude extends Extractors with Renderers {
   implicit val rendererOpt: Renderer[Option[Latitude]] = optionRenderer[Latitude]
 }
 
+/**
+ * Represents a rectangular geographic bounding box defined by its northernmost, southernmost,
+ * easternmost, and westernmost limits, along with an optional rotational value.
+ * Used by GroundOverlay.
+ *
+ * @param north    The northern boundary of the box as a Latitude.
+ * @param south    The southern boundary of the box as a Latitude.
+ * @param east     The eastern boundary of the box as a Longitude.
+ * @param west     The western boundary of the box as a Longitude.
+ * @param rotation The rotational angle applied to the box as a Rotation.
+ */
+case class LatLonBox(north: Latitude, south: Latitude, east: Longitude, west: Longitude, rotation: Rotation)
+
+/**
+ * Companion object for the LatLonBox case class.
+ * Provides implicit instances for Extractor and Renderer typeclasses to facilitate
+ * parsing LatLonBox objects from XML nodes and rendering them to String representations.
+ *
+ * The implicit extractor uses `extractor50`, enabling the construction of a LatLonBox
+ * from its five constituent members: north, south, east, west, and rotation.
+ *
+ * The implicit renderer uses `renderer5`, enabling the rendering of LatLonBox objects
+ * by delegating to renderers for each of its five members.
+ */
+object LatLonBox extends Extractors with Renderers {
+  implicit val extractor: Extractor[LatLonBox] = extractor50(apply)
+  implicit val renderer: Renderer[LatLonBox] = renderer5(apply)
+
+}
 /**
  * Case class LineString which extends Geometry.
  *
@@ -1479,7 +1500,7 @@ object ListStyle extends Extractors with Renderers {
 }
 
 /**
- * Case class representing a geographical longitude.
+ * Case class representing a geographical longitude (an angle180).
  *
  * @param $ the longitude value in degrees as a Double.
  */
@@ -1633,16 +1654,45 @@ object Outline extends Extractors with Renderers {
  *  icon Defines the image associated with the Overlay.
  */
 trait Overlay extends Feature {
-  // Abstract members to be implemented by subtypes
+  /**
+   * Retrieves the optional color of the overlay.
+   * The color is represented in hexadecimal notation as aabbggrr, where:
+   * - aa: alpha (transparency) channel (00 to ff)
+   * - bb: blue channel (00 to ff)
+   * - gg: green channel (00 to ff)
+   * - rr: red channel (00 to ff)
+   *
+   * @return An Option containing the color of the overlay if defined, otherwise None.
+   */
   def maybeColor: Option[Color]
 
+  /**
+   * Retrieves the optional draw order for the overlay.
+   * The draw order defines the stacking order for images in overlapping overlays.
+   * Higher values are drawn on top of lower values.
+   *
+   * @return An Option containing the draw order if defined, otherwise None.
+   */
   def maybeDrawOrder: Option[DrawOrder]
 
+  /**
+   * Retrieves the Icon associated with the Overlay.
+   * The Icon defines the image representation of the Overlay.
+   *
+   * @return An Icon representing the image associated with the Overlay.
+   */
   def Icon: Icon
 }
 
 /**
- * Companion object to Overlay.
+ * Companion object for the Overlay trait, providing utilities for extraction and rendering of Overlay instances.
+ *
+ * The Overlay object leverages `Extractors` and `Renderers` to handle its subtypes,
+ * which include GroundOverlay, PhotoOverlay, and ScreenOverlay.
+ *
+ * Key features:
+ * - Implicit `extractorSeq` for extracting sequences of Overlay instances.
+ * - Implicit `renderer` for rendering Overlay instances and its subtypes.
  */
 object Overlay extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[Overlay]] =
@@ -1651,24 +1701,58 @@ object Overlay extends Extractors with Renderers {
 }
 
 /**
+ * Abstract class `BaseOverlay` representing the base implementation for Overlay elements.
+ * It extends the functionalities of the `Overlay` trait and the `HasName` trait.
+ *
+ * A `BaseOverlay` is associated with overlay-specific data defined by `OverlayData`.
+ * It provides access to essential properties like `maybeColor`, `maybeDrawOrder`, `Icon`, and `name`.
+ *
+ * @constructor Creates a `BaseOverlay` instance with the specified overlay data.
+ * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
+ */
+abstract class BaseOverlay(overlayData: OverlayData) extends Overlay with HasName {
+  /**
+   * Retrieves the optional color associated with the overlay.
+   *
+   * @return an `Option` containing the `Color` if available, or `None` if no color is set.
+   */
+  def maybeColor: Option[Color] = overlayData.maybeColor
+
+  /**
+   * Retrieves the optional draw order associated with the overlay.
+   *
+   * @return an `Option` containing the `DrawOrder` if available, or `None` if no draw order is set.
+   */
+  def maybeDrawOrder: Option[DrawOrder] = overlayData.maybeDrawOrder
+
+  /**
+   * Retrieves the `Icon` associated with the overlay.
+   *
+   * @return the `Icon` instance associated with this overlay.
+   */
+  def Icon: Icon = overlayData.Icon
+
+  /**
+   * Retrieves the name as a `Text` value.
+   *
+   * @return the name represented as a `Text` instance.
+   */
+  def name: Text = overlayData.featureData.name
+}
+
+/**
  *
  * @param featureData (auxiliary) member: FeatureData, shared by sub-elements
  */
-case class OverlayData(featureData: FeatureData)
+case class OverlayData(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColor: Option[Color])(val featureData: FeatureData)
 
 /**
  * Companion object to OverlayData.
  */
 object OverlayData extends Extractors with Renderers {
-  private val applyFunction: FeatureData => OverlayData = new OverlayData(_)
-  val extractorPartial: Extractor[FeatureData => OverlayData] = extractorPartial0[FeatureData, OverlayData](applyFunction) ^^ "extractorFD2OverlayData"
+  val extractorPartial: Extractor[FeatureData => OverlayData] = extractorPartial30(apply) ^^ "extractorFD2OverlayData"
   implicit val extractor: Extractor[OverlayData] = extractorPartial[FeatureData, OverlayData](extractorPartial) ^^ "extractorOverlayData"
-  implicit val renderer: Renderer[OverlayData] = renderer0Super(applyFunction)(_.featureData)^^ "rendererOverlayData"
-
-  object featureData {
-
-    object name
-  }
+  implicit val renderer: Renderer[OverlayData] = renderer3Super(apply)(_.featureData) ^^ "rendererOverlayData"
 }
 
 /**
@@ -1703,34 +1787,21 @@ object Pair extends Extractors with Renderers {
 }
 
 /**
- * Represents a photo overlay, which is a specific type of `Overlay`,
- * featuring an image (`Icon`) along with optional properties like
- * color and draw order.
- * The overlay also supports a name attribute through the `HasName` trait.
+ * Represents a specialized overlay element that adds a photo overlay to a geographical location.
  * See [[https://developers.google.com/kml/documentation/kmlreference#photooverlay PhotoOverlay]]
- * Photo overlay is designed to house an image, optionally styled or
- * layered, and is identified by associated `OverlayData`.
+ * The `PhotoOverlay` class is a concrete implementation of the `BaseOverlay` abstract class, combining additional
+ * properties such as rotation and point location with the base overlay features from `OverlayData`.
  *
- * @constructor Creates a PhotoOverlay with the specified `Icon`, optional
- *              `DrawOrder` and `Color`, and mandatory `OverlayData`.
- * @param Icon           Defines the image associated with the overlay, represented
- *                       as an `Icon` instance.
- * @param maybeDrawOrder Optional stacking order for overlapping images,
- *                       represented as a `DrawOrder` instance if defined.
- * @param maybeColor     Optional color specification applied to the overlay, defined
- *                       using a `Color` instance.
- * @param overlayData    Associated data that provides context and metadata, encapsulated
- *                       in an `OverlayData` instance.
+ * A `PhotoOverlay` specifies the placement and orientation of an image overlay in geographic space, allowing the image
+ * to be placed over a specific location with a defined rotation. It is constructed with `Rotation`, `Point`, and
+ * `OverlayData` parameters.
+ *
+ * @constructor Creates a new `PhotoOverlay` instance.
+ * @param rotation    the rotation angle of the photo overlay, represented as a `Rotation`.
+ * @param point       the geographical position for the photo overlay, represented as a `Point`.
+ * @param overlayData supplementary data for the overlay, encapsulated in the `OverlayData` instance.
  */
-case class PhotoOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColor: Option[Color])(val overlayData: OverlayData) extends Overlay with HasName {
-
-  /**
-   * Retrieves the name as a `Text` value.
-   *
-   * @return the name represented as a `Text` instance.
-   */
-  override def name: Text = overlayData.featureData.name
-}
+case class PhotoOverlay(rotation: Rotation, point: Point)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Object `PhotoOverlay` provides extractors and renderers for the case class `PhotoOverlay`.
@@ -1739,9 +1810,9 @@ case class PhotoOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColo
  * This object serves as a utility companion to the `PhotoOverlay` type.
  */
 object PhotoOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => PhotoOverlay] = extractorPartial30(apply) ^^ "extractorCD2PhotoOverlay"
+  val extractorPartial: Extractor[OverlayData => PhotoOverlay] = extractorPartial20(apply) ^^ "extractorCD2PhotoOverlay"
   implicit val extractor: Extractor[PhotoOverlay] = extractorPartial(extractorPartial) ^^ "extractorPhotoOverlay"
-  implicit val renderer: Renderer[PhotoOverlay] = renderer3Super(apply)(_.overlayData) ^^ "renderPhotoOverlay"
+  implicit val renderer: Renderer[PhotoOverlay] = renderer2Super(apply)(_.overlayData) ^^ "renderPhotoOverlay"
   implicit val renderSeq: Renderer[Seq[PhotoOverlay]] = sequenceRenderer[PhotoOverlay] ^^ "rendererPhotoOverlays"
 }
 
@@ -2021,6 +2092,27 @@ object Roll extends Extractors with Renderers {
 }
 
 /**
+ * Case class representing a rotation (an angle180).
+ *
+ * @param $ the rotation value in degrees as a Double.
+ */
+case class Rotation($: Double)
+
+/**
+ * Object representing Rotation functionalities, such as rendering and extraction.
+ * Of type angle180.
+ */
+object Rotation extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[Rotation] = extractor10(apply)
+  implicit val extractorOpt: Extractor[Option[Rotation]] = extractorOption[Rotation]
+  implicit val renderer: Renderer[Rotation] = renderer1(apply)
+  implicit val rendererOpt: Renderer[Option[Rotation]] = optionRenderer[Rotation]
+}
+
+/**
  * Scale element: subelement of Object in the Kml reference.
  * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
  * See [[https://developers.google.com/kml/documentation/kmlreference#scale Scale]]
@@ -2052,33 +2144,15 @@ object Scale extends Extractors with Renderers {
 }
 
 /**
- * Represents a ScreenOverlay, a specific type of `Overlay` that overlays a 2D image on the screen.
+ * Represents a screen overlay, which combines graphical data with specific positional and rotation details.
  * See [[https://developers.google.com/kml/documentation/kmlreference#screenoverlay ScreenOverlay]]
- * A ScreenOverlay is defined by an `Icon` (representing the image),
- * an optional `DrawOrder` (specifying stacking order for overlapping overlays),
- * and an optional `Color` (representing the overlay's color properties).
- * It also includes `OverlayData` that provides additional feature-related data.
  *
- * This class extends `Overlay`, inheriting its abstract properties, and mixes in `HasName` to define a name.
- * Attributes such as coordinate position and alignment are inherited from the parent
- * `Overlay` trait.
- *
- * @constructor Creates a ScreenOverlay with a given `Icon`, optional `DrawOrder`,
- *              optional `Color`, and `OverlayData`.
- * @param Icon           The image associated with the ScreenOverlay, defined as an instance of `Icon`.
- * @param maybeDrawOrder An optional stacking order value, represented as an instance of `DrawOrder`.
- * @param maybeColor     An optional color property defined as a `Color`, specified in aabbggrr format.
- * @param overlayData    An instance of `OverlayData` that contains auxiliary feature information.
+ * @constructor
+ * Constructs a `ScreenOverlay` instance.
+ * @param rotation    Represents the rotation of the overlay in degrees. It uses the `Rotation` case class for this property.
+ * @param overlayData Composed of metadata and relevant properties encapsulated in the `OverlayData` class.
  */
-case class ScreenOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColor: Option[Color])(val overlayData: OverlayData) extends Overlay with HasName {
-
-  /**
-   * Retrieves the name as a `Text` value.
-   *
-   * @return the name represented as a `Text` instance.
-   */
-  override def name: Text = overlayData.featureData.name
-}
+case class ScreenOverlay(rotation: Rotation)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Companion object for the `ScreenOverlay` class
@@ -2095,9 +2169,9 @@ case class ScreenOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeCol
  * and are intended to support working with structured representations of screen overlays.
  */
 object ScreenOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial30(apply) ^^ "extractorCD2ScreenOverlay"
+  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial10(apply) ^^ "extractorCD2ScreenOverlay"
   implicit val extractor: Extractor[ScreenOverlay] = extractorPartial(extractorPartial) ^^ "extractorScreenOverlay"
-  implicit val renderer: Renderer[ScreenOverlay] = renderer3Super(apply)(_.overlayData) ^^ "renderScreenOverlay"
+  implicit val renderer: Renderer[ScreenOverlay] = renderer1Super(apply)(_.overlayData) ^^ "renderScreenOverlay"
   implicit val renderSeq: Renderer[Seq[ScreenOverlay]] = sequenceRenderer[ScreenOverlay] ^^ "rendererScreenOverlays"
 }
 
