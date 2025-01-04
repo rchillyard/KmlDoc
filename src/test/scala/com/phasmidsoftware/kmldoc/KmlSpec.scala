@@ -701,11 +701,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         overlay match {
           case g@GroundOverlay(icon, maybeDrawOrder, maybeColor) =>
             println(s"got GroundOverlay($icon, $maybeDrawOrder, $maybeColor)(${g.overlayData})")
-            val overlayData: OverlayData = g.overlayData
-            val featureData: FeatureData = overlayData.featureData
-            val name = featureData.name
-            name shouldBe Text("Large-scale overlay on terrain")
+            g.name shouldBe Text("Large-scale overlay on terrain")
             g.maybeDrawOrder shouldBe None
+            g.maybeColor shouldBe None
+            g.Icon shouldBe Icon(Text("http://developers.google.com/kml/documentation/images/etna.jpg"))
+//            val overlayData: OverlayData = g.overlayData
+//            val featureData: FeatureData = overlayData.featureData
         }
       case Failure(x) => fail(x)
     }

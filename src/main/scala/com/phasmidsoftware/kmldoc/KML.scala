@@ -917,7 +917,7 @@ case class GroundOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeCol
    *
    * @return the name represented as a `Text` instance.
    */
-  override def name: Text = ???
+  override def name: Text = overlayData.featureData.name
 }
 
 /**
@@ -1729,7 +1729,7 @@ case class PhotoOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColo
    *
    * @return the name represented as a `Text` instance.
    */
-  override def name: Text = ???
+  override def name: Text = overlayData.featureData.name
 }
 
 /**
@@ -2077,7 +2077,7 @@ case class ScreenOverlay(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeCol
    *
    * @return the name represented as a `Text` instance.
    */
-  override def name: Text = ???
+  override def name: Text = overlayData.featureData.name
 }
 
 /**
