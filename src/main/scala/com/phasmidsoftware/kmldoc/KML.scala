@@ -683,7 +683,8 @@ trait Feature extends KmlObject {
 object Feature extends Extractors with Renderers {
 
   implicit val extractorSeq: MultiExtractor[Seq[Feature]] =
-    MultiExtractor.createLazy(multiExtractor3[Feature, (Folder, Document, Placemark), Folder, Document, Placemark]((f, d, p) => (f, d, p), Seq("Folder", "Document", "Placemark")) ^^ "multiExtractorFeature")
+    MultiExtractor.createLazy(multiExtractor6[Feature, (Folder, Document, Placemark, GroundOverlay, PhotoOverlay, ScreenOverlay), Folder, Document, Placemark, GroundOverlay, PhotoOverlay, ScreenOverlay]((f, d, p, go, po, so) =>
+      (f, d, p, go, po, so), Seq("Folder", "Document", "Placemark", "GroundOverlay", "PhotoOverlay", "ScreenOverlay")) ^^ "multiExtractorFeature")
   implicit val renderer: Renderer[Feature] = Renderer.createLazy(rendererSuper2[Feature, Placemark, Container] ^^ "rendererFeature")
   implicit val rendererSeq: Renderer[Seq[Feature]] = sequenceRenderer[Feature] ^^ "rendererFeatures"
 }
@@ -871,6 +872,30 @@ object GeometryData extends Extractors with Renderers {
   implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial)
   implicit val renderer: Renderer[GeometryData] = renderer2Super(apply)(_.kmlData) ^^ "rendererGeometryData"
 }
+
+case class GroundOverlay(features: Seq[Feature])(val overlayData: OverlayData) extends Overlay with HasFeatures with HasName {
+
+  override def color: Color = ???
+
+  override def drawOrder: Int = ???
+
+  override def icon: Icon = ???
+
+  /**
+   * Retrieves the name as a `Text` value.
+   *
+   * @return the name represented as a `Text` instance.
+   */
+  override def name: Text = ???
+}
+
+object GroundOverlay extends Extractors with Renderers {
+  val extractorPartial: Extractor[OverlayData=>GroundOverlay] = extractorPartial01(apply)^^ "extractorCD2GroundOverlay"
+  implicit val extractor: Extractor[GroundOverlay] = extractorPartial(extractorPartial) ^^ "extractorGroundOverlay"
+  implicit val renderer: Renderer[GroundOverlay] = renderer1Super(apply)(_.overlayData)^^ "renderGroundOverlay"
+  implicit val renderSeq: Renderer[Seq[GroundOverlay]] = sequenceRenderer[GroundOverlay] ^^ "rendererGroundOverlays"
+}
+
 
 /**
  * Case class to represent a Heading which is represented in XML as, for example: <heading>1.1</heading>
@@ -1541,6 +1566,54 @@ object Outline extends Extractors with Renderers {
 }
 
 /**
+ *  Abstract Overlay element.
+ *  Overlay is a subtype of Feature and a super-type of PhotoOverlay, ScreenOverlay, GroundOverlay.
+ *  See [[https://developers.google.com/kml/documentation/kmlreference#overlay Overlay]].
+ *
+ *  A Overlay has properties (color, drawOrder and Icon ) of its own.
+ *  color The order of expression is aabbggrr in hexadecimal notation,
+ *               where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).
+ *  drawOrder This element defines the stacking order for the images in overlapping overlays.
+ *  icon Defines the image associated with the Overlay.
+ */
+trait Overlay extends Feature {
+  // Abstract members to be implemented by subtypes
+  def color: Color
+  def drawOrder: Int
+  def icon: Icon
+}
+
+/**
+ * Companion object to Overlay.
+ */
+object Overlay extends Extractors with Renderers {
+  implicit val extractorSeq: MultiExtractor[Seq[Overlay]] =
+    multiExtractor3[Overlay, (GroundOverlay, PhotoOverlay, ScreenOverlay), GroundOverlay, PhotoOverlay, ScreenOverlay]((go, po, so) => (go, po, so), Seq("GroundOverlay", "PhotoOverlay", "ScreenOverlay")) ^^"multiExtractorOverlay"
+  implicit val renderer: Renderer[Overlay] = rendererSuper3[Overlay,PhotoOverlay, ScreenOverlay, GroundOverlay ] ^^ "rendererContainer"
+}
+
+/**
+ *
+ * @param featureData (auxiliary) member: FeatureData, shared by sub-elements
+ */
+case class OverlayData(featureData: FeatureData)
+
+/**
+ * Companion object to OverlayData.
+ */
+object OverlayData extends Extractors with Renderers {
+  private val applyFunction: FeatureData => OverlayData = new OverlayData(_)
+  val extractorPartial: Extractor[FeatureData => OverlayData] = extractorPartial0[FeatureData, OverlayData](applyFunction) ^^ "extractorFD2OverlayData"
+  implicit val extractor: Extractor[OverlayData] = extractorPartial[FeatureData, OverlayData](extractorPartial) ^^ "extractorOverlayData"
+  implicit val renderer: Renderer[OverlayData] = renderer0Super(applyFunction)(_.featureData)^^ "rendererOverlayData"
+
+  object featureData {
+
+    object name
+  }
+}
+
+/**
  * A case class representing a key-style URL pair mapping in the KML document context.
  *
  * This class encapsulates a `Key` and a `StyleURL` to represent associations typically used
@@ -1569,6 +1642,32 @@ object Pair extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[Pair]] = multiExtractorBase[Pair](Positive) ^^ "multiExtractorPair"
   implicit val renderer: Renderer[Pair] = renderer2(apply) ^^ "rendererPair"
   implicit val rendererSeq: Renderer[Seq[Pair]] = sequenceRenderer[Pair] ^^ "rendererPairs"
+}
+
+case class PhotoOverlay(features: Seq[Feature])(val overlayData: OverlayData) extends Overlay with HasFeatures with HasName {
+  //case class PhotoOverlay(maybeColor: Option[Color], maybeDrawOrder: Option[Int], maybeIcon: Option[Icon])(val overlayData: OverlayData) extends Overlay {
+  override def color: Color = ???
+
+  override def drawOrder: Int = ???
+
+  override def icon: Icon = ???
+
+  /**
+   * Retrieves the name as a `Text` value.
+   *
+   * @return the name represented as a `Text` instance.
+   */
+  override def name: Text = ???
+}
+
+
+//case class PhotoOverlay(featureData: FeatureData, color: Color, drawOrder: Int, icon: Icon) extends Overlay
+
+object PhotoOverlay extends Extractors with Renderers {
+  val extractorPartial: Extractor[OverlayData=>PhotoOverlay] = extractorPartial01(apply)^^ "extractorCD2PhotoOverlay"
+  implicit val extractor: Extractor[PhotoOverlay] = extractorPartial(extractorPartial) ^^ "extractorPhotoOverlay"
+  implicit val renderer: Renderer[PhotoOverlay] = renderer1Super(apply)(_.overlayData)^^ "renderPhotoOverlay"
+  implicit val renderSeq: Renderer[Seq[PhotoOverlay]] = sequenceRenderer[PhotoOverlay] ^^ "rendererPhotoOverlays"
 }
 
 /**
@@ -1875,6 +1974,28 @@ object Scale extends Extractors with Renderers {
    * @return a new instance of the Scale class configured with the provided value and `KmlData.nemo`.
    */
   def nemo(x: Double): Scale = new Scale(x)(KmlData.nemo)
+}
+case class ScreenOverlay(features: Seq[Feature])(val overlayData: OverlayData) extends Overlay with HasFeatures with HasName {
+
+  override def color: Color = ???
+
+  override def drawOrder: Int = ???
+
+  override def icon: Icon = ???
+
+  /**
+   * Retrieves the name as a `Text` value.
+   *
+   * @return the name represented as a `Text` instance.
+   */
+  override def name: Text = ???
+}
+
+object ScreenOverlay extends Extractors with Renderers {
+  val extractorPartial: Extractor[OverlayData=>ScreenOverlay] = extractorPartial01(apply)^^ "extractorCD2ScreenOverlay"
+  implicit val extractor: Extractor[ScreenOverlay] = extractorPartial(extractorPartial) ^^ "extractorScreenOverlay"
+  implicit val renderer: Renderer[ScreenOverlay] = renderer1Super(apply)(_.overlayData)^^ "renderScreenOverlay"
+  implicit val renderSeq: Renderer[Seq[ScreenOverlay]] = sequenceRenderer[ScreenOverlay] ^^ "rendererScreenOverlays"
 }
 
 /**
