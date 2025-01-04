@@ -699,34 +699,13 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         os.size shouldBe 1
         val overlay: Overlay = os.head
         overlay match {
-          case f@GroundOverlay(features) =>
-            println(s"got Folder($features)(${f.overlayData})")
-            val overlayData: OverlayData = f.overlayData
+          case g@GroundOverlay(icon, maybeDrawOrder, maybeColor) =>
+            println(s"got GroundOverlay($icon, $maybeDrawOrder, $maybeColor)(${g.overlayData})")
+            val overlayData: OverlayData = g.overlayData
             val featureData: FeatureData = overlayData.featureData
             val name = featureData.name
-            val terrainOverlay = Text("Large-scale overlay on terrain")
-            name shouldBe terrainOverlay
-            features.size shouldBe 1
-            val feature = features.head
-            feature match {
-              case placemark: Placemark =>
-                placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
-                placemark.featureData.maybeDescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
-                val ls: scala.Seq[Geometry] = placemark.Geometry
-                ls.size shouldBe 1
-                val geometry: Geometry = ls.head
-                val coordinates: scala.Seq[Coordinates] = geometry match {
-                  case lineString: LineString => lineString.coordinates
-                  case _ => fail("first geometrys is not a LineString")
-                }
-                coordinates.size shouldBe 1
-                val coordinate = coordinates.head
-                coordinate.coordinates.size shouldBe 8
-                println(implicitly[Renderer[Folder]])
-                val wy = TryUsing(StateR())(sr => Renderer.render[Overlay](f, FormatXML(), sr))
-                wy.isSuccess shouldBe true
-                wy.get shouldBe s"<Folder>\n  <name>Untitled layer</name>\n  <Placemark>\n    <name>Wakefield Branch of Eastern RR</name>\n    <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n    <styleUrl>#line-006600-5000</styleUrl>\n    <LineString>\n      <tessellate>1</tessellate>\n      <coordinates>\n        -71.06992,42.49424,0\n        -71.07018,42.49512,0\n        -71.07021,42.49549,0\n        -71.07008,42.49648,0\n        -71.069849,42.497415,0\n        -71.06954,42.49833,0\n        -70.9257614,42.5264001,0\n        -70.9254345,42.5262817,0\n      </coordinates>\n    </LineString>\n  </Placemark>\n</Folder>"
-            }
+            name shouldBe Text("Large-scale overlay on terrain")
+            g.maybeDrawOrder shouldBe None
         }
       case Failure(x) => fail(x)
     }
