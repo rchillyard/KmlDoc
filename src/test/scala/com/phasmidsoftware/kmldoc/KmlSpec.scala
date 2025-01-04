@@ -668,6 +668,71 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     println("End extract Container/Document")
   }
 
+  behavior of "Overlay"
+
+  it should "extract Overlay" in {
+    val xml = <xml><GroundOverlay>
+      <name>Large-scale overlay on terrain</name>
+      <visibility>0</visibility>
+      <description>Overlay shows Mount Etna erupting on July 13th, 2001.</description>
+      <LookAt>
+        <longitude>15.02468937557116</longitude>
+        <latitude>37.67395167941667</latitude>
+        <altitude>0</altitude>
+        <heading>-16.5581842842829</heading>
+        <tilt>58.31228652890705</tilt>
+        <range>30350.36838438907</range>
+      </LookAt>
+      <Icon>
+        <href>http://developers.google.com/kml/documentation/images/etna.jpg</href>
+      </Icon>
+      <LatLonBox>
+        <north>37.91904192681665</north>
+        <south>37.46543388598137</south>
+        <east>15.35832653742206</east>
+        <west>14.60128369746704</west>
+        <rotation>-0.1556640799496235</rotation>
+      </LatLonBox>
+    </GroundOverlay></xml>
+    extractAll[Seq[Overlay]](xml) match {
+      case Success(os) =>
+        os.size shouldBe 1
+        val overlay: Overlay = os.head
+        overlay match {
+          case f@GroundOverlay(features) =>
+            println(s"got Folder($features)(${f.overlayData})")
+            val overlayData: OverlayData = f.overlayData
+            val featureData: FeatureData = overlayData.featureData
+            val name = featureData.name
+            val terrainOverlay = Text("Large-scale overlay on terrain")
+            name shouldBe terrainOverlay
+            features.size shouldBe 1
+            val feature = features.head
+            feature match {
+              case placemark: Placemark =>
+                placemark.featureData.name shouldBe Text("Wakefield Branch of Eastern RR")
+                placemark.featureData.maybeDescription shouldBe Some(Text("RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody."))
+                val ls: scala.Seq[Geometry] = placemark.Geometry
+                ls.size shouldBe 1
+                val geometry: Geometry = ls.head
+                val coordinates: scala.Seq[Coordinates] = geometry match {
+                  case lineString: LineString => lineString.coordinates
+                  case _ => fail("first geometrys is not a LineString")
+                }
+                coordinates.size shouldBe 1
+                val coordinate = coordinates.head
+                coordinate.coordinates.size shouldBe 8
+                println(implicitly[Renderer[Folder]])
+                val wy = TryUsing(StateR())(sr => Renderer.render[Overlay](f, FormatXML(), sr))
+                wy.isSuccess shouldBe true
+                wy.get shouldBe s"<Folder>\n  <name>Untitled layer</name>\n  <Placemark>\n    <name>Wakefield Branch of Eastern RR</name>\n    <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n    <styleUrl>#line-006600-5000</styleUrl>\n    <LineString>\n      <tessellate>1</tessellate>\n      <coordinates>\n        -71.06992,42.49424,0\n        -71.07018,42.49512,0\n        -71.07021,42.49549,0\n        -71.07008,42.49648,0\n        -71.069849,42.497415,0\n        -71.06954,42.49833,0\n        -70.9257614,42.5264001,0\n        -70.9254345,42.5262817,0\n      </coordinates>\n    </LineString>\n  </Placemark>\n</Folder>"
+            }
+        }
+      case Failure(x) => fail(x)
+    }
+
+  }
+
   behavior of "HotSpot"
 
   it should "extract HotSpot" in {
