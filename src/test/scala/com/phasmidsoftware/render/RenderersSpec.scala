@@ -136,6 +136,19 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
     wy shouldBe Success("""KVV{k="a" v="-1" b="false"}""")
   }
 
+  behavior of "lift"
+
+  it should "render Some" in {
+    val renderer = implicitly[Renderer[Int]].lift
+    val wy = TryUsing(StateR())(sr => renderer.render(Some(42), FormatText(0), sr))
+    wy shouldBe Success("42")
+  }
+  it should "render None" in {
+    val renderer = implicitly[Renderer[Int]].lift
+    val wy = TryUsing(StateR())(sr => renderer.render(None, FormatText(0), sr))
+    wy shouldBe Success("")
+  }
+
   behavior of "Renderers (FormatXML)"
 
   it should "renderer1" in {
