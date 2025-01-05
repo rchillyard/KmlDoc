@@ -169,8 +169,7 @@ object AltitudeMode extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[AltitudeMode] = extractor10(apply) ^^ "extractorAltitudeMode"
-  implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractorOption[AltitudeMode] ^^ "extractorOptAltitudeMode"
+  implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractor10(apply).opt ^^ "extractorOptAltitudeMode"
   implicit val renderer: Renderer[AltitudeMode] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[AltitudeMode]] = optionRenderer[AltitudeMode]
 }
@@ -318,8 +317,7 @@ object Color extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractorColor"
-  implicit val extractorOpt: Extractor[Option[Color]] = extractorOption[Color] ^^ "extractMaybeColor"
+  implicit val extractorOpt: Extractor[Option[Color]] = extractor10(apply).opt ^^ "extractMaybeColor"
   implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
   implicit val rendererOpt: Renderer[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
 }
@@ -349,8 +347,7 @@ object ColorMode extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[ColorMode] = extractor10(apply) ^^ "extractorColorMode"
-  implicit val extractorOpt: Extractor[Option[ColorMode]] = extractorOption[ColorMode] ^^ "extractMaybeColorMode"
+  implicit val extractorOpt: Extractor[Option[ColorMode]] = extractor10(apply).opt ^^ "extractMaybeColorMode"
   implicit val renderer: Renderer[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
   implicit val rendererOpt: Renderer[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
 }
@@ -621,8 +618,7 @@ object DisplayMode extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[DisplayMode] = extractor10(apply) ^^ "extractorDisplayMode"
-  implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractorOption[DisplayMode] ^^ "extractMaybeDisplayMode"
+  implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractor10(apply).opt ^^ "extractMaybeDisplayMode"
   implicit val renderer: Renderer[DisplayMode] = renderer1(apply) ^^ "rendererDisplayMode"
   implicit val rendererOpt: Renderer[Option[DisplayMode]] = optionRenderer[DisplayMode] ^^ "rendererOptionDisplayMode"
 }
@@ -686,8 +682,7 @@ object DrawOrder extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[DrawOrder] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[DrawOrder]] = extractorOption[DrawOrder]
+  implicit val extractorOpt: Extractor[Option[DrawOrder]] = extractor10(apply).opt
   implicit val renderer: Renderer[DrawOrder] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[DrawOrder]] = optionRenderer[DrawOrder]
 }
@@ -723,8 +718,7 @@ object Extrude extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Extrude] = extractor10(apply) ^^ "extractorExtrude"
-  implicit val extractorOpt: Extractor[Option[Extrude]] = extractorOption[Extrude] ^^ "extractorOptionExtrude"
+  implicit val extractorOpt: Extractor[Option[Extrude]] = extractor10(apply).opt ^^ "extractorOptionExtrude"
   implicit val renderer: Renderer[Extrude] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[Extrude]] = optionRenderer[Extrude]
 }
@@ -850,8 +844,7 @@ object Fill extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Fill] = extractor10(apply) ^^ "extractorFill"
-  implicit val extractorOpt: Extractor[Option[Fill]] = extractorOption[Fill] ^^ "extractMaybeFill"
+  implicit val extractorOpt: Extractor[Option[Fill]] = extractor10(apply).opt ^^ "extractMaybeFill"
   implicit val renderer: Renderer[Fill] = renderer1(apply) ^^ "rendererFill"
   implicit val rendererOpt: Renderer[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
 }
@@ -988,17 +981,21 @@ object GeometryData extends Extractors with Renderers {
 }
 
 /**
- * Represents a GroundOverlay element that defines a ground-based image overlay.
- * See [[https://developers.google.com/kml/documentation/kmlreference#groundoverlay GroundOverlay]]
- * GroundOverlay is a subtype of Overlay and uses OverlayData for additional features.
- * It describes the image to be rendered on the ground, optionally applying a color filter
- * and a draw order for stacking.
+ * Represents a GroundOverlay, which is a KML feature that overlays an image on the surface
+ * of the Earth. The image is geographically bound to a `LatLonBox` and can have an optional
+ * altitude and altitude mode.
  *
- * @param Icon           Defines the image associated with the GroundOverlay.
- * @param maybeDrawOrder Optional stacking order for the images in overlapping overlays.
- *                       Lower numbers are drawn first.
- * @param maybeColor     Optional color filter to be applied to the overlay image.
- * @param overlayData    Supplementary data inheriting from `OverlayData`.
+ * A `GroundOverlay` extends the `BaseOverlay` class to include additional geographic attributes
+ * such as the bounding box and altitude-related data.
+ *
+ * @param maybeAltitude     An optional `Altitude` value that specifies the elevation of the
+ *                          overlay, typically measured in meters.
+ * @param maybeAltitudeMode An optional `AltitudeMode` value indicating how the altitude of
+ *                          the overlay is interpreted (e.g., relative to the ground or absolute).
+ * @param LatLonBox         Defines the geographic bounding rectangle where the overlay image
+ *                          is positioned, including its rotation.
+ * @param overlayData       The overlay-specific data encapsulated in `OverlayData`, containing
+ *                          attributes such as the icon, draw order, and associated feature data.
  */
 case class GroundOverlay(maybeAltitude: Option[Altitude], maybeAltitudeMode: Option[AltitudeMode], LatLonBox: LatLonBox)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
@@ -1090,6 +1087,7 @@ object HotSpot extends Extractors with Renderers {
 
   import Renderers._
 
+  // XXX we need the (plain) extractor as a val only because it is required in KML_Spec
   implicit val extractor: Extractor[HotSpot] = extractor40(apply) ^^ "extractorHotspot"
   implicit val extractorOpt: Extractor[Option[HotSpot]] = extractorOption[HotSpot] ^^ "extractMaybeHotSpot"
   implicit val renderer: Renderer[HotSpot] = renderer4(apply) ^^ "rendererHotSpot"
@@ -1166,8 +1164,7 @@ object ItemIcon extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[ItemIcon] = extractor20(apply) ^^ "extractorItemIcon"
-  implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractorOption[ItemIcon] ^^ "extractMaybeItemIcon"
+  implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractor20(apply).opt ^^ "extractMaybeItemIcon"
   implicit val renderer: Renderer[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
   implicit val rendererOpt: Renderer[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
 }
@@ -1550,8 +1547,7 @@ object ListItemType extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[ListItemType] = extractor10(apply) ^^ "extractorListItemType"
-  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractorOption[ListItemType] ^^ "extractMaybeListItemType"
+  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractor10(apply).opt ^^ "extractMaybeListItemType"
   implicit val renderer: Renderer[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
   implicit val rendererOpt: Renderer[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
 }
@@ -1675,8 +1671,7 @@ object Open extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Open] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Open]] = extractorOption[Open]
+  implicit val extractorOpt: Extractor[Option[Open]] = extractor10(apply).opt
   implicit val renderer: Renderer[Open] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
 }
@@ -1729,7 +1724,7 @@ object Outline extends Extractors with Renderers {
   import Renderers._
 
   implicit val extractor: Extractor[Outline] = extractor10(apply) ^^ "extractorOutline"
-  implicit val extractorOpt: Extractor[Option[Outline]] = extractorOption[Outline] ^^ "extractMaybeOutline"
+  implicit val extractorOpt: Extractor[Option[Outline]] = extractor10(apply).opt ^^ "extractMaybeOutline"
   implicit val renderer: Renderer[Outline] = renderer1(apply) ^^ "rendererOutline"
   implicit val rendererOpt: Renderer[Option[Outline]] = optionRenderer[Outline] ^^ "rendererOptionOutline"
 }
@@ -1738,7 +1733,8 @@ object Outline extends Extractors with Renderers {
  *  Abstract Overlay element.
  *  Overlay is a subtype of Feature and a super-type of PhotoOverlay, ScreenOverlay, GroundOverlay.
  *  See [[https://developers.google.com/kml/documentation/kmlreference#overlay Overlay]].
- * The trait Overlay is extended, abstractly, by {@link BaseOverlay}.
+ * The trait Overlay is extended, abstractly, by
+ * {@link BaseOverlay}.
  * A Overlay has properties (color, maybeDrawOrder and Icon ) of its own.
  *  color The order of expression is aabbggrr in hexadecimal notation,
  *               where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).
@@ -2589,8 +2585,7 @@ object TextColor extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[TextColor] = extractor10(apply) ^^ "extractorTextColor"
-  implicit val extractorOpt: Extractor[Option[TextColor]] = extractorOption[TextColor] ^^ "extractMaybeTextColor"
+  implicit val extractorOpt: Extractor[Option[TextColor]] = extractor10(apply).opt ^^ "extractMaybeTextColor"
   implicit val renderer: Renderer[TextColor] = renderer1(apply) ^^ "rendererTextColor"
   implicit val rendererOpt: Renderer[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
 }
@@ -2645,8 +2640,7 @@ object Visibility extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Visibility] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Visibility]] = extractorOption[Visibility]
+  implicit val extractorOpt: Extractor[Option[Visibility]] = extractor10(apply).opt
   implicit val renderer: Renderer[Visibility] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[Visibility]] = optionRenderer[Visibility]
 }
@@ -2675,8 +2669,7 @@ object Width extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Width] = extractor10(apply) ^^ "extractorWidth"
-  implicit val extractorOpt: Extractor[Option[Width]] = extractorOption[Width] ^^ "extractMaybeWidth"
+  implicit val extractorOpt: Extractor[Option[Width]] = extractor10(apply).opt ^^ "extractMaybeWidth"
   implicit val renderer: Renderer[Width] = renderer1(apply) ^^ "rendererWidth"
   implicit val rendererOpt: Renderer[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
 }
