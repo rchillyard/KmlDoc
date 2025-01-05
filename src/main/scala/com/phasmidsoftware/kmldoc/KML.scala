@@ -43,7 +43,16 @@ case class KmlData(__id: Option[String]) extends Mergeable[KmlData] {
 }
 
 /**
- * Companion object to KmlData.
+ * Companion object for the `KmlData` case class.
+ *
+ * This object provides utility methods and implicit definitions to facilitate the use of
+ * `KmlData`, including extractors and renderers that integrate with the `Extractors`
+ * and `Renderers` frameworks.
+ *
+ * Defines an implicit `Extractor` for deserializing `KmlData` instances, and an implicit
+ * `Renderer` for serializing `KmlData` instances.
+ *
+ * @see `KmlData` case class for additional details on properties and functionality.
  */
 object KmlData extends Extractors with Renderers {
   def nemo: KmlData = KmlData(None)
@@ -65,7 +74,19 @@ object KmlData extends Extractors with Renderers {
 trait AbstractView extends KmlObject
 
 /**
- * Companion object to AbstractView.
+ * AbstractView serves as an object companion to the AbstractView trait,
+ * which represents an abstract subelement of KmlObject.
+ * It is the base type for more specific views such as Camera and LookAt.
+ *
+ * This object includes implicit utilities for extracting and rendering
+ * AbstractView instances and sequences of them:
+ *
+ * - `extractorSeq`: MultiExtractor for extracting sequences of AbstractView elements.
+ * - `renderer`: Renderer for rendering individual AbstractView instances.
+ * - `rendererSeq`: Renderer for rendering sequences of AbstractView instances.
+ *
+ * The extraction and rendering follows the defined relationships and properties
+ * described for AbstractView and its subtypes.
  */
 object AbstractView extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[AbstractView]] =
@@ -401,7 +422,11 @@ object ColorStyleData extends Extractors with Renderers {
 trait Container extends Feature
 
 /**
- * Companion object to Container.
+ * Container object that extends functionalities from Extractors and Renderers for processing Container elements.
+ *
+ * This object defines:
+ *   - An implicit MultiExtractor for sequences of Container types, facilitating extraction operations involving Folder and Document elements.
+ *   - An implicit Renderer for rendering Container elements, leveraging provided Folder and Document data.
  */
 object Container extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[Container]] =
@@ -417,7 +442,19 @@ object Container extends Extractors with Renderers {
 case class ContainerData(featureData: FeatureData)
 
 /**
- * Companion object to ContainerData.
+ * The `ContainerData` object serves as a companion object to the `ContainerData` case class.
+ * It provides utility features for extracting and rendering instances of `ContainerData`.
+ *
+ * This object mixes in the `Extractors` and `Renderers` traits, which provide the foundational
+ * behavior for extraction and rendering operations.
+ *
+ * It defines and initializes the following:
+ *
+ * - `applyFunction`: A private function used internally to create `ContainerData` instances from `FeatureData`.
+ * - `extractorPartial`: A partially defined extractor for converting `FeatureData` into `ContainerData`.
+ * - `extractor`: An implicit extractor instance for `ContainerData`.
+ * - `renderer`: An implicit renderer instance for `ContainerData` that manages the rendering of
+ * `ContainerData` instances back into their constituent elements.
  */
 object ContainerData extends Extractors with Renderers {
   private val applyFunction: FeatureData => ContainerData = new ContainerData(_)
@@ -600,13 +637,30 @@ object DisplayMode extends Extractors with Renderers {
  * @param containerData ContainerData (auxiliary property).
  */
 case class Document(features: Seq[Feature])(val containerData: ContainerData) extends Container with HasFeatures with HasName {
+  /**
+   * Retrieves the name property from the feature data encapsulated within the container data.
+   *
+   * @return The name as a `Text` instance.
+   */
   def name: Text = containerData.featureData.name
 
   override def toString: String = s"Document: name=${name.$} with ${features.size} features"
 }
 
 /**
- * Companion object to Document.
+ * Object companion for the `Document` case class, providing extractors and renderers.
+ *
+ * This object serves as a utility for working with `Document`, offering:
+ * - Partial and complete extractors for deserializing `Document` instances.
+ * - Renderers for serializing `Document` instances or sequences of `Document` objects.
+ *
+ * Members:
+ * - `extractorPartial`: A partial extractor for transforming `ContainerData` to `Document`.
+ * - `extractor`: An implicit complete extractor for `Document` instances.
+ * - `renderer`: An implicit renderer for serializing `Document` to a string representation.
+ * - `rendererSeq`: An implicit renderer for serializing a sequence of `Document` instances.
+ *
+ * Extraction and rendering processes are defined through the `Extractors` and `Renderers` mixins.
  */
 object Document extends Extractors with Renderers {
   val extractorPartial: Extractor[ContainerData => Document] = extractorPartial01(apply) ^^ "extractorCD2Document"
@@ -702,7 +756,12 @@ trait Feature extends KmlObject {
 }
 
 /**
- * Companion object to Feature.
+ * The `Feature` object provides implementations for extractors and renderers related to the `Feature` trait.
+ *
+ * It includes implicit definitions for processing sequences of `Feature` instances and rendering them.
+ * This object is intended to support operations and transformations on `Feature` and its subtypes.
+ *
+ * @see `Feature` trait for more details on the `Feature` type hierarchy.
  */
 object Feature extends Extractors with Renderers {
 
@@ -745,7 +804,18 @@ case class FeatureData(name: Text, maybeDescription: Option[Text], maybeStyleUrl
 }
 
 /**
- * Companion object to Feature.
+ * Companion object for `FeatureData` case class.
+ *
+ * The `FeatureData` object provides extractor and renderer implementations for `FeatureData` instances,
+ * allowing the transformation and processing of `FeatureData` objects.
+ *
+ * It extends the functionality of both `Extractors` and `Renderers` traits to enable
+ * flexible extraction and rendering of `FeatureData`.
+ *
+ * Members:
+ * - `extractorPartial`: A partial extractor defined for `FeatureData` using `KmlData => FeatureData`.
+ * - `extractor`: An implicit extractor for `FeatureData` based on `extractorPartial`.
+ * - `renderer`: An implicit renderer for `FeatureData` facilitating serialization.
  */
 object FeatureData extends Extractors with Renderers {
 
@@ -805,7 +875,16 @@ case class Folder(features: Seq[Feature])(val containerData: ContainerData) exte
 }
 
 /**
- * Companion object to Folder.
+ * Folder object provides extractors and renderers for the `Folder` case class.
+ *
+ * - Extractors are used to parse or transform `Folder` objects.
+ * - Renderers are used to serialize `Folder` objects and sequences of them.
+ *
+ * Members:
+ * - `extractorPartial`: A partial extractor function for transforming `ContainerData` into `Folder`.
+ * - `extractor`: Implicit extractor for `Folder`.
+ * - `renderer`: Implicit renderer for a single `Folder`.
+ * - `rendererSeq`: Implicit renderer for sequences of `Folder` instances.
  */
 object Folder extends Extractors with Renderers {
   val extractorPartial: Extractor[ContainerData => Folder] = extractorPartial01(apply) ^^ "extractorCD2Folder"
@@ -841,7 +920,18 @@ trait Geometry extends KmlObject with Mergeable[Geometry] with Invertible[Geomet
 }
 
 /**
- * Companion object to Geometry.
+ * Object Geometry serves as a utility and companion object for the `Geometry` trait and its related subtypes
+ * (LineString, Point, Polygon, LinearRing). It provides implicit extractors and renderers to facilitate
+ * operations such as multi-extraction, rendering, and rendering sequences of `Geometry` instances.
+ *
+ * It leverages the `Extractors` and `Renderers` traits to abstract the functionality of parsing and generating
+ * `Geometry` instances while adhering to the expected formats.
+ *
+ * Members:
+ * - `extractorSeq`: An implicit utility that facilitates the extraction of sequences of `Geometry` instances,
+ * supporting parsing of its subtypes (LineString, Point, Polygon, LinearRing).
+ * - `renderer`: An implicit utility for rendering instances of `Geometry` into their expected formats.
+ * - `rendererSeq`: An implicit utility for rendering sequences of `Geometry` instances.
  */
 object Geometry extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[Geometry]] =
@@ -1167,7 +1257,9 @@ case class KML(features: Seq[Feature]) extends HasFeatures {
 }
 
 /**
- * Companion object to class KML.
+ * Companion object for the KML case class. This object provides utilities for
+ * rendering, extracting, and managing KML objects in various formats. Additionally,
+ * it defines custom renderers and extractors tailored to KML handling.
  *
  * NOTE that there are two different methods for rendering a KML object.
  * One is to use the KML_Binding mechanism.
@@ -1646,43 +1738,14 @@ object Outline extends Extractors with Renderers {
  *  Abstract Overlay element.
  *  Overlay is a subtype of Feature and a super-type of PhotoOverlay, ScreenOverlay, GroundOverlay.
  *  See [[https://developers.google.com/kml/documentation/kmlreference#overlay Overlay]].
- *
+ * The trait Overlay is extended, abstractly, by {@link BaseOverlay}.
  * A Overlay has properties (color, maybeDrawOrder and Icon ) of its own.
  *  color The order of expression is aabbggrr in hexadecimal notation,
  *               where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).
  * maybeDrawOrder This element defines the stacking order for the images in overlapping overlays.
  *  icon Defines the image associated with the Overlay.
  */
-trait Overlay extends Feature {
-  /**
-   * Retrieves the optional color of the overlay.
-   * The color is represented in hexadecimal notation as aabbggrr, where:
-   * - aa: alpha (transparency) channel (00 to ff)
-   * - bb: blue channel (00 to ff)
-   * - gg: green channel (00 to ff)
-   * - rr: red channel (00 to ff)
-   *
-   * @return An Option containing the color of the overlay if defined, otherwise None.
-   */
-  def maybeColor: Option[Color]
-
-  /**
-   * Retrieves the optional draw order for the overlay.
-   * The draw order defines the stacking order for images in overlapping overlays.
-   * Higher values are drawn on top of lower values.
-   *
-   * @return An Option containing the draw order if defined, otherwise None.
-   */
-  def maybeDrawOrder: Option[DrawOrder]
-
-  /**
-   * Retrieves the Icon associated with the Overlay.
-   * The Icon defines the image representation of the Overlay.
-   *
-   * @return An Icon representing the image associated with the Overlay.
-   */
-  def Icon: Icon
-}
+trait Overlay extends Feature
 
 /**
  * Companion object for the Overlay trait, providing utilities for extraction and rendering of Overlay instances.
@@ -1712,23 +1775,31 @@ object Overlay extends Extractors with Renderers {
  */
 abstract class BaseOverlay(overlayData: OverlayData) extends Overlay with HasName {
   /**
-   * Retrieves the optional color associated with the overlay.
+   * Retrieves the optional color of the overlay.
+   * The color is represented in hexadecimal notation as aabbggrr, where:
+   * - aa: alpha (transparency) channel (00 to ff)
+   * - bb: blue channel (00 to ff)
+   * - gg: green channel (00 to ff)
+   * - rr: red channel (00 to ff)
    *
-   * @return an `Option` containing the `Color` if available, or `None` if no color is set.
+   * @return An Option containing the color of the overlay if defined, otherwise None.
    */
   def maybeColor: Option[Color] = overlayData.maybeColor
 
   /**
-   * Retrieves the optional draw order associated with the overlay.
+   * Retrieves the optional draw order for the overlay.
+   * The draw order defines the stacking order for images in overlapping overlays.
+   * Higher values are drawn on top of lower values.
    *
-   * @return an `Option` containing the `DrawOrder` if available, or `None` if no draw order is set.
+   * @return An Option containing the draw order if defined, otherwise None.
    */
   def maybeDrawOrder: Option[DrawOrder] = overlayData.maybeDrawOrder
 
   /**
-   * Retrieves the `Icon` associated with the overlay.
+   * Retrieves the Icon associated with the Overlay.
+   * The Icon defines the image representation of the Overlay.
    *
-   * @return the `Icon` instance associated with this overlay.
+   * @return An Icon representing the image associated with the Overlay.
    */
   def Icon: Icon = overlayData.Icon
 
@@ -1741,13 +1812,32 @@ abstract class BaseOverlay(overlayData: OverlayData) extends Overlay with HasNam
 }
 
 /**
+ * Represents overlay data with associated properties including an icon, optional draw order,
+ * optional color, and feature data. This case class is designed to encapsulate metadata
+ * relevant to a KML (Keyhole Markup Language) overlay structure.
  *
- * @param featureData (auxiliary) member: FeatureData, shared by sub-elements
+ * @param Icon           the associated icon representing the overlay.
+ * @param maybeDrawOrder an optional draw order, determining the rendering order of the overlay.
+ * @param maybeColor     an optional color value for overlay customization.
+ * @param featureData    the associated feature data providing contextual metadata.
  */
 case class OverlayData(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColor: Option[Color])(val featureData: FeatureData)
 
 /**
- * Companion object to OverlayData.
+ * Provides utilities for extracting and rendering `OverlayData` instances. This object includes
+ * an `Extractor` and `Renderer` for handling `OverlayData` serialization and deserialization
+ * processes and serves as a companion to the `OverlayData` case class.
+ *
+ * `OverlayData` encapsulates overlay-specific metadata such as an icon, optional draw order,
+ * optional color, and associated feature data. The provided extractors and renderers aim to
+ * simplify working with data transformation and rendering tasks in context with `OverlayData`.
+ *
+ * - `extractorPartial`: Defines a partial extractor for transforming `FeatureData` into
+ * `OverlayData`. It is a composition of utility methods supporting specialized extraction logic.
+ * - `extractor`: An implicit full extractor taking advantage of `extractorPartial` to deserialize
+ * `OverlayData` instances.
+ * - `renderer`: An implicit renderer for serializing `OverlayData` objects, designed to include
+ * relevant metadata for rendering tasks.
  */
 object OverlayData extends Extractors with Renderers {
   val extractorPartial: Extractor[FeatureData => OverlayData] = extractorPartial30(apply) ^^ "extractorFD2OverlayData"
@@ -1942,7 +2032,19 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
 }
 
 /**
- * Companion object to Placemark.
+ * The companion object for the `Placemark` class, providing extractors, renderers, and various operations
+ * associated with `Placemark` instances. This object extends traits for extracting, rendering,
+ * and handling sequences of `Placemark` objects.
+ *
+ * It includes implicit instances of extractors and renderers for processing `Placemark` objects
+ * and their sequences. The companion object facilitates functionality such as deserialization,
+ * serialization, and manipulation of `Placemark` instances.
+ *
+ * Members:
+ * - `extractorPartial`: A partial extractor for transforming `FeatureData` into a `Placemark`.
+ * - `extractor`: An implicit full extractor for `Placemark` instances, utilizing the `extractorPartial`.
+ * - `renderer`: An implicit renderer for converting `Placemark` objects into a specific representation.
+ * - `rendererSeq`: An implicit renderer for handling sequences of `Placemark` instances.
  */
 object Placemark extends Extractors with Renderers {
   val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
@@ -2122,7 +2224,17 @@ object Rotation extends Extractors with Renderers {
 case class Scale($: Double)(val kmlData: KmlData) extends KmlObject
 
 /**
- * Companion object to Scale.
+ * Companion object for the Scale case class. Provides extractors, renderers, and utility methods
+ * to facilitate the creation and manipulation of Scale objects in the Kml context.
+ *
+ * The Scale object is used to define the scale factor for the Kml representation. It manages both
+ * serialization and deserialization processes between KmlData and Scale instances using provided
+ * extractors and renderers.
+ *
+ * Functionality includes:
+ * - Extractors to derive Scale objects from KmlData.
+ * - Renderers for transforming Scale instances into their Kml representations.
+ * - Utility factory methods for creating Scale objects.
  */
 object Scale extends Extractors with Renderers {
 
