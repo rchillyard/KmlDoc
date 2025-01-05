@@ -60,6 +60,14 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
   def |[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
 
   /**
+   * Lifts this `Extractor[T]` into an `Extractor[Option[T]]`.
+   * If the extraction is successful, the resulting value is wrapped in `Some`.
+   *
+   * @return an `Extractor[Option[T]]`, which extracts an `Option[T]` from a `Node`.
+   */
+  def opt: Extractor[Option[T]] = (node: Node) => self.extract(node) map Some.apply
+
+  /**
    * Method to create an `Extractor[P]` which instantiates a `Try[T]` but treats it as a `Try[P]` where `P` is a super-class of `T`.
    *
    * @tparam P the type of the `Extractor` we wish to return.

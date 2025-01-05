@@ -668,6 +668,57 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     println("End extract Container/Document")
   }
 
+  behavior of "Overlay"
+
+  it should "extract Overlay" in {
+    val xml = <xml><GroundOverlay>
+      <name>Large-scale overlay on terrain</name>
+      <visibility>0</visibility>
+      <description>Overlay shows Mount Etna erupting on July 13th, 2001.</description>
+      <LookAt>
+        <longitude>15.02468937557116</longitude>
+        <latitude>37.67395167941667</latitude>
+        <altitude>0</altitude>
+        <heading>-16.5581842842829</heading>
+        <tilt>58.31228652890705</tilt>
+        <range>30350.36838438907</range>
+      </LookAt>
+      <Icon>
+        <href>http://developers.google.com/kml/documentation/images/etna.jpg</href>
+      </Icon>
+      <LatLonBox>
+        <north>37.91904192681665</north>
+        <south>37.46543388598137</south>
+        <east>15.35832653742206</east>
+        <west>14.60128369746704</west>
+        <rotation>-0.1556640799496235</rotation>
+      </LatLonBox>
+    </GroundOverlay></xml>
+    extractAll[Seq[Overlay]](xml) match {
+      case Success(os) =>
+        os.size shouldBe 1
+        val overlay: Overlay = os.head
+        overlay match {
+          case g@GroundOverlay(maybeAltitude, maybeAltitudeMode, latLonBox) =>
+            g.name shouldBe Text("Large-scale overlay on terrain")
+            maybeAltitude shouldBe None
+            maybeAltitudeMode shouldBe None
+            latLonBox.north shouldBe Latitude(37.91904192681665)
+            latLonBox.south shouldBe Latitude(37.46543388598137)
+            latLonBox.east shouldBe Longitude(15.35832653742206)
+            latLonBox.west shouldBe Longitude(14.60128369746704)
+            latLonBox.rotation shouldBe Rotation(-0.1556640799496235)
+            g.maybeDrawOrder shouldBe None
+            g.maybeColor shouldBe None
+            g.Icon shouldBe Icon(Text("http://developers.google.com/kml/documentation/images/etna.jpg"))
+//            val overlayData: OverlayData = g.overlayData
+//            val featureData: FeatureData = overlayData.featureData
+        }
+      case Failure(x) => fail(x)
+    }
+
+  }
+
   behavior of "HotSpot"
 
   it should "extract HotSpot" in {
