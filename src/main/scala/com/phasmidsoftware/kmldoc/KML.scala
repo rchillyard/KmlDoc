@@ -4,10 +4,11 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer, stringRenderer}
 import com.phasmidsoftware.render._
-import com.phasmidsoftware.xml.Extractor.intExtractor
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
+
 import scala.io.Source
 import scala.util._
 
@@ -1202,6 +1203,31 @@ object IconStyle extends Extractors with Renderers {
 }
 
 /**
+ * This case class represents a hierarchical set of images,
+ * each of which is an increasingly lower resolution version of the original image.
+ * used by PhotoOverlay.
+ *
+ * @param tileSize Size of the tiles, in pixels. Tiles must be square, and "tileSize" must be a power of 2.
+ *                 A tile size of 256 (the default) or 512 is recommended.
+ * @param maxWidth Width in pixels of the original image.
+ * @param maxHeight Height in pixels of the original image.
+ * @param gridOrigin Specifies where to begin numbering the tiles in each layer of the pyramid.
+ *                   A value of lowerLeft specifies that row 1, column 1 of each layer is in the bottom left corner of the grid.
+ *                   just exist two values, lowerLeft, upperLeft
+ */
+case class ImagePyramid(tileSize: Int, maxWidth: Int, maxHeight: Int, gridOrigin: Boolean)
+
+/**
+ * Companion object for the ImagePyramid case class.
+ * Provides implicit instances for Extractor and Renderer typeclasses to facilitate
+ */
+object ImagePyramid extends Extractors with Renderers {
+  implicit val extractor: Extractor[ImagePyramid] = extractor40(apply)
+  implicit val renderer: Renderer[ImagePyramid] = renderer4(apply)
+}
+
+
+/**
  * A case class representing a symbolic key with a character sequence value.
  *
  * The `Key` class encapsulates a key as a `CharSequence`.
@@ -1842,6 +1868,28 @@ object OverlayData extends Extractors with Renderers {
 }
 
 /**
+ *
+ * @param _x Either the number of pixels, a fractional component of the image,
+ *           or a pixel inset indicating the x component of a point on the overlay image.
+ * @param _y Either the number of pixels, a fractional component of the image,
+ *           or a pixel inset indicating the y component of a point on the overlay image.
+ * @param _xunits Units in which the x value is specified.
+ *                A value of "fraction" indicates the x value is a fraction of the image.
+ *                A value of "pixels" indicates the x value in pixels.
+ *                A value of "insetPixels" indicates the indent from the right edge of the image.
+ * @param _yunits Units in which the y value is specified.
+ *                A value of "fraction" indicates the y value is a fraction of the image.
+ *                A value of "pixels" indicates the y value in pixels.
+ *                A value of "insetPixels" indicates the indent from the top edge of the image.
+ */
+case class OverlayXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+
+object OverlayXY extends Extractors with Renderers {
+  implicit val extractor: Extractor[OverlayXY] = extractor40(apply)
+  implicit val renderer: Renderer[OverlayXY] = renderer4(apply)
+}
+
+/**
  * A case class representing a key-style URL pair mapping in the KML document context.
  *
  * This class encapsulates a `Key` and a `StyleURL` to represent associations typically used
@@ -1883,11 +1931,19 @@ object Pair extends Extractors with Renderers {
  * `OverlayData` parameters.
  *
  * @constructor Creates a new `PhotoOverlay` instance.
- * @param rotation    the rotation angle of the photo overlay, represented as a `Rotation`.
- * @param point       the geographical position for the photo overlay, represented as a `Point`.
- * @param overlayData supplementary data for the overlay, encapsulated in the `OverlayData` instance.
+ * @param rotation the rotation angle of the photo overlay, represented as a `Rotation`.
+ * @param viewVolume Defines how much of the current scene is visible.
+ * @param imagePyramid a hierarchical set of images,
+ *                     each of which is an increasingly lower resolution version of the original image.
+ * @param point  the geographical position for the photo overlay, represented as a `Point`.
+ * @param shape The PhotoOverlay is projected onto the <shape>.
+ *              The <shape> can be one of the following:
+ *              rectangle (default) - for an ordinary photo
+ *              cylinder - for panoramas, which can be either partial or full cylinders
+ *              sphere - for spherical panoramas
+ * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
-case class PhotoOverlay(rotation: Rotation, point: Point)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
+case class PhotoOverlay(rotation: Rotation,viewVolume: ViewVolume, imagePyramid: ImagePyramid, point: Point, shape: CharSequence)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Object `PhotoOverlay` provides extractors and renderers for the case class `PhotoOverlay`.
@@ -1896,9 +1952,9 @@ case class PhotoOverlay(rotation: Rotation, point: Point)(val overlayData: Overl
  * This object serves as a utility companion to the `PhotoOverlay` type.
  */
 object PhotoOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => PhotoOverlay] = extractorPartial20(apply) ^^ "extractorCD2PhotoOverlay"
+  val extractorPartial: Extractor[OverlayData => PhotoOverlay] = extractorPartial50(apply) ^^ "extractorCD2PhotoOverlay"
   implicit val extractor: Extractor[PhotoOverlay] = extractorPartial(extractorPartial) ^^ "extractorPhotoOverlay"
-  implicit val renderer: Renderer[PhotoOverlay] = renderer2Super(apply)(_.overlayData) ^^ "renderPhotoOverlay"
+  implicit val renderer: Renderer[PhotoOverlay] = renderer5Super(apply)(_.overlayData) ^^ "renderPhotoOverlay"
   implicit val renderSeq: Renderer[Seq[PhotoOverlay]] = sequenceRenderer[PhotoOverlay] ^^ "rendererPhotoOverlays"
 }
 
@@ -2211,6 +2267,27 @@ object Rotation extends Extractors with Renderers {
 }
 
 /**
+ * Represent Point relative to the screen about which the screen overlay is rotated.
+ *
+ * @param _x
+ * @param _y
+ * @param _xunits Units in which the x value is specified.
+ *                A value of "fraction" indicates the x value is a fraction of the image.
+ *                A value of "pixels" indicates the x value in pixels.
+ *                A value of "insetPixels" indicates the indent from the right edge of the image.
+ * @param _yunits Units in which the y value is specified.
+ *                A value of "fraction" indicates the y value is a fraction of the image.
+ *                A value of "pixels" indicates the y value in pixels.
+ *                A value of "insetPixels" indicates the indent from the top edge of the image.
+ */
+case class RotationXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+
+object RotationXY extends Extractors with Renderers {
+  implicit val extractor: Extractor[RotationXY] = extractor40(apply)
+  implicit val renderer: Renderer[RotationXY] = renderer4(apply)
+}
+
+/**
  * Scale element: subelement of Object in the Kml reference.
  * Case class to represent a Scale which is represented in XML as, for example: <scale>1.1</scale>
  * See [[https://developers.google.com/kml/documentation/kmlreference#scale Scale]]
@@ -2257,10 +2334,14 @@ object Scale extends Extractors with Renderers {
  *
  * @constructor
  * Constructs a `ScreenOverlay` instance.
- * @param rotation    Represents the rotation of the overlay in degrees. It uses the `Rotation` case class for this property.
- * @param overlayData Composed of metadata and relevant properties encapsulated in the `OverlayData` class.
+ * @param overlayXY
+ * @param screenXY
+ * @param rotationXY
+ * @param size
+ * @param maybeRotation
+ * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
-case class ScreenOverlay(rotation: Rotation)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
+case class ScreenOverlay(overlayXY: OverlayXY, screenXY: ScreenXY, rotationXY: RotationXY, size: Size, maybeRotation: Option[Rotation])(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Companion object for the `ScreenOverlay` class
@@ -2277,12 +2358,53 @@ case class ScreenOverlay(rotation: Rotation)(val overlayData: OverlayData) exten
  * and are intended to support working with structured representations of screen overlays.
  */
 object ScreenOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial10(apply) ^^ "extractorCD2ScreenOverlay"
+  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial50(apply) ^^ "extractorCD2ScreenOverlay"
   implicit val extractor: Extractor[ScreenOverlay] = extractorPartial(extractorPartial) ^^ "extractorScreenOverlay"
-  implicit val renderer: Renderer[ScreenOverlay] = renderer1Super(apply)(_.overlayData) ^^ "renderScreenOverlay"
+  implicit val renderer: Renderer[ScreenOverlay] = renderer5Super(apply)(_.overlayData) ^^ "renderScreenOverlay"
   implicit val renderSeq: Renderer[Seq[ScreenOverlay]] = sequenceRenderer[ScreenOverlay] ^^ "rendererScreenOverlays"
 }
 
+/**
+ * Represent Specifies a point relative to the screen origin that the overlay image is mapped to.
+ * used by ScreenOverlay.
+ *
+ * @param _x Either the number of pixels, a fractional component of the screen,
+ *           or a pixel inset indicating the x component of a point on the screen.
+ * @param _y Either the number of pixels, a fractional component of the screen,
+ *           or a pixel inset indicating the y component of a point on the screen.
+ * @param _xunits Units in which the x value is specified.
+ *                A value of "fraction" indicates the x value is a fraction of the screen.
+ *                A value of "pixels" indicates the x value in pixels.
+ *                A value of "insetPixels" indicates the indent from the right edge of the screen.
+ * @param _yunits Units in which the y value is specified.
+ *                A value of "fraction" indicates the y value is a fraction of the screen.
+ *                A value of "pixels" indicates the y value in pixels.
+ *                A value of "insetPixels" indicates the indent from the top edge of the screen.
+ */
+case class ScreenXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+
+object ScreenXY extends Extractors with Renderers {
+  implicit val extractor: Extractor[ScreenXY] = extractor40(apply)
+  implicit val renderer: Renderer[ScreenXY] = renderer4(apply)
+}
+
+/**
+ * Specifies the size of the image for the screen overlay, as follows:
+ * A value of −1 indicates to use the native dimension
+ * A value of 0 indicates to maintain the aspect ratio
+ * A value of n sets the value of the dimension
+ *
+ * @param _x
+ * @param _y
+ * @param _xunits
+ * @param _yunits
+ */
+case class Size(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+
+object Size extends Extractors with Renderers {
+  implicit val extractor: Extractor[Size] = extractor40(apply)
+  implicit val renderer: Renderer[Size] = renderer4(apply)
+}
 /**
  * State
  * CONSIDER this should be an enumerated type with values: open, closed, error, fetching0, fetching1, or fetching2
@@ -2617,6 +2739,30 @@ object Tilt extends Extractors with Renderers {
   implicit val extractorOpt: Extractor[Option[Tilt]] = extractorOption[Tilt]
   implicit val renderer: Renderer[Tilt] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[Tilt]] = optionRenderer[Tilt]
+}
+
+/**
+ * Represent how much of the current scene is visible.
+ * Specifying the field of view is analogous to specifying the lens opening in a physical camera.
+ * A small field of view, like a telephoto lens, focuses on a small part of the scene.
+ * A large field of view, like a wide-angle lens, focuses on a large part of the scene.
+ * Used by PhotoOverlay.
+ *
+ * @param leftFov Angle, in degrees, between the camera's viewing direction and the left side of the view volume.
+ * @param rightFov Angle, in degrees, between the camera's viewing direction and the right side of the view volume.
+ * @param bottomFov Angle, in degrees, between the camera's viewing direction and the bottom side of the view volume.
+ * @param topFov Angle, in degrees, between the camera's viewing direction and the top side of the view volume.
+ * @param near Measurement in meters along the viewing direction from the camera viewpoint to the PhotoOverlay shape.
+ */
+case class ViewVolume(leftFov:Longitude, rightFov: Longitude, bottomFov: Latitude, topFov: Latitude, near: Double)
+
+/**
+ * Companion object for the ViewVolume case class.
+ * Provides implicit instances for Extractor and Renderer typeclasses to facilitate
+ */
+object ViewVolume extends Extractors with Renderers {
+  implicit val extractor: Extractor[ViewVolume] = extractor50(apply)
+  implicit val renderer: Renderer[ViewVolume] = renderer5(apply)
 }
 
 /**

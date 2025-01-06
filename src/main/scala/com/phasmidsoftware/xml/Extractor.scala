@@ -533,7 +533,7 @@ object MultiExtractor {
 /**
  * MultiExtractorBase class to deal with minimum and maximum numbers of elements.
  * This is not used for situations where different subtypes are grouped together (for example, Folder can contain any number of "Features,"
- * which can be of type Container, Document, Folder, or Placemark.
+ * which can be of type Container, Document, Folder, or Placemark.)
  *
  * @tparam P element type of the MultiExtractor to be returned.
  *           requires implicit evidence of Extractor[P].
