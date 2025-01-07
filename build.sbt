@@ -4,21 +4,21 @@ name := "KMLDoc"
 
 version := "1.0.3"
 
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.15"
 
 Compile / doc / scalacOptions ++= Seq("-Vimplicits", "-implicits-debug", "-implicits-show-all", "-unchecked", "-feature", "-Xcheckinit", "-deprecation", "-Ywarn-dead-code", "-Ywarn-value-discard", "-Ywarn-unused")
 scalacOptions ++= Seq("-encoding", "UTF-8")
 
 lazy val scalaModules = "org.scala-lang.modules"
 
-libraryDependencies += scalaModules %% "scala-xml" % "2.1.0"
+libraryDependencies += scalaModules %% "scala-xml" % "2.3.0"
 
-libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.2"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.7"
 
 libraryDependencies ++= Seq(
-  "com.phasmidsoftware" %% "flog" % "1.0.8",
+  "com.phasmidsoftware" %% "flog" % "1.0.9",
   "com.phasmidsoftware" %% "args" % "1.0.3",
-  "ch.qos.logback" % "logback-classic" % "1.4.7" % "runtime",
+  "ch.qos.logback" % "logback-classic" % "1.5.16" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "org.scalatest" %% "scalatest" % "3.2.15" % Test
+  "org.scalatest" %% "scalatest" % "3.2.19" % Test
 )

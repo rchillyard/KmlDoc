@@ -65,7 +65,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    *
    * @return an `Extractor[Option[T]]`, which extracts an `Option[T]` from a `Node`.
    */
-  def opt: Extractor[Option[T]] = (node: Node) => self.extract(node) map Some.apply
+  def lift: Extractor[Option[T]] = (node: Node) => self.extract(node) map Some.apply
 
   /**
    * Method to create an `Extractor[P]` which instantiates a `Try[T]` but treats it as a `Try[P]` where `P` is a super-class of `T`.
@@ -532,7 +532,7 @@ object MultiExtractor {
 /**
  * MultiExtractorBase class to deal with minimum and maximum numbers of elements.
  * This is not used for situations where different subtypes are grouped together (for example, Folder can contain any number of "Features,"
- * which can be of type Container, Document, Folder, or Placemark.
+ * which can be of type Container, Document, Folder, or Placemark.)
  *
  * @tparam P element type of the MultiExtractor to be returned.
  *           requires implicit evidence of Extractor[P].

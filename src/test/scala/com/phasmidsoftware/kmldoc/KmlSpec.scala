@@ -744,6 +744,106 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "OverlayXY"
+
+  it should "extract OverlayXY" in {
+    val xml = <xml>
+      <overlayXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
+    </xml>
+    val nodeSeq = xml / "overlayXY"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[OverlayXY](nodeSeq.head) match {
+      case Success(overlayXY) =>
+        overlayXY shouldBe OverlayXY(0.5, 0.5,"fraction", "fraction")
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering an OverlayXY object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[OverlayXY](overlayXY, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<OverlayXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></OverlayXY>"""
+        // XXX the second is rendering an OverlayXY object as if it was in the context of its parent where the attribute name starts with lower case h.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[OverlayXY](overlayXY, FormatXML(), sr.setName("overlayXY")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<overlayXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></overlayXY>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "ScreenXY"
+
+  it should "extract ScreenXY" in {
+    val xml = <xml>
+      <screenXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
+    </xml>
+    val nodeSeq = xml / "screenXY"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[ScreenXY](nodeSeq.head) match {
+      case Success(screenXY) =>
+        screenXY shouldBe ScreenXY(0.5, 0.5,"fraction", "fraction")
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a ScreenXY object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[ScreenXY](screenXY, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<ScreenXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></ScreenXY>"""
+        // XXX the second is rendering a ScreenXY object as if it was in the context of its parent where the attribute name starts with lower case h.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[ScreenXY](screenXY, FormatXML(), sr.setName("screenXY")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<screenXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></screenXY>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "RotationXY"
+
+  it should "extract RotationXY" in {
+    val xml = <xml>
+      <rotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
+    </xml>
+    val nodeSeq = xml / "rotationXY"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[RotationXY](nodeSeq.head) match {
+      case Success(rotationXY) =>
+        rotationXY shouldBe RotationXY(0.5, 0.5,"fraction", "fraction")
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a RotationXY object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[RotationXY](rotationXY, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<RotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></RotationXY>"""
+        // XXX the second is rendering a RotationXY object as if it was in the context of its parent where the attribute name starts with lower case r.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[RotationXY](rotationXY, FormatXML(), sr.setName("rotationXY")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<rotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></rotationXY>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "Size"
+
+  it should "extract Size" in {
+    val xml = <xml>
+      <size x="0" y="0" xunits="pixels" yunits="pixels"/>
+    </xml>
+    val nodeSeq = xml / "size"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[Size](nodeSeq.head) match {
+      case Success(size) =>
+        size shouldBe Size(0, 0,"pixels", "pixels")
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a Size object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[Size](size, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<Size x="0" y="0" xunits="pixels" yunits="pixels"></Size>"""
+        // XXX the second is rendering a Size object as if it was in the context of its parent where the attribute name starts with lower case r.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[Size](size, FormatXML(), sr.setName("size")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<size x="0" y="0" xunits="pixels" yunits="pixels"></size>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
   behavior of "Style"
 
   // TODO resolve spacing issues

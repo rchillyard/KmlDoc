@@ -6,7 +6,7 @@ import com.phasmidsoftware.render.Renderer.maybeAttributeName
 import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractor, NamedFunction}
 import scala.reflect.ClassTag
-import scala.util.Try
+import scala.util.{Success, Try}
 
 /**
  * Typeclass to specify the required behavior of an object that you want to render as a String.
@@ -24,6 +24,22 @@ trait Renderer[T] extends NamedFunction[Renderer[T]] {
    * @return a String representation of t.
    */
   def render(t: T, format: Format, stateR: StateR): Try[String]
+
+  /**
+   * Lifts the current Renderer to operate on optional values.
+   * When the provided value is `Some`, it renders the contained value using the current Renderer.
+   * When the provided value is `None`, it produces an empty result.
+   *
+   * @return a Renderer for `Option[T]` that renders `Some[T]` using the current Renderer and returns
+   *         an empty result for `None`.
+   */
+  def lift: Renderer[Option[T]] = Renderer.apply {
+    (t, f, s) =>
+      t match {
+        case Some(x) => render(x, f, s)
+        case None => Success("")
+      }
+  }
 }
 
 object Renderer {

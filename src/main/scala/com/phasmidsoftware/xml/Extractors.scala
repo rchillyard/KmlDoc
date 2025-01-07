@@ -1555,7 +1555,7 @@ object Extractors extends Extractors {
    * Method to extract an optional value from a NodeSeq.
    * NOTE: this code looks very wrong.
    * But, as Galileo said, "eppur si muove."
-   * CONSIDER re-writing by using the `opt` method.
+   * CONSIDER re-writing by using the `lift` method.
    */
   def extractOptional[P: Extractor](nodeSeq: NodeSeq): Try[P] =
     nodeSeq.headOption map Extractor.extract[P] match {
