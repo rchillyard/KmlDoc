@@ -344,14 +344,14 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     le.extract(<xml id="42"></xml>) shouldBe Success(42)
   }
 
-  behavior of "opt"
+  behavior of "lift"
 
   it should "extractOptional1" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
     </xml>
     import MyExtractors._
-    implicit val extractMaybeJunk: Extractor[Option[Junk]] = implicitly[Extractor[Junk]].opt
+    implicit val extractMaybeJunk: Extractor[Option[Junk]] = implicitly[Extractor[Junk]].lift
     implicit val extractDocument3: Extractor[Document3] = extractor21(Document3)
     val extractor = implicitly[Extractor[Document3]]
     extractor.extract(xml) shouldBe Success(Document3(1, None, List(Empty, Empty)))
@@ -365,7 +365,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument3: Extractor[Document3] = extractor21(Document3)
     val extractor = implicitly[Extractor[Document3]]
-    extractor.opt.extract(xml) shouldBe Success(Some(Document3(1, None, List(Empty, Empty))))
+    extractor.lift.extract(xml) shouldBe Success(Some(Document3(1, None, List(Empty, Empty))))
   }
 
   behavior of "Extractors"

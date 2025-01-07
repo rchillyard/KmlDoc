@@ -144,7 +144,7 @@ object Altitude extends Extractors with Renderers {
   implicit val extractor: Extractor[Altitude] = extractor10(apply)
   implicit val extractorOpt: Extractor[Option[Altitude]] = extractorOption[Altitude]
   implicit val renderer: Renderer[Altitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Altitude]] = optionRenderer[Altitude]
+  implicit val rendererOpt: Renderer[Option[Altitude]] = optionRenderer
 }
 
 /**
@@ -169,9 +169,8 @@ object AltitudeMode extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractor10(apply).opt ^^ "extractorOptAltitudeMode"
-  implicit val renderer: Renderer[AltitudeMode] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[AltitudeMode]] = optionRenderer[AltitudeMode]
+  implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractor10(apply).lift ^^ "extractorOptAltitudeMode"
+  implicit val rendererOpt: Renderer[Option[AltitudeMode]] = renderer1(apply).lift
 }
 
 /**
@@ -317,9 +316,8 @@ object Color extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Color]] = extractor10(apply).opt ^^ "extractMaybeColor"
-  implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
-  implicit val rendererOpt: Renderer[Option[Color]] = optionRenderer[Color] ^^ "rendererOptionColor"
+  implicit val extractorOpt: Extractor[Option[Color]] = extractor10(apply).lift ^^ "extractMaybeColor"
+  implicit val rendererOpt: Renderer[Option[Color]] = renderer1(apply).lift ^^ "rendererOptionColor"
 }
 
 /**
@@ -347,9 +345,8 @@ object ColorMode extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[ColorMode]] = extractor10(apply).opt ^^ "extractMaybeColorMode"
-  implicit val renderer: Renderer[ColorMode] = renderer1(apply) ^^ "rendererColorMode"
-  implicit val rendererOpt: Renderer[Option[ColorMode]] = optionRenderer[ColorMode] ^^ "rendererOptionColorMode"
+  implicit val extractorOpt: Extractor[Option[ColorMode]] = extractor10(apply).lift ^^ "extractMaybeColorMode"
+  implicit val rendererOpt: Renderer[Option[ColorMode]] = renderer1(apply).lift ^^ "rendererOptionColorMode"
 }
 
 /**
@@ -618,9 +615,8 @@ object DisplayMode extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractor10(apply).opt ^^ "extractMaybeDisplayMode"
-  implicit val renderer: Renderer[DisplayMode] = renderer1(apply) ^^ "rendererDisplayMode"
-  implicit val rendererOpt: Renderer[Option[DisplayMode]] = optionRenderer[DisplayMode] ^^ "rendererOptionDisplayMode"
+  implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractor10(apply).lift ^^ "extractMaybeDisplayMode"
+  implicit val rendererOpt: Renderer[Option[DisplayMode]] = renderer1(apply).lift ^^ "rendererOptionDisplayMode"
 }
 
 /**
@@ -682,9 +678,8 @@ object DrawOrder extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[DrawOrder]] = extractor10(apply).opt
-  implicit val renderer: Renderer[DrawOrder] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[DrawOrder]] = optionRenderer[DrawOrder]
+  implicit val extractorOpt: Extractor[Option[DrawOrder]] = extractor10(apply).lift
+  implicit val rendererOpt: Renderer[Option[DrawOrder]] = renderer1(apply).lift
 }
 
 
@@ -718,9 +713,8 @@ object Extrude extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Extrude]] = extractor10(apply).opt ^^ "extractorOptionExtrude"
-  implicit val renderer: Renderer[Extrude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Extrude]] = optionRenderer[Extrude]
+  implicit val extractorOpt: Extractor[Option[Extrude]] = extractor10(apply).lift ^^ "extractorOptionExtrude"
+  implicit val rendererOpt: Renderer[Option[Extrude]] = renderer1(apply).lift
 }
 
 /**
@@ -844,9 +838,8 @@ object Fill extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Fill]] = extractor10(apply).opt ^^ "extractMaybeFill"
-  implicit val renderer: Renderer[Fill] = renderer1(apply) ^^ "rendererFill"
-  implicit val rendererOpt: Renderer[Option[Fill]] = optionRenderer[Fill] ^^ "rendererOptionFill"
+  implicit val extractorOpt: Extractor[Option[Fill]] = extractor10(apply).lift ^^ "extractMaybeFill"
+  implicit val rendererOpt: Renderer[Option[Fill]] = renderer1(apply).lift ^^ "rendererOptionFill"
 }
 
 /**
@@ -1164,9 +1157,8 @@ object ItemIcon extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractor20(apply).opt ^^ "extractMaybeItemIcon"
-  implicit val renderer: Renderer[ItemIcon] = renderer2(apply) ^^ "rendererItemIcon"
-  implicit val rendererOpt: Renderer[Option[ItemIcon]] = optionRenderer[ItemIcon] ^^ "rendererOptionItemIcon"
+  implicit val extractorOpt: Extractor[Option[ItemIcon]] = extractor20(apply).lift ^^ "extractMaybeItemIcon"
+  implicit val rendererOpt: Renderer[Option[ItemIcon]] = renderer2(apply).lift ^^ "rendererOptionItemIcon"
 }
 
 /**
@@ -1572,9 +1564,8 @@ object ListItemType extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractor10(apply).opt ^^ "extractMaybeListItemType"
-  implicit val renderer: Renderer[ListItemType] = renderer1(apply) ^^ "rendererListItemType"
-  implicit val rendererOpt: Renderer[Option[ListItemType]] = optionRenderer[ListItemType] ^^ "rendererOptionListItemType"
+  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractor10(apply).lift ^^ "extractMaybeListItemType"
+  implicit val rendererOpt: Renderer[Option[ListItemType]] = renderer1(apply).lift ^^ "rendererOptionListItemType"
 }
 
 /**
@@ -1696,7 +1687,7 @@ object Open extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Open]] = extractor10(apply).opt
+  implicit val extractorOpt: Extractor[Option[Open]] = extractor10(apply).lift
   implicit val renderer: Renderer[Open] = renderer1(apply)
   implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
 }
@@ -1748,10 +1739,8 @@ object Outline extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Outline] = extractor10(apply) ^^ "extractorOutline"
-  implicit val extractorOpt: Extractor[Option[Outline]] = extractor10(apply).opt ^^ "extractMaybeOutline"
-  implicit val renderer: Renderer[Outline] = renderer1(apply) ^^ "rendererOutline"
-  implicit val rendererOpt: Renderer[Option[Outline]] = optionRenderer[Outline] ^^ "rendererOptionOutline"
+  implicit val extractorOpt: Extractor[Option[Outline]] = extractor10(apply).lift ^^ "extractMaybeOutline"
+  implicit val rendererOpt: Renderer[Option[Outline]] = renderer1(apply).lift ^^ "rendererOptionOutline"
 }
 
 /**
@@ -2706,9 +2695,8 @@ object TextColor extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[TextColor]] = extractor10(apply).opt ^^ "extractMaybeTextColor"
-  implicit val renderer: Renderer[TextColor] = renderer1(apply) ^^ "rendererTextColor"
-  implicit val rendererOpt: Renderer[Option[TextColor]] = optionRenderer[TextColor] ^^ "rendererOptionTextColor"
+  implicit val extractorOpt: Extractor[Option[TextColor]] = extractor10(apply).lift ^^ "extractMaybeTextColor"
+  implicit val rendererOpt: Renderer[Option[TextColor]] = renderer1(apply).lift ^^ "rendererOptionTextColor"
 }
 
 /**
@@ -2785,9 +2773,8 @@ object Visibility extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Visibility]] = extractor10(apply).opt
-  implicit val renderer: Renderer[Visibility] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Visibility]] = optionRenderer[Visibility]
+  implicit val extractorOpt: Extractor[Option[Visibility]] = extractor10(apply).lift
+  implicit val rendererOpt: Renderer[Option[Visibility]] = renderer1(apply).lift
 }
 
 /**
@@ -2814,7 +2801,6 @@ object Width extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Width]] = extractor10(apply).opt ^^ "extractMaybeWidth"
-  implicit val renderer: Renderer[Width] = renderer1(apply) ^^ "rendererWidth"
-  implicit val rendererOpt: Renderer[Option[Width]] = optionRenderer[Width] ^^ "rendererOptionWidth"
+  implicit val extractorOpt: Extractor[Option[Width]] = extractor10(apply).lift ^^ "extractMaybeWidth"
+  implicit val rendererOpt: Renderer[Option[Width]] = renderer1(apply).lift ^^ "rendererOptionWidth"
 }
