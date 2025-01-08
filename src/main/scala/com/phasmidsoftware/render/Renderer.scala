@@ -5,6 +5,7 @@ import com.phasmidsoftware.core.{SmartBuffer, TryUsing}
 import com.phasmidsoftware.render.Renderer.maybeAttributeName
 import com.phasmidsoftware.render.Renderers.logger
 import com.phasmidsoftware.xml.{Extractor, NamedFunction}
+
 import scala.reflect.ClassTag
 import scala.util.{Success, Try}
 
@@ -118,7 +119,7 @@ object Renderer {
    * @tparam R the Product type.
    * @return a String.
    */
-  private[render] def doNestedRender[R <: Product : ClassTag](formatIn: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String): Try[String] = {
+  private[render] def doNestedRender[R: ClassTag](formatIn: Format, stateR: StateR, wInner: String, wOuter: String, attributeName: String): Try[String] = {
     // XXX: determine if attributeName corresponds to an optional attribute--Some(true), an attribute--Some(false), or a non-attribute: None.
     val maybeAttribute = Extractor.inferAttributeType(attributeName)
     val format = if (maybeAttribute.isDefined || attributeName == "$" || attributeName == "") formatIn.flatten else formatIn

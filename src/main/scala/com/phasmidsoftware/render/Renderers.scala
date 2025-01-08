@@ -24,7 +24,7 @@ trait Renderers {
    */
   def renderer0[R <: Product : ClassTag]: Renderer[R] = Renderer {
     (_: R, format, stateR) =>
-      Renderer.doNestedRender(format, stateR, "", "", "")
+      doNestedRender(format, stateR, "", "", "")
   }
 
   /**
@@ -41,7 +41,7 @@ trait Renderers {
         case p0: P0 =>
           for {
             wOuter <- renderOuter(r, p0, 0, format.indent)
-            result <- Renderer.doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
+            result <- doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
           } yield result
       }
   }
@@ -59,7 +59,7 @@ trait Renderers {
       for {
         // XXX See renderer1 for better way to get a P0 parameter
         wOuter <- renderOuter(r, r.productElement(0).asInstanceOf[P0], 0, format.indent)
-        result <- Renderer.doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
+        result <- doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
       } yield prefix + result
   }
 
@@ -80,7 +80,7 @@ trait Renderers {
           val objectInner = constructorInner(p0)
           for {wInner <- renderer1(constructorInner).render(objectInner, format, stateR.recurse)
                wOuter <- renderOuter(r, p1, 1, format.indent)
-               result <- Renderer.doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
+               result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
                } yield result
       }
   }
@@ -103,7 +103,7 @@ trait Renderers {
       val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
       for {wInner <- renderer2(constructorInner).render(objectInner, format, stateR.recurse)
            wOuter <- renderOuter(r, objectOuter, 2, format.indent)
-           result <- Renderer.doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
+           result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
            } yield result
     }
   }
@@ -127,7 +127,7 @@ trait Renderers {
       val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1], r.productElement(2).asInstanceOf[P2])
       for {wInner <- renderer3(constructorInner).render(objectInner, format, stateR.recurse)
            wOuter <- renderOuter(r, objectOuter, 3, format.indent)
-           result <- Renderer.doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
+           result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
            } yield result
     }
   }
@@ -569,16 +569,17 @@ object Renderers {
   val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
   /**
-   * Creates a `Renderer` for a generic parameterized type `P`, which is constrained by an enumeration type `E`.
-   * The renderer generates a string attribute representation of the input value, potentially incorporating
-   * a name from the rendering state.
+   * Creates a renderer for a specified type `P` that renders the type as a string using the provided tag.
+   * The rendered output includes nested rendering behavior and associates the provided tag with the renderer state.
+   * The reason that we have to pass in `tag` is that the ClassTag of P has the classname of "Value"
+   * instead of the alias defined in the Enumeration (which is what we want)
    *
-   * @tparam P the type to be rendered.
-   * @tparam E the enumeration type that constrains `P`.
-   * @return a `Renderer` object that processes input of type `P` and generates a string representation.
+   * @param tag a string used to set the name of the renderer state for the provided type `P`
+   * @tparam P the type of the object to be rendered
+   * @return a `Renderer[P]` instance that renders objects of type `P` as strings with nested rendering.
    */
-  def rendererEnum[P, E <: Enumeration]: Renderer[P] = Renderer[P] {
-    (p, _, stateR) => renderAttribute(p.toString, stateR.maybeName)
+  def rendererEnum[P: ClassTag](tag: String): Renderer[P] = Renderer[P] {
+    (p, format, stateR) => doNestedRender[P](format, stateR.setName(tag), p.toString, "", "")
   }
 
   /**
@@ -635,7 +636,7 @@ object Renderers {
   implicit val longRenderer: Renderer[Long] = Renderer[Long] {
     (t, _, stateR) => renderAttribute(t.toString, stateR.maybeName)
   } ^^ "longRenderer"
-  
+
   /**
    * Sanitizes the input character sequence by replacing certain characters with their HTML-safe representations.
    * Specifically, it replaces '<' with "&lt;" and '&' with "&amp;".

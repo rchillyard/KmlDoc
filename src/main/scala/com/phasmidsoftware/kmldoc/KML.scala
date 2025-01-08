@@ -2409,7 +2409,7 @@ object Shapes extends Enumeration with Extractors with Renderers {
   type Shape = Value
   val rectangle, cylinder, sphere = Value
   implicit val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)
-  implicit val renderer: Renderer[Shape] = rendererEnum[Shape, this.type]
+  implicit val renderer: Renderer[Shape] = rendererEnum("shape")
 }
 
 /**

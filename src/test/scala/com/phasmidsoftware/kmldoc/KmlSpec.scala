@@ -2,6 +2,7 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.core.{CDATA, Text, TryUsing, XmlException}
+import com.phasmidsoftware.kmldoc.Shapes.Shape
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
@@ -685,7 +686,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         <range>30350.36838438907</range>
       </LookAt>
       <Icon>
-        <href>http://developers.google.com/kml/documentation/images/etna.jpg</href>
+        <href>https://developers.google.com/kml/documentation/images/etna.jpg</href>
       </Icon>
       <LatLonBox>
         <north>37.91904192681665</north>
@@ -711,7 +712,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             latLonBox.rotation shouldBe Rotation(-0.1556640799496235)
             g.maybeDrawOrder shouldBe None
             g.maybeColor shouldBe None
-            g.Icon shouldBe Icon(Text("http://developers.google.com/kml/documentation/images/etna.jpg"))
+            g.Icon shouldBe Icon(Text("https://developers.google.com/kml/documentation/images/etna.jpg"))
 //            val overlayData: OverlayData = g.overlayData
 //            val featureData: FeatureData = overlayData.featureData
         }
@@ -802,8 +803,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     po.isSuccess shouldBe true
     po.get shouldBe Shapes.rectangle
     po.get.toString shouldBe "rectangle"
-    // TODO reinstate the following check once rendering is working properly.
-    //    Renderer.render[Shapes.Shape](po.get, FormatXML(), StateR()) shouldBe "<shape>rectangle</shape>"
+    val triedString = Renderer.render[Shape](po.get, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<shape>rectangle</shape>"
   }
 
   behavior of "HotSpot"
