@@ -42,17 +42,9 @@ trait Extractors {
   def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => Extractor.extractSequence[P](node / label))
 
   /**
-   * Extractor function to parse and transform a string extracted from an XML node into a specific type using a provided function.
-   * This method is designed for extracting enumerated values
-   *
-   * @param f A function that takes a string and tries to parse it into the desired type P, returning a Try instance.
-   * @return An Extractor function, which takes an XML node and transforms its text content into type P using the provided function f.
-   */
-  def extractorParse[P](f: String => Try[P])(g: String => String): Extractor[P] = (node: Node) => f(g(node.text))
-
-  /**
-   * Creates an extractor for enumerations by parsing a string to its corresponding Enumeration value.
-   * This method invokes extractorParse.
+   * Creates an extractor for enumerations by parsing a string into its corresponding `Enumeration` value.
+   * This method invokes `parse` after reformatting the String
+   * to match the enumerated type using the `fromView` method.
    *
    * An example of the use of this method is as follows:
    * <pre>
@@ -68,15 +60,10 @@ trait Extractors {
    * @tparam P is the underlying type of the resulting Extractor.
    * @tparam E is the Enumeration type.
    */
-  def extractorEnum[P, E <: Enumeration](e: E): Extractor[P] = extractorParse(s => Try(e.withName(s).asInstanceOf[P]))(s => {
+  def extractorEnum[P, E <: Enumeration](e: E): Extractor[P] = Extractor.parse { s =>
     val w = s.toLowerCase
-    s"${w.head.toUpper}${w.tail}"
-  })
-
-  //    (node: Node) => {
-  //    val w = node.text.toLowerCase
-  //    f(w.head.toUpper + w.tail)
-  //  }
+    Try(e.withName(s"${w.head.toUpper}${w.tail}").asInstanceOf[P])
+  }
 
   /**
    * Creates a new instance of `MultiExtractorBase` for the specified range,

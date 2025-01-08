@@ -3,6 +3,7 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.core.FP
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
 import scala.util.{Failure, Try}
 import scala.xml.Node
 
@@ -28,6 +29,12 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
     val ext: Extractor[Int] = (node: Node) => FP.optionToTry(node.text.toIntOption, new NoSuchElementException())
     val target: Extractor[Int] = ext.flatMap(x => Try(x + 1))
     target.extract(node) shouldBe Try(2)
+  }
+
+  it should "parse" in {
+    val node = <junk>1</junk>
+    val target: Extractor[Int] = Extractor.parse(w => Try(w.toInt))
+    target.extract(node) shouldBe Try(1)
   }
 
   it should "$bar" in {

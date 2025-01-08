@@ -2,10 +2,11 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.xml.Extractor._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
-import java.util.regex.Matcher
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
+import java.util.regex.Matcher
 import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
 
@@ -379,6 +380,17 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     </xml>
     val extractedSeq: Try[Iterable[Empty.type]] = MyExtractors.extractorIterable[Empty.type]("empty").extract(xml)
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
+  }
+
+  //noinspection ScalaUnusedSymbol
+  it should "extractorEnum" in {
+    object Shapes extends Enumeration with Extractors {
+      type Shape = Value
+      val Rectangle, Cylinder, Sphere = Value
+      val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)
+      private val xml = <shape>rectangle</shape>
+      extractor.extract(xml) shouldBe Success(Rectangle)
+    }
   }
 
   case class MyContainer(simple1: Simple1, simple2: Simple1, simple4s: Seq[Simple4])

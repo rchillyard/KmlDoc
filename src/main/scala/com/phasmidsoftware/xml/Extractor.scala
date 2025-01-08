@@ -7,6 +7,7 @@ import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
@@ -117,6 +118,15 @@ object Extractor {
    * @return an Extractor[T].
    */
   def createLazy[T](te: => Extractor[T]): Extractor[T] = (node: Node) => te.extract(node)
+
+  /**
+   * Method to create an Extractor[T] from a String => Try[T] function.
+   *
+   * @param parser a String => Try[T] function.
+   * @tparam T the underlying type of the resulting Extractor.
+   * @return an Extractor[T].
+   */
+  def parse[T](parser: String => Try[T]): Extractor[T] = (node: Node) => parser(node.text)
 
   /**
    * Method to extract a Try[T] from the implicitly defined extractor operating on the given node.
