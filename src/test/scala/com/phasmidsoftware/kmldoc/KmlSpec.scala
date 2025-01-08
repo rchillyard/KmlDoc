@@ -2,7 +2,6 @@ package com.phasmidsoftware.kmldoc
 
 import com.phasmidsoftware.core.Utilities.parseUnparsed
 import com.phasmidsoftware.core.{CDATA, Text, TryUsing, XmlException}
-import com.phasmidsoftware.kmldoc.Shapes.Shape
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
@@ -55,7 +54,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml: Elem = <scale id="Hello">2.0</scale>
     val triedScale = extract[Scale](xml)
     triedScale.isSuccess shouldBe true
-    triedScale.get.$ shouldBe 2.0
+    val scale = triedScale.get
+    scale.$ shouldBe 2.0
+    val wy = TryUsing(StateR())(sr => Renderer.render[Scale](scale, FormatXML(), sr))
+    wy.isSuccess shouldBe true
+    // CONSIDER should we force this result to have tag of "scale" instead of "Scale"?
+    wy.get shouldBe "<Scale id=\"Hello\">2</Scale>"
   }
 
   it should "parse Scale without id" in {
@@ -797,15 +801,18 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "enumerated types"
 
   it should "extract shape" in {
-    val xml = <shape>rectangle</shape>
-    val po = extract[Shapes.Shape](xml)
+    val xml = <xml>
+      <shape>rectangle</shape>
+    </xml>
+    val po = extract[Shape](xml)
     println(po)
     po.isSuccess shouldBe true
-    po.get shouldBe Shapes.rectangle
-    po.get.toString shouldBe "rectangle"
-    val triedString = Renderer.render[Shape](po.get, FormatXML(), StateR())
+    val p = po.get
+    p.shape shouldBe Shapes.rectangle
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Shape](p, FormatXML(), StateR())
     triedString.isSuccess shouldBe true
-    triedString.get shouldBe "<shape>rectangle</shape>"
+    triedString.get shouldBe "<Shape>rectangle\n</Shape>"
   }
 
   behavior of "HotSpot"

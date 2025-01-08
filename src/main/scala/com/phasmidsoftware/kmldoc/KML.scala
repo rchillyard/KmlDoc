@@ -4,8 +4,7 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.kmldoc.Shapes.Shape
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer, rendererEnum}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
@@ -2385,31 +2384,74 @@ object ScreenOverlay extends Extractors with Renderers {
  */
 case class ScreenXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
 
+/**
+ * Companion object for the `ScreenXY` case class that provides implicit extractors
+ * and renderers for the `ScreenXY` type.
+ *
+ * This object includes:
+ * - An implicit `Extractor` instance for parsing or extracting `ScreenXY` objects.
+ * - An implicit `Renderer` instance for rendering `ScreenXY` objects into a specific format.
+ *
+ * It simplifies the process of transforming `ScreenXY` to and from other representations.
+ */
 object ScreenXY extends Extractors with Renderers {
   implicit val extractor: Extractor[ScreenXY] = extractor40(apply)
   implicit val renderer: Renderer[ScreenXY] = renderer4(apply)
 }
 
 /**
- * An enumeration that defines various types of shapes and provides utilities for extraction and rendering.
+ * Represents a shape based on the `Shapes.Value` enumeration.
  *
- * The available shapes in this enumeration are:
- * - Rectangle
- * - Cylinder
- * - Sphere
+ * This case class encapsulates a single shape value, which can represent predefined
+ * shapes such as `rectangle`, `cylinder`, or `sphere`.
+ * The `shape` parameter is of type `Shapes.Value`,
+ * which is a value from the `Shapes` enumeration.
  *
- * This object integrates with the `Extractors` and `Renderers` frameworks to enable type-safe extraction
- * and custom rendering of shapes.
+ * This class integrates with the `Extractors` and `Renderers` frameworks to support:
+ * - Automatic extraction using an implicit `Extractor[Shape]`.
+ * - Custom rendering of shape instances through an implicit `Renderer[Shape]`.
  *
- * It provides implicit instances for:
- * - `Extractor[Shape]`: Facilitates type extraction of `Shape` values.
- * - `Renderer[Shape]`: Handles the rendering of `Shape` instances into a specific format.
+ * The companion object for this class provides the necessary extractor and renderer
+ * implementations for seamless integration.
+ */
+case class Shape(shape: Shapes.Value)
+
+/**
+ * Companion object for the `Shape` case class.
+ *
+ * This object provides integration with the `Extractors` and `Renderers` frameworks
+ * by defining the necessary implicit instances for `Extractor` and `Renderer` specific
+ * to the `Shape` type.
+ *
+ * - The `extractor` is an implicit instance of `Extractor[Shape]`, enabling the automatic
+ * extraction of `Shape` instances.
+ * - The `renderer` is an implicit instance of `Renderer[Shape]`, enabling the customized
+ * rendering of `Shape` instances.
+ */
+object Shape extends Extractors with Renderers {
+  implicit val extractor: Extractor[Shape] = extractor10(Shape.apply)
+  implicit val renderer: Renderer[Shape] = renderer1(Shape.apply)
+}
+
+/**
+ * An enumeration object representing a collection of shapes.
+ * `Shapes` supports extraction and rendering functionalities.
+ *
+ * Shapes include:
+ * - rectangle
+ * - cylinder
+ * - sphere
+ *
+ * This object provides implicit values for extraction and rendering:
+ * - `extractor`: Extracts instances of `Shapes.ShapeValue` from a defined context.
+ * - `renderer`: Renders `Shapes.ShapeValue` instances as their string representations.
+ *
+ * The `ShapeValue` type is an alias for the `Value` type in this enumeration.
  */
 object Shapes extends Enumeration with Extractors with Renderers {
-  type Shape = Value
   val rectangle, cylinder, sphere = Value
-  implicit val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)
-  implicit val renderer: Renderer[Shape] = rendererEnum("shape")
+  implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)
+  implicit val renderer: Renderer[Shapes.Value] = (t: Value, _: Format, _: StateR) => Success(t.toString)
 }
 
 /**

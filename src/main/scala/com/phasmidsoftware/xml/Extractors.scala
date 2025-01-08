@@ -50,11 +50,11 @@ trait Extractors {
    *
    * An example of the use of this method is as follows:
    * <pre>
-   * object Shapes extends Enumeration with Extractors {
-   * type Shape = Value
-   * val rectangle, cylinder, sphere = Value
-   * implicit val extractor: Extractor[Shape] = extractorEnum[Shape,this.type](this)
-   * }
+   object Shapes extends Enumeration with Extractors with Renderers {
+     val rectangle, cylinder, sphere = Value
+     implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)
+     implicit val renderer: Renderer[Shapes.Value] = (t: Value, _: Format, _: StateR) => Success(t.toString)
+     }
    * </pre>
    *
    * @param e the enumeration to extract values from
