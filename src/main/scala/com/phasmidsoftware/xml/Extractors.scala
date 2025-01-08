@@ -45,12 +45,14 @@ trait Extractors {
    * Creates an extractor for enumerations by parsing a string into its corresponding `Enumeration` value.
    * This method invokes `parse` after reformatting the String
    * to match the enumerated type using the `fromView` method.
+   * Enumerated values are assumed to be all lower-case.
+   * CONSIDER is this appropriate?
    *
    * An example of the use of this method is as follows:
    * <pre>
    * object Shapes extends Enumeration with Extractors {
    * type Shape = Value
-   * val Rectangle, Cylinder, Sphere = Value
+   * val rectangle, cylinder, sphere = Value
    * implicit val extractor: Extractor[Shape] = extractorEnum[Shape,this.type](this)
    * }
    * </pre>
@@ -60,9 +62,8 @@ trait Extractors {
    * @tparam P is the underlying type of the resulting Extractor.
    * @tparam E is the Enumeration type.
    */
-  def extractorEnum[P, E <: Enumeration](e: E): Extractor[P] = Extractor.parse { s =>
-    val w = s.toLowerCase
-    Try(e.withName(s"${w.head.toUpper}${w.tail}").asInstanceOf[P])
+  def extractorEnum[P, E <: Enumeration](e: E): Extractor[P] = Extractor.parse {
+    s => Try(e.withName(s.toLowerCase).asInstanceOf[P])
   }
 
   /**

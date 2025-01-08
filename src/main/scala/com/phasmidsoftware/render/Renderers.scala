@@ -5,6 +5,7 @@ import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.{doNestedRender, doRenderSequence, renderAttribute, renderOuter}
 import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.annotation.unused
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
@@ -567,6 +568,32 @@ object Renderers {
 
   val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
+  /**
+   * Creates a `Renderer` for a generic parameterized type `P`, which is constrained by an enumeration type `E`.
+   * The renderer generates a string attribute representation of the input value, potentially incorporating
+   * a name from the rendering state.
+   *
+   * @tparam P the type to be rendered.
+   * @tparam E the enumeration type that constrains `P`.
+   * @return a `Renderer` object that processes input of type `P` and generates a string representation.
+   */
+  def rendererEnum[P, E <: Enumeration]: Renderer[P] = Renderer[P] {
+    (p, _, stateR) => renderAttribute(p.toString, stateR.maybeName)
+  }
+
+  /**
+   * Implicit `Renderer` instance for the `CharSequence` type.
+   *
+   * This renderer is responsible for converting a `CharSequence` into its string representation,
+   * based on the given format and rendering state. It handles two specific cases:
+   *
+   * 1. If the input `CharSequence` is of type `CDATA` and the format is `_XML`, it invokes `toXML`
+   * to generate the appropriate XML representation.
+   * 2. For all other `CharSequence` inputs, it uses the `scrub` method to sanitize the input and
+   * then calls `renderAttribute` to produce the final string representation.
+   *
+   * Note: Additional handling may be needed to convert all other `CharSequence` inputs into `CDATA` if required.
+   */
   implicit val charSequenceRenderer: Renderer[CharSequence] = Renderer[CharSequence] {
     (x, format, stateR) =>
       (x, format) match {
@@ -575,9 +602,6 @@ object Renderers {
         case _ => renderAttribute(scrub(x), stateR.maybeName)
       }
   } ^^ "charSequenceRenderer"
-
-  def scrub(x: CharSequence): String =
-    x.toString.replaceAll("<", "&lt;").replaceAll("&", "&amp;")
 
   implicit val stringRenderer: Renderer[String] = Renderer[String] {
     (x, _, stateR) =>
@@ -611,6 +635,16 @@ object Renderers {
   implicit val longRenderer: Renderer[Long] = Renderer[Long] {
     (t, _, stateR) => renderAttribute(t.toString, stateR.maybeName)
   } ^^ "longRenderer"
+  
+  /**
+   * Sanitizes the input character sequence by replacing certain characters with their HTML-safe representations.
+   * Specifically, it replaces '<' with "&lt;" and '&' with "&amp;".
+   *
+   * @param x the input character sequence to be sanitized
+   * @return a sanitized string with unsafe characters replaced
+   */
+  private def scrub(x: CharSequence): String =
+    x.toString.replaceAll("<", "&lt;").replaceAll("&", "&amp;")
 
   private val renderers = new Renderers {}
   implicit val rendererText: Renderer[Text] = renderers.renderer1(Text.apply)

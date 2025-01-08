@@ -5,7 +5,7 @@ import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
 import com.phasmidsoftware.kmldoc.Shapes.Shape
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer, rendererEnum}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
@@ -2407,9 +2407,9 @@ object ScreenXY extends Extractors with Renderers {
  */
 object Shapes extends Enumeration with Extractors with Renderers {
   type Shape = Value
-  val Rectangle, Cylinder, Sphere = Value
+  val rectangle, cylinder, sphere = Value
   implicit val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)
-  implicit val renderer: Renderer[Shape] = (t: Shape, format: Format, stateR: StateR) => Success(t.toString)
+  implicit val renderer: Renderer[Shape] = rendererEnum[Shape, this.type]
 }
 
 /**

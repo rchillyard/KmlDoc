@@ -800,8 +800,10 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val po = extract[Shapes.Shape](xml)
     println(po)
     po.isSuccess shouldBe true
-    //    po.get should matchPattern {case Shapes.Shape(_,_,_,_,_) =>}
-
+    po.get shouldBe Shapes.rectangle
+    po.get.toString shouldBe "rectangle"
+    // TODO reinstate the following check once rendering is working properly.
+    //    Renderer.render[Shapes.Shape](po.get, FormatXML(), StateR()) shouldBe "<shape>rectangle</shape>"
   }
 
   behavior of "HotSpot"
