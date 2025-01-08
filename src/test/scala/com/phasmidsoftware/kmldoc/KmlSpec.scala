@@ -5,9 +5,10 @@ import com.phasmidsoftware.core.{CDATA, Text, TryUsing, XmlException}
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
-import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
+import java.io.FileWriter
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
@@ -670,7 +671,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "Overlay"
 
-  it should "extract Overlay" in {
+  it should "extract GroundOverlay" in {
     val xml = <xml><GroundOverlay>
       <name>Large-scale overlay on terrain</name>
       <visibility>0</visibility>
@@ -716,6 +717,90 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         }
       case Failure(x) => fail(x)
     }
+  }
+
+  // TODO Issue #38
+  ignore should "extract PhotoOverlay" in {
+    val xml = <PhotoOverlay>
+      <!-- inherited from Feature element -->
+      <name>Test Photo Overlay</name> <!-- string -->
+      <visibility>1</visibility> <!-- boolean -->
+      <open>0</open> <!-- boolean -->
+      <!-- xmlns:atom -->
+      <!-- xmlns:atom -->
+      <address>110 Huntingdon Avenue</address> <!-- string -->
+      <!-- xmlns:xal -->
+      <phoneNumber>123456789</phoneNumber> <!-- string -->
+      <!-- <Snippet maxLines="2">...</Snippet> --> <!-- string -->
+      <description>Fiction</description> <!-- string -->
+      <LookAt>
+        <longitude>15.02468937557116</longitude>
+        <latitude>37.67395167941667</latitude>
+        <altitude>0</altitude>
+        <heading>-16.5581842842829</heading>
+        <tilt>58.31228652890705</tilt>
+        <range>30350.36838438907</range>
+      </LookAt> <!-- Camera or LookAt -->
+      <!-- <TimePrimitive>...</TimePrimitive> -->
+      <styleUrl>#icon-22-nodesc-normal</styleUrl> <!-- anyURI -->
+      <StyleMap id="icon-22-nodesc">
+        <Pair>
+          <key>normal</key>
+          <styleUrl>#icon-22-nodesc-normal</styleUrl>
+        </Pair>
+        <Pair>
+          <key>highlight</key>
+          <styleUrl>#icon-22-nodesc-highlight</styleUrl>
+        </Pair>
+      </StyleMap>
+      <!-- <Region>...</Region> -->
+      <!-- <Metadata>...</Metadata> --> <!-- deprecated in KML 2.2 -->
+      <!-- <ExtendedData>...</ExtendedData> --> <!-- new in KML 2.2 -->
+
+      <!-- inherited from Overlay element -->
+      <color>ffffffff</color> <!-- kml:color -->
+      <drawOrder>0</drawOrder> <!-- int -->
+      <Icon>
+        <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href> <!-- anyURI -->
+      </Icon>
+
+      <!-- specific to PhotoOverlay -->
+      <rotation>0</rotation> <!-- kml:angle180 -->
+      <ViewVolume>
+        <leftFov>0</leftFov> <!-- kml:angle180 -->
+        <rightFov>0</rightFov> <!-- kml:angle180 -->
+        <bottomFov>0</bottomFov> <!-- kml:angle90 -->
+        <topFov>0</topFov> <!-- kml:angle90 -->
+        <near>0</near> <!-- double -->
+      </ViewVolume>
+      <ImagePyramid>
+        <tileSize>256</tileSize> <!-- int -->
+        <maxWidth>10</maxWidth> <!-- int -->
+        <maxHeight>99</maxHeight> <!-- int -->
+        <gridOrigin>lowerLeft</gridOrigin> <!-- lowerLeft or upperLeft -->
+      </ImagePyramid>
+      <Point>
+        <coordinates>
+          -71.380341,42.571137,0
+        </coordinates>
+      </Point>
+      <shape>rectangle</shape> <!-- kml:shape -->
+    </PhotoOverlay>
+
+    val po = extract[PhotoOverlay](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    po.get should matchPattern { case PhotoOverlay(_, _, _, _, _) => }
+  }
+
+  behavior of "enumerated types"
+
+  it should "extract shape" in {
+    val xml = <shape>rectangle</shape>
+    val po = extract[Shapes.Shape](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    //    po.get should matchPattern {case Shapes.Shape(_,_,_,_,_) =>}
 
   }
 
@@ -844,6 +929,40 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "ViewVolume"
+
+  it should "extract ViewVolume" in {
+    val xml = <viewVolume>
+      <leftFov>0</leftFov> <!-- kml:angle180 -->
+      <rightFov>0</rightFov> <!-- kml:angle180 -->
+      <bottomFov>0</bottomFov> <!-- kml:angle90 -->
+      <topFov>0</topFov> <!-- kml:angle90 -->
+      <near>0</near> <!-- double -->
+    </viewVolume>
+
+    val po = extract[ViewVolume](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    po.get should matchPattern { case ViewVolume(_, _, _, _, _) => }
+  }
+
+  behavior of "ImagePyramid"
+  it should "extract ImagePyramid" in {
+
+    val xml =
+      <ImagePyramid>
+        <tileSize>256</tileSize> <!-- int -->
+        <maxWidth>10</maxWidth> <!-- int -->
+        <maxHeight>99</maxHeight> <!-- int -->
+        <gridOrigin>lowerLeft</gridOrigin> <!-- lowerLeft or upperLeft -->
+      </ImagePyramid>
+
+    val po = extract[ImagePyramid](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    po.get should matchPattern { case ImagePyramid(_, _, _, _) => }
+  }
+
   behavior of "Style"
 
   // TODO resolve spacing issues
@@ -861,7 +980,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
 
-  it should "extract IconStyle" in {
+  it should "extract IconStyle1" in {
     val xml = <xml>
       <IconStyle>
         <scale>1.1</scale>
@@ -875,6 +994,42 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     nodeSeq.size shouldBe 1
     val iconStyle = nodeSeq.head
     extract[IconStyle](iconStyle) match {
+      case Success(is) =>
+        is match {
+          case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
+            maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
+            icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
+            maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+            maybeHeading shouldBe None
+            x.colorStyleData match {
+              case c@ColorStyleData(_, _) =>
+                println(c)
+            }
+        }
+        val wy = TryUsing(StateR())(sr => Renderer.render[IconStyle](is, FormatXML(), sr))
+        wy.isSuccess shouldBe true
+        wy shouldBe Success(
+          s"""<IconStyle>
+             |  <scale>1.1</scale>
+             |  <Icon>
+             |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+             |  </Icon>
+             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+             |</IconStyle>""".stripMargin)
+      case Failure(x) => fail(x)
+    }
+  }
+  it should "extract IconStyle2" in {
+    val xml =
+      <IconStyle>
+        <scale>1.1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+        </Icon>
+        <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+      </IconStyle>
+
+    extract[IconStyle](xml) match {
       case Success(is) =>
         is match {
           case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>

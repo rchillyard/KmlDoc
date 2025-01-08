@@ -4,10 +4,12 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
+import com.phasmidsoftware.kmldoc.Shapes.Shape
 import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
+
 import scala.io.Source
 import scala.util._
 
@@ -1931,7 +1933,7 @@ object Pair extends Extractors with Renderers {
  *              sphere - for spherical panoramas
  * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
-case class PhotoOverlay(rotation: Rotation,viewVolume: ViewVolume, imagePyramid: ImagePyramid, point: Point, shape: CharSequence)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
+case class PhotoOverlay(rotation: Rotation, viewVolume: ViewVolume, imagePyramid: ImagePyramid, point: Point, shape: Shape)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Object `PhotoOverlay` provides extractors and renderers for the case class `PhotoOverlay`.
@@ -2257,8 +2259,8 @@ object Rotation extends Extractors with Renderers {
 /**
  * Represent Point relative to the screen about which the screen overlay is rotated.
  *
- * @param _x
- * @param _y
+ * @param _x the X value, according to the units specified in _xunits.
+ * @param _y the Y value, according to the units specified in _yunits.
  * @param _xunits Units in which the x value is specified.
  *                A value of "fraction" indicates the x value is a fraction of the image.
  *                A value of "pixels" indicates the x value in pixels.
@@ -2270,6 +2272,18 @@ object Rotation extends Extractors with Renderers {
  */
 case class RotationXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
 
+/**
+ * Object RotationXY provides implicit extractor and renderer instances for the RotationXY case class.
+ *
+ * RotationXY represents a point relative to the screen about which the screen overlay is rotated. The extractor
+ * and renderer facilitate the serialization and deserialization of the RotationXY data type.
+ *
+ * The extractor is implemented as an `Extractor[RotationXY]`, which handles the deserialization
+ * of the RotationXY case class from a structured source.
+ *
+ * The renderer is implemented as a `Renderer[RotationXY]`, which manages the serialization
+ * of the RotationXY case class for output.
+ */
 object RotationXY extends Extractors with Renderers {
   implicit val extractor: Extractor[RotationXY] = extractor40(apply)
   implicit val renderer: Renderer[RotationXY] = renderer4(apply)
@@ -2322,11 +2336,11 @@ object Scale extends Extractors with Renderers {
  *
  * @constructor
  * Constructs a `ScreenOverlay` instance.
- * @param overlayXY
- * @param screenXY
- * @param rotationXY
- * @param size
- * @param maybeRotation
+ * @param overlayXY an OverlayXY
+ * @param screenXY a ScreenXY
+ * @param rotationXY a RotationXY
+ * @param size a Size
+ * @param maybeRotation an optional Rotation
  * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
 case class ScreenOverlay(overlayXY: OverlayXY, screenXY: ScreenXY, rotationXY: RotationXY, size: Size, maybeRotation: Option[Rotation])(val overlayData: OverlayData) extends BaseOverlay(overlayData)
@@ -2377,15 +2391,37 @@ object ScreenXY extends Extractors with Renderers {
 }
 
 /**
- * Specifies the size of the image for the screen overlay, as follows:
+ * An enumeration that defines various types of shapes and provides utilities for extraction and rendering.
+ *
+ * The available shapes in this enumeration are:
+ * - Rectangle
+ * - Cylinder
+ * - Sphere
+ *
+ * This object integrates with the `Extractors` and `Renderers` frameworks to enable type-safe extraction
+ * and custom rendering of shapes.
+ *
+ * It provides implicit instances for:
+ * - `Extractor[Shape]`: Facilitates type extraction of `Shape` values.
+ * - `Renderer[Shape]`: Handles the rendering of `Shape` instances into a specific format.
+ */
+object Shapes extends Enumeration with Extractors with Renderers {
+  type Shape = Value
+  val Rectangle, Cylinder, Sphere = Value
+  implicit val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)
+  implicit val renderer: Renderer[Shape] = (t: Shape, format: Format, stateR: StateR) => Success(t.toString)
+}
+
+/**
+ * Represents the dimensions of a given entity with units for both x and y components.
  * A value of −1 indicates to use the native dimension
  * A value of 0 indicates to maintain the aspect ratio
  * A value of n sets the value of the dimension
  *
- * @param _x
- * @param _y
- * @param _xunits
- * @param _yunits
+ * @param _x      The measurement value along the x-axis.
+ * @param _y      The measurement value along the y-axis.
+ * @param _xunits The units in which the x-axis measurement is expressed.
+ * @param _yunits The units in which the y-axis measurement is expressed.
  */
 case class Size(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
 

@@ -5,6 +5,7 @@ import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, none}
 import com.phasmidsoftware.xml.Extractors.fieldNamesMaybeDropLast
+
 import scala.Function.uncurried
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -39,6 +40,43 @@ trait Extractors {
    * @return an Extractor of `Iterable[P]`.
    */
   def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => Extractor.extractSequence[P](node / label))
+
+  /**
+   * Extractor function to parse and transform a string extracted from an XML node into a specific type using a provided function.
+   * This method is designed for extracting enumerated values
+   *
+   * @param f A function that takes a string and tries to parse it into the desired type P, returning a Try instance.
+   * @return An Extractor function, which takes an XML node and transforms its text content into type P using the provided function f.
+   */
+  def extractorParse[P](f: String => Try[P])(g: String => String): Extractor[P] = (node: Node) => f(g(node.text))
+
+  /**
+   * Creates an extractor for enumerations by parsing a string to its corresponding Enumeration value.
+   * This method invokes extractorParse.
+   *
+   * An example of the use of this method is as follows:
+   * <pre>
+   * object Shapes extends Enumeration with Extractors {
+   * type Shape = Value
+   * val Rectangle, Cylinder, Sphere = Value
+   * implicit val extractor: Extractor[Shape] = extractorEnum[Shape,this.type](this)
+   * }
+   * </pre>
+   *
+   * @param e the enumeration to extract values from
+   * @return an Extractor instance capable of parsing strings and extracting the corresponding enumeration value
+   * @tparam P is the underlying type of the resulting Extractor.
+   * @tparam E is the Enumeration type.
+   */
+  def extractorEnum[P, E <: Enumeration](e: E): Extractor[P] = extractorParse(s => Try(e.withName(s).asInstanceOf[P]))(s => {
+    val w = s.toLowerCase
+    s"${w.head.toUpper}${w.tail}"
+  })
+
+  //    (node: Node) => {
+  //    val w = node.text.toLowerCase
+  //    f(w.head.toUpper + w.tail)
+  //  }
 
   /**
    * Creates a new instance of `MultiExtractorBase` for the specified range,
