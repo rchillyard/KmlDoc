@@ -8,7 +8,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
  * Trait which defines generic and standard renderers.
@@ -564,9 +564,36 @@ trait Renderers {
   }
 }
 
+/**
+ * Object containing various `Renderer` instances and utility methods for rendering objects
+ * into string representations with optional attributes and specific formatting rules.
+ */
 object Renderers {
 
   val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
+
+  /**
+   * Provides a `Renderer` instance for rendering objects of type `T` with an optional name.
+   * This renderer delegates to the `renderAny` method to generate the string representation,
+   * incorporating the provided name if available.
+   *
+   * @tparam T the type of the object to be rendered.
+   * @return a `Renderer[T]` that renders objects of type `T` with an optional name.
+   */
+  def rendererAnyWithName[T]: Renderer[T] = {
+    (t, _, stateR) => renderAny(t, stateR.maybeName)
+  }
+
+  /**
+   * Renders any given object into a string representation, optionally incorporating a name as part of the rendering.
+   * The rendering is performed using the `renderAttribute` method, which formats the output as either `name="value"`
+   * or simply `value` if no name is provided.
+   *
+   * @param t         the object to be rendered, converted to its string representation using `toString`
+   * @param maybeName an optional string representing the name to be prefixed in the rendered output
+   * @return a `Try[String]` containing the rendered representation or an exception if rendering fails
+   */
+  def renderAny(t: Any, maybeName: Option[String]): Try[String] = renderAttribute(t.toString, maybeName)
 
   /**
    * Provides a `Renderer` instance for rendering objects of type `T`.
@@ -576,7 +603,7 @@ object Renderers {
    * @return a `Renderer[T]` that processes the object and renders its string representation.
    */
   def enumObjectRenderer[T]: Renderer[T] = {
-    (t: T, _: Format, _: StateR) => Success(t.toString)
+    (t: T, _: Format, _: StateR) => renderAny(t, None)
   }
 
   /**
@@ -587,8 +614,8 @@ object Renderers {
    * @tparam T the type parameter for the object being rendered, representing an enum-like type.
    * @return a `Renderer[T]` instance for rendering enum attributes.
    */
-  def enumAttributeRenderer[T]: Renderer[T] = Renderer[T] {
-    (t: T, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
+  def enumAttributeRenderer[T]: Renderer[T] = {
+    (t: T, _: Format, stateR: StateR) => renderAny(t, stateR.maybeName)
   }
 
   /**
@@ -613,24 +640,19 @@ object Renderers {
       }
   } ^^ "charSequenceRenderer"
 
-  implicit val stringRenderer: Renderer[String] = Renderer[String] {
-    (x, _, stateR) =>
-      renderAttribute(x, stateR.maybeName)
-  } ^^ "stringRenderer"
+  implicit val stringRenderer: Renderer[String] = rendererAnyWithName ^^ "stringRenderer"
 
   // CONSIDER why do we not get this from Renderers
   implicit val rendererOptionString: Renderer[Option[String]] = optionRenderer[String] ^^ "rendererOptionString"
 
   implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
 
-  implicit val intRenderer: Renderer[Int] = Renderer[Int] {
-    (t, _, stateR) => renderAttribute(t.toString, stateR.maybeName)
-  } ^^ "intRenderer"
+  implicit val intRenderer: Renderer[Int] = rendererAnyWithName ^^ "intRenderer"
+
   implicit val rendererOptionInt: Renderer[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 
-  implicit val booleanRenderer: Renderer[Boolean] = Renderer[Boolean] {
-    (t, _, stateR) => renderAttribute(t.toString, stateR.maybeName)
-  } ^^ "booleanRenderer"
+  implicit val booleanRenderer: Renderer[Boolean] = rendererAnyWithName ^^ "booleanRenderer"
+
   implicit val rendererOptionBoolean: Renderer[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
 
   implicit val doubleRenderer: Renderer[Double] = Renderer[Double] {
@@ -642,9 +664,7 @@ object Renderers {
   } ^^ "doubleRenderer"
   implicit val rendererOptionDouble: Renderer[Option[Double]] = optionRenderer[Double]
 
-  implicit val longRenderer: Renderer[Long] = Renderer[Long] {
-    (t, _, stateR) => renderAttribute(t.toString, stateR.maybeName)
-  } ^^ "longRenderer"
+  implicit val longRenderer: Renderer[Long] = rendererAnyWithName ^^ "longRenderer"
 
   /**
    * Sanitizes the input character sequence by replacing certain characters with their HTML-safe representations.
