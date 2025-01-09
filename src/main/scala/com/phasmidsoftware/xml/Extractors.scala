@@ -22,7 +22,7 @@ trait Extractors {
    * @return An `Extractor` that can extract an `Option[P]`, which will contain
    *         a value if extraction for type `P` succeeds or be None if it fails.
    */
-  def extractorOption[P: Extractor]: Extractor[Option[P]] = implicitly[Extractor[P]] map (p => Option(p))
+  def extractorOption[P: Extractor]: Extractor[Option[P]] = implicitly[Extractor[P]].lift
 
   /**
    * Method to yield an `Extractor` which will convert an Xml `Node` into a sequence of `P` objects
@@ -1564,12 +1564,12 @@ object Extractors extends Extractors {
   /**
    * Optional Int extractor.
    */
-  implicit val extractOptionalInt: Extractor[Option[Int]] = extractorOption[Int]
+  implicit val extractOptionalInt: Extractor[Option[Int]] = extractorOption
 
   /**
    * Optional Double extractor.
    */
-  implicit val extractOptionalDouble: Extractor[Option[Double]] = extractorOption[Double]
+  implicit val extractOptionalDouble: Extractor[Option[Double]] = extractorOption
 
   /**
    * Optional String extractor.
