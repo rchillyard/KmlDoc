@@ -569,17 +569,26 @@ object Renderers {
   val logger: Logger = LoggerFactory.getLogger(Renderers.getClass)
 
   /**
-   * Creates a renderer for a specified type `P` that renders the type as a string using the provided tag.
-   * The rendered output includes nested rendering behavior and associates the provided tag with the renderer state.
-   * The reason that we have to pass in `tag` is that the ClassTag of P has the classname of "Value"
-   * instead of the alias defined in the Enumeration (which is what we want)
+   * Provides a `Renderer` instance for rendering objects of type `T`.
+   * This method converts the input object into a string representation using its `toString` method.
    *
-   * @param tag a string used to set the name of the renderer state for the provided type `P`
-   * @tparam P the type of the object to be rendered
-   * @return a `Renderer[P]` instance that renders objects of type `P` as strings with nested rendering.
+   * @tparam T the type of the object to render.
+   * @return a `Renderer[T]` that processes the object and renders its string representation.
    */
-  def rendererEnum[P: ClassTag](tag: String): Renderer[P] = Renderer[P] {
-    (p, format, stateR) => doNestedRender[P](format, stateR.setName(tag), p.toString, "", "")
+  def enumObjectRenderer[T]: Renderer[T] = {
+    (t: T, _: Format, _: StateR) => Success(t.toString)
+  }
+
+  /**
+   * Provides a `Renderer` instance for rendering enum-like attributes.
+   * This renderer converts the input type `T` into
+   * a string representation and processes it as an attribute using the rendering state information.
+   *
+   * @tparam T the type parameter for the object being rendered, representing an enum-like type.
+   * @return a `Renderer[T]` instance for rendering enum attributes.
+   */
+  def enumAttributeRenderer[T]: Renderer[T] = Renderer[T] {
+    (t: T, _: Format, stateR: StateR) => renderAttribute(t.toString, stateR.maybeName)
   }
 
   /**

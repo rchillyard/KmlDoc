@@ -826,7 +826,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     Extractor.extract[HotSpot](nodeSeq.head) match {
       case Success(hotSpot) =>
-        hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
+        hotSpot shouldBe HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels)
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a HotSpot object as is.
         val wy1 = TryUsing(StateR())(sr => Renderer.render[HotSpot](hotSpot, FormatXML(), sr))
@@ -1010,7 +1010,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
             maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
             icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
-            maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+            maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
             maybeHeading shouldBe None
             x.colorStyleData match {
               case c@ColorStyleData(_, _) =>
@@ -1046,7 +1046,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
             maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
             icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
-            maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+            maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
             maybeHeading shouldBe None
             x.colorStyleData match {
               case c@ColorStyleData(_, _) =>
@@ -1134,7 +1134,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
               case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
                 maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
                 icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
-                maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+                maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
                 maybeHeading shouldBe None
                 x.colorStyleData match {
                   case c@ColorStyleData(_, _) =>
@@ -1246,7 +1246,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
               case IconStyle(scale, Icon(Text(w)), hotSpot, maybeHeading) =>
                 scale shouldBe Some(Scale(1.1)(KmlData(None)))
                 w shouldBe "https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"
-                hotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+                hotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
                 maybeHeading shouldBe None
                 val wy = TryUsing(StateR())(sr => Renderer.render[SubStyle](style, FormatXML(), sr))
                 wy.isSuccess shouldBe true

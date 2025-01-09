@@ -62,8 +62,8 @@ trait Extractors {
    * @tparam P is the underlying type of the resulting Extractor.
    * @tparam E is the Enumeration type.
    */
-  def extractorEnum[P, E <: Enumeration](e: E): Extractor[P] = Extractor.parse {
-    s => Try(e.withName(s.toLowerCase).asInstanceOf[P])
+  def extractorEnum[P, E <: Enumeration](e: E)(f: String => String): Extractor[P] = Extractor.parse {
+    s => Try(e.withName(f(s)).asInstanceOf[P])
   }
 
   /**

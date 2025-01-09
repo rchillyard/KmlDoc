@@ -4,7 +4,7 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
@@ -65,7 +65,51 @@ object KmlData extends Extractors with Renderers {
   implicit val renderer: Renderer[KmlData] = renderer1(apply) ^^ "rendererKmlData"
 }
 
-// ============================== From here on, classes are grouped alphabetically
+// ================ The following are enumerated types
+// ================ See https://developers.google.com/kml/documentation/kmlreference#kml-fields
+
+/**
+ * An enumeration object representing a collection of shapes.
+ * `Shapes` supports extraction and rendering functionalities.
+ *
+ * Shapes include:
+ * - rectangle
+ * - cylinder
+ * - sphere
+ *
+ * This object provides implicit values for extraction and rendering:
+ * - `extractor`: Extracts instances of `Shapes.ShapeValue` from a defined context.
+ * - `renderer`: Renders `Shapes.ShapeValue` instances as their string representations.
+ *
+ * The `ShapeValue` type is an alias for the `Value` type in this enumeration.
+ */
+object Shapes extends Enumeration with Extractors with Renderers {
+  val rectangle, cylinder, sphere = Value
+  implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
+  implicit val renderer: Renderer[Shapes.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing various units that can be used.
+ *
+ * The available units in this enumeration are:
+ * - fraction: Represents fractional units
+ * - pixels: Represents pixel-based units
+ * - insetPixels: Represents pixel units used for insets
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of UnitsEnum.
+ * - renderer: Provides a Renderer instance for rendering values of UnitsEnum.
+ */
+object UnitsEnum extends Enumeration with Extractors with Renderers {
+  val fraction, pixels, insetPixels = Value
+  implicit val extractor: Extractor[UnitsEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[UnitsEnum.Value] = enumAttributeRenderer
+}
+
+// ================ From here on, classes (objects) are grouped alphabetically
 
 /**
  * Trait AbstractView: abstract subelement of KmlObject.
@@ -1065,7 +1109,7 @@ object Heading extends Extractors with Renderers {
  * @param _y      optional y field.
  * @param _yunits optional yunits field.
  */
-case class HotSpot(_x: Int, _xunits: CharSequence, _y: Int, _yunits: CharSequence)
+case class HotSpot(_x: Int, _xunits: UnitsEnum.Value, _y: Int, _yunits: UnitsEnum.Value)
 
 /**
  * The `HotSpot` object serves as a companion to the `HotSpot` case class.
@@ -2431,27 +2475,6 @@ case class Shape(shape: Shapes.Value)
 object Shape extends Extractors with Renderers {
   implicit val extractor: Extractor[Shape] = extractor10(Shape.apply)
   implicit val renderer: Renderer[Shape] = renderer1(Shape.apply)
-}
-
-/**
- * An enumeration object representing a collection of shapes.
- * `Shapes` supports extraction and rendering functionalities.
- *
- * Shapes include:
- * - rectangle
- * - cylinder
- * - sphere
- *
- * This object provides implicit values for extraction and rendering:
- * - `extractor`: Extracts instances of `Shapes.ShapeValue` from a defined context.
- * - `renderer`: Renders `Shapes.ShapeValue` instances as their string representations.
- *
- * The `ShapeValue` type is an alias for the `Value` type in this enumeration.
- */
-object Shapes extends Enumeration with Extractors with Renderers {
-  val rectangle, cylinder, sphere = Value
-  implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)
-  implicit val renderer: Renderer[Shapes.Value] = (t: Value, _: Format, _: StateR) => Success(t.toString)
 }
 
 /**

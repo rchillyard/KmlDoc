@@ -387,7 +387,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     object Shapes extends Enumeration with Extractors {
       type Shape = Value
       val Rectangle, Cylinder, Sphere = Value
-      val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)
+      val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)(s => s.toLowerCase)
       private val xml = <shape>rectangle</shape>
       extractor.extract(xml) shouldBe Success(Rectangle)
     }
