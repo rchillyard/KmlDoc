@@ -1,6 +1,6 @@
 package com.phasmidsoftware.xml
 
-import com.phasmidsoftware.core.FP.{sequence, tryNotNull}
+import com.phasmidsoftware.core.FP.{optionToTry, sequence, tryNotNull}
 import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, none}
@@ -50,20 +50,21 @@ trait Extractors {
    *
    * An example of the use of this method is as follows:
    * <pre>
-   object Shapes extends Enumeration with Extractors with Renderers {
-     val rectangle, cylinder, sphere = Value
-     implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)
-     implicit val renderer: Renderer[Shapes.Value] = (t: Value, _: Format, _: StateR) => Success(t.toString)
-     }
+   * object Shapes extends Enumeration with Extractors with Renderers {
+   * val rectangle, cylinder, sphere = Value
+   * implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
+   * implicit val renderer: Renderer[Shapes.Value] = enumObjectRenderer
+   * }
    * </pre>
    *
-   * @param e the enumeration to extract values from
-   * @return an Extractor instance capable of parsing strings and extracting the corresponding enumeration value
+   * @param e the enumeration type from which the value is extracted
+   * @param f a function that transforms the input string before attempting the extraction
+   * @return an `Extractor` that performs the extraction of type `P` from the given string
    * @tparam P is the underlying type of the resulting Extractor.
    * @tparam E is the Enumeration type.
    */
   def extractorEnum[P, E <: Enumeration](e: E)(f: String => String): Extractor[P] = Extractor.parse {
-    s => Try(e.withName(f(s)).asInstanceOf[P])
+    s => optionToTry(e.values.find(_.toString == f(s)) map (_.asInstanceOf[P]))
   }
 
   /**
