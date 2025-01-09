@@ -3,7 +3,7 @@ package com.phasmidsoftware.xml
 import com.phasmidsoftware.core.FP.{optionToTry, sequence, tryNotNull}
 import com.phasmidsoftware.core.{FP, Reflection, XmlException}
 import com.phasmidsoftware.flog.Flog
-import com.phasmidsoftware.xml.Extractor.{extractChildren, extractElementsByLabel, fieldExtractor, none}
+import com.phasmidsoftware.xml.Extractor.{extract, extractChildren, extractElementsByLabel, extractSequence, fieldExtractor, none, parse}
 import com.phasmidsoftware.xml.Extractors.fieldNamesMaybeDropLast
 
 import scala.Function.uncurried
@@ -39,14 +39,12 @@ trait Extractors {
    *           Required: implicit evidence of type `Extractor[P]`.
    * @return an Extractor of `Iterable[P]`.
    */
-  def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => Extractor.extractSequence[P](node / label))
+  def extractorIterable[P: Extractor](label: String): Extractor[Iterable[P]] = Extractor((node: Node) => extractSequence[P](node / label))
 
   /**
    * Creates an extractor for enumerations by parsing a string into its corresponding `Enumeration` value.
    * This method invokes `parse` after reformatting the String
-   * to match the enumerated type using the `fromView` method.
-   * Enumerated values are assumed to be all lower-case.
-   * CONSIDER is this appropriate?
+   * to match the enumerated type using the (safe) equivalent of the `fromView` method.
    *
    * An example of the use of this method is as follows:
    * <pre>
@@ -63,7 +61,7 @@ trait Extractors {
    * @tparam P is the underlying type of the resulting Extractor.
    * @tparam E is the Enumeration type.
    */
-  def extractorEnum[P, E <: Enumeration](e: E)(f: String => String): Extractor[P] = Extractor.parse {
+  def extractorEnum[P, E <: Enumeration](e: E)(f: String => String): Extractor[P] = parse {
     s => optionToTry(e.values.find(_.toString == f(s)) map (_.asInstanceOf[P]))
   }
 
@@ -1585,7 +1583,7 @@ object Extractors extends Extractors {
    * CONSIDER re-writing by using the `lift` method.
    */
   def extractOptional[P: Extractor](nodeSeq: NodeSeq): Try[P] =
-    nodeSeq.headOption map Extractor.extract[P] match {
+    nodeSeq.headOption map extract[P] match {
       case Some(value) => value
       case None => Success(None.asInstanceOf[P])
     }
@@ -1600,7 +1598,7 @@ object Extractors extends Extractors {
    * @return a TagToExtractorFunc of `Seq[T]`
    */
   def tagToSequenceExtractorFunc[T <: Iterable[_]](fExtractor: TagToSequenceExtractorFunc[T]): TagToExtractorFunc[Seq[T]] =
-    (label: String) => if (fExtractor.valid(label)) fExtractor(label) else Extractor.none
+    (label: String) => if (fExtractor.valid(label)) fExtractor(label) else none
 
   /**
    * Return the field names as Seq[String], from either the fields parameter or by reflection into T.
