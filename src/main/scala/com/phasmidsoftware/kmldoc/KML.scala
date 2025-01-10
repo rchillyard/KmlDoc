@@ -109,6 +109,127 @@ object UnitsEnum extends Enumeration with Extractors with Renderers {
   implicit val renderer: Renderer[UnitsEnum.Value] = enumAttributeRenderer
 }
 
+/**
+ * Enumeration representing various methods how the `altitude` is interpreted
+ *
+ * The available altitudeMode in this enumeration are:
+ * - clampToGround: (default) Represents to ignore the altitude specification
+ *                  and drape the overlay over the terrain.
+ * - relativeToGround: Represents the altitude of the element relative to the actual ground elevation of a particular location.
+ * - absolute: Represents the altitude of the coordinate relative to sea level
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of AltitudeModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of AltitudeModeEnum.
+ *
+ */
+object AltitudeModeEnum extends Enumeration with Extractors with Renderers {
+  val clampToGround, relativeToGround, absolute = Value
+  implicit val extractor: Extractor[AltitudeModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[AltitudeModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing Values for ColorMode are normal (no effect) and random
+ *
+ * The available ColorMode in this enumeration are:
+ * - normal: no effect, base condition
+ * - random: applies a random linear scale to the base `color` as follows.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of ColorModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of ColorModeEnum.
+ */
+object ColorModeEnum extends Enumeration with Extractors with Renderers {
+  val normal, random = Value
+  implicit val extractor: Extractor[ColorModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[ColorModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing Values for DisplayMode are default and hide.
+ *
+ * The available DisplayMode in this enumeration are:
+ * - default: Google Earth uses the information supplied in `text` to create a balloon
+ * - hide: Google Earth does not display the balloon.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of DisplayModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of DisplayModeEnum.
+ */
+object DisplayModeEnum extends Enumeration with Extractors with Renderers {
+  val default, hide = Value
+  implicit val extractor: Extractor[DisplayModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[DisplayModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing a time-based refresh mode.
+ *
+ * The available refreshMode in this enumeration are:
+ * - onChange: refresh when the file is loaded
+ *             and whenever the Link parameters change (the default).
+ * - onInterval: refresh every n seconds (specified in `refreshInterval`)
+ * - onExpire:  refresh the file when the expiration time is reached.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of RefreshModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of RefreshModeEnum.
+ */
+object RefreshModeEnum extends Enumeration with Extractors with Renderers {
+  val onChange, onInterval,onExpire = Value
+  implicit val extractor: Extractor[RefreshModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[RefreshModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing two different Styles of `StyleMap`.
+ *
+ * The available StyleState in this enumeration are:
+ * - normal: a normal styles version for a placemark
+ * - highlight: the highlighted version appears when the user mouses over the icon in Google Earth.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of StyleStateEnum.
+ * - renderer: Provides a Renderer instance for rendering values of StyleStateEnum.
+ */
+object StyleStateEnum extends Enumeration with Extractors with Renderers {
+  val normal, highlight = Value
+  implicit val extractor: Extractor[StyleStateEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[StyleStateEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing Specifies how the link is refreshed when the "camera" changes.
+ *
+ * The available ViewRefreshEnum in this enumeration are:
+ * - never: (default) Ignore changes in the view.
+ * - onRequest: Refresh the file only when the user explicitly requests it.
+ * - onStop: Refresh the file n seconds after movement stops.
+ * - onRegion: Refresh the file when the Region becomes active.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of ViewRefreshEnum.
+ * - renderer: Provides a Renderer instance for rendering values of ViewRefreshEnum.
+ */
+object ViewRefreshEnum extends Enumeration with Extractors with Renderers {
+  val never, onRequest, onStop, onRegion = Value
+  implicit val extractor: Extractor[ViewRefreshEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[ViewRefreshEnum.Value] = enumObjectRenderer
+}
+
 // ================ From here on, classes (objects) are grouped alphabetically
 
 /**
