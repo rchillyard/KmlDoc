@@ -490,9 +490,12 @@ object Color extends Extractors with Renderers {
  * Case class to model ColorMode.
  * See [[https://developers.google.com/kml/documentation/kmlreference#colormode ColorMode]]
  *
- * @param $ the color mode as string: "normal" or "random."
+ * `ColorMode` is defined using the `ColorModeEnum` enumeration, which specifies the
+ * possible modes for handling colors. The two primary modes are:
+ * - `normal`: Represents no effect or a base condition.
+ * - `random`: Applies a random linear scale to the base color.
  */
-case class ColorMode($: CharSequence)
+case class ColorMode($: ColorModeEnum.Value)
 
 /**
  * Object companion for the `ColorMode` case class that provides auxiliary utilities.
@@ -508,8 +511,6 @@ case class ColorMode($: CharSequence)
  * - Implicit `Renderer[Option[ColorMode]]`: Renders optional `ColorMode` values.
  */
 object ColorMode extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractorOpt: Extractor[Option[ColorMode]] = extractor10(apply).lift ^^ "extractMaybeColorMode"
   implicit val rendererOpt: Renderer[Option[ColorMode]] = renderer1(apply).lift ^^ "rendererOptionColorMode"
@@ -2571,6 +2572,8 @@ object ScreenXY extends Extractors with Renderers {
  * shapes such as `rectangle`, `cylinder`, or `sphere`.
  * The `shape` parameter is of type `Shapes.Value`,
  * which is a value from the `Shapes` enumeration.
+ *
+ * CONSIDER renaming shape as $ (for consistency with other similar Kml objects).
  *
  * This class integrates with the `Extractors` and `Renderers` frameworks to support:
  * - Automatic extraction using an implicit `Extractor[Shape]`.

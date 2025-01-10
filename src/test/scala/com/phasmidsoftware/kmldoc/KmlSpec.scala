@@ -805,7 +805,6 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       <shape>rectangle</shape>
     </xml>
     val po = extract[Shape](xml)
-    println(po)
     po.isSuccess shouldBe true
     val p = po.get
     p.shape shouldBe Shapes.rectangle
@@ -813,6 +812,19 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val triedString = Renderer.render[Shape](p, FormatXML(), StateR())
     triedString.isSuccess shouldBe true
     triedString.get shouldBe "<Shape>rectangle\n</Shape>"
+  }
+
+  it should "extract (optional) color mode" in {
+    val xml = <colorMode>random</colorMode>
+    val po = extract[Option[ColorMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe ColorModeEnum.random
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[ColorMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<ColorMode>random</ColorMode>"
   }
 
   behavior of "HotSpot"
