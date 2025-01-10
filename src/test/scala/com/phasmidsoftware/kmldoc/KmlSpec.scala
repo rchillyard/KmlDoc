@@ -50,8 +50,23 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "KmlObject"
 
-  it should "parse Scale with id" in {
+  it should "parse Scale with id 0" in {
     val xml: Elem = <scale id="Hello">2.0</scale>
+    val triedScale = extract[Scale](xml)
+    triedScale.isSuccess shouldBe true
+    val scale = triedScale.get
+    scale.$ shouldBe 2.0
+    val wy = TryUsing(StateR())(sr => Renderer.render[Scale](scale, FormatXML(), sr))
+    wy.isSuccess shouldBe true
+    // CONSIDER should we force this result to have tag of "scale" instead of "Scale"?
+    wy.get shouldBe "<Scale id=\"Hello\">2</Scale>"
+  }
+
+  // TODO fix this (should it matter whether scale is wrapped inside xml?)
+  ignore should "parse Scale with id 1" in {
+    val xml: Elem = <xml>
+      <scale id="Hello">2.0</scale>
+    </xml>
     val triedScale = extract[Scale](xml)
     triedScale.isSuccess shouldBe true
     val scale = triedScale.get

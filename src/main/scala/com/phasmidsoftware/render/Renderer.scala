@@ -312,6 +312,33 @@ case class StateR(maybeName: Option[String], private val attributes: SmartBuffer
       logger.warn(s"StateR.close: attributes not empty: '$attributes'")
     }
   }
+
+  /**
+   * Retrieves the name of the class for the specified type `T` as a string.
+   * If the class name exists, it uses the name directly. Otherwise, it generates
+   * the class name by converting the first character of the runtime class name
+   * to lowercase and appending the rest.
+   * The reason for needing this mechanism is that:
+   * (1) Scala classes begin with an upper-case letter;
+   * (2) On rendering, the tag is taken from the attribute name (no adjustment required)
+   * but when rendering an object at the top level,
+   * we need to force the first character to be lower-case.
+   *
+   * Normally, if `interior` is true, then `maybeName` is also defined.
+   * When `interior` is false, we tend to generate upper-case tags,
+   * which isn't always appropriate.
+   * But that situation mostly occurs during testing so it's not so important'
+   *
+   * @tparam T the type for which the class name is to be retrieved.
+   * @return the class name of the specified type `T` in a string format.
+   */
+  def getClassName[T: ClassTag]: String = maybeName.getOrElse {
+    val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    if (interior)
+      className.substring(0, 1).toLowerCase + className.substring(1)
+    else
+      className
+  }
 }
 
 /**
@@ -442,17 +469,6 @@ abstract class BaseFormat(indents: Int) extends Format {
    */
   def newline: String = "\n" + (tab * indents)
 
-  /**
-   * Returns an optional name provided in the given `StateR` instance.
-   * Otherwise, retrieves the class name for the given type `T`.
-   *
-   * @param stateR The current rendering state, which may include an optional name to use instead of the class name.
-   * @tparam T The type whose class name is being retrieved, if no name is provided within the `StateR` instance.
-   * @return A string representing the class name of type `T` or the optional name from the `StateR` instance.
-   */
-  // CONSIDER making this an instance method of StateR.
-  protected def getClassName[T: ClassTag](stateR: StateR): String = stateR.maybeName.getOrElse(implicitly[ClassTag[T]].runtimeClass.getSimpleName)
-
   private lazy val tab = "  "
 }
 
@@ -510,7 +526,7 @@ case class FormatXML(indents: Int, flat: Boolean = false) extends BaseFormat(ind
    * @return A formatted string representing the name or tag, appropriately formatted based on the given state and context.
    */
   def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = {
-    val name = getClassName(stateR)
+    val name = stateR.getClassName // getClassName(stateR)
     open match {
       case Some(true) => (if (indents > 0) newline else "") + s"<$name"
       case Some(false) => (if (flat) "" else newline) + s"</$name>"
@@ -585,13 +601,11 @@ case class FormatText(indents: Int) extends BaseFormat(indents) {
    * @tparam T The type whose class name is being formatted, used in conjunction with `StateR`.
    * @return A formatted string representing the class name, including any open or close indicators based on the `open` parameter.
    */
-  def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = {
-    val name = getClassName(stateR)
+  def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String =
     open match {
-      case Some(true) => s"$name{"
+      case Some(true) => s"${stateR.getClassName}{"
       case Some(false) => "}"
       case None => ""
-    }
   }
 
   /**
