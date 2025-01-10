@@ -999,10 +999,11 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       |</IconStyle>""".stripMargin
   private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"/>\n  </IconStyle>"
   private val balloonStyleText = "<BalloonStyle>\n    <text>\n<![CDATA[<h3>$[name]</h3>]]>\n</text>\n  </BalloonStyle>"
-  private val labelStyleText = "<LabelStyle>\n    <scale>0</scale>\n  </LabelStyle>"
+  private val labelStyleText = "<LabelStyle>\n    <color>ff0000cc</color>\n    <colorMode>random</colorMode>\n    <scale>1.5</scale>\n  </LabelStyle>"
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
 
+  // TESTME Issue #42
   it should "extract IconStyle1" in {
     val xml = <xml>
       <IconStyle>
@@ -1209,7 +1210,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
         </IconStyle>
         <LabelStyle>
-          <scale>0</scale>
+          <color>ff0000cc</color>
+          <colorMode>random</colorMode>
+          <scale>1.5</scale>
         </LabelStyle>
         <BalloonStyle>
           <text>
@@ -1253,14 +1256,17 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         styleSelector match {
           case Style(styles) =>
             styles.size shouldBe 3
-            val style: SubStyle = styles(1)
-            style match {
+            styles(0) match {
+              case LabelStyle(ls) =>
+                ls.$ shouldBe 1.5
+            }
+            styles(1) match {
               case IconStyle(scale, Icon(Text(w)), hotSpot, maybeHeading) =>
                 scale shouldBe Some(Scale(1.1)(KmlData(None)))
                 w shouldBe "https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"
                 hotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
                 maybeHeading shouldBe None
-                val wy = TryUsing(StateR())(sr => Renderer.render[SubStyle](style, FormatXML(), sr))
+                val wy = TryUsing(StateR())(sr => Renderer.render[SubStyle](styles(1), FormatXML(), sr))
                 wy.isSuccess shouldBe true
                 wy.get shouldBe iconStyleText1
             }
