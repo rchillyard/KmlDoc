@@ -766,7 +766,7 @@ object Coordinates extends Extractors with Renderers {
  *
  * @param $ the mode.
  */
-case class DisplayMode($: CharSequence)
+case class DisplayMode($: DisplayModeEnum.Value)
 
 /**
  * Companion object for the DisplayMode case class.
@@ -779,8 +779,6 @@ case class DisplayMode($: CharSequence)
  * - Rendering an optional DisplayMode instance.
  */
 object DisplayMode extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractor10(apply).lift ^^ "extractMaybeDisplayMode"
   implicit val rendererOpt: Renderer[Option[DisplayMode]] = renderer1(apply).lift ^^ "rendererOptionDisplayMode"

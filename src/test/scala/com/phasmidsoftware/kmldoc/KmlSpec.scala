@@ -1097,6 +1097,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           <text>
             <![CDATA[<h3>$[name]</h3>]]>
           </text>
+          <displayMode>default</displayMode>
         </BalloonStyle>
       </Style>
       <Style id="icon-22-nodesc-highlight">
@@ -1161,7 +1162,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 text.$ shouldBe cdata
                 maybeBgColor shouldBe None
                 maybeTextColor shouldBe None
-                maybeDisplayMode shouldBe None
+                maybeDisplayMode shouldBe Some(DisplayMode(DisplayModeEnum.default))
                 x.colorStyleData match {
                   case c@ColorStyleData(_, _) =>
                     println(c)
@@ -1184,6 +1185,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                  |  </IconStyle>
                  |  <BalloonStyle>
                  |    <text>$cdata</text>
+                 |    <displayMode>default</displayMode>
                  |  </BalloonStyle>
                  |</Style>""".stripMargin
             wy.get shouldBe expected
