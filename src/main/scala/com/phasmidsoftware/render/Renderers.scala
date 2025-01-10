@@ -3,12 +3,11 @@ package com.phasmidsoftware.render
 import com.phasmidsoftware.core.{CDATA, Text, XmlException}
 import com.phasmidsoftware.kmldoc.KmlRenderers.optionRenderer
 import com.phasmidsoftware.render.Renderer.{doNestedRender, doRenderSequence, renderAttribute, renderOuter}
-import com.phasmidsoftware.xml.Extractor
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 /**
  * Trait which defines generic and standard renderers.
@@ -397,31 +396,23 @@ trait Renderers {
   }
 
   /**
-   * Method to yield a renderer of Option[R].
-   * NOTE there is also a `lift` method which can be used to lift a `Renderer[R]` into a `Renderer of Option[R]`.
+   * Creates a Renderer instance for an Option container type.
    *
-   * @tparam R the (Renderer) underlying type to be rendered.
-   * @return a Renderer of Option[R].
+   * This method lifts the functionality of an existing (implicit) Renderer for a type `R`
+   * to handle `Option[R]`, allowing rendering of optional values by delegating
+   * to the Renderer of the underlying type `R`.
+   *
+   * @return A Renderer for the Option wrapper of type R
+   * @tparam R the underlying type, which must provide evidence of Renderer[R].
    */
-  def optionRenderer[R: Renderer : ClassTag]: Renderer[Option[R]] = Renderer {
-    (ro: Option[R], format, stateR) =>
-      ro match {
-        case Some(r) =>
-          val wo = stateR.maybeName match {
-            case Some(Extractor.optional(x)) => Some(x)
-            case Some(x) => Some(x)
-            case None => None
-          }
-          implicitly[Renderer[R]].render(r, format, StateR(wo))
-        case None => Success("")
-      }
-  }
+  def optionRenderer[R: Renderer]: Renderer[Option[R]] = implicitly[Renderer[R]].lift
 
   /**
-   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for one sub-type of T (R0).
+   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for one subtype of T
+   * (R0).
    *
    * @tparam T  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of T.
+   * @tparam R0 one subtype of T.
    * @return a Renderer[T].
    */
   def rendererSuper1[T: ClassTag, R0 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
@@ -432,18 +423,19 @@ trait Renderers {
             result <- Renderer.render(r, format, stateR)
           } yield result
         case _ =>
-          Failure(XmlException(s"rendererSuper1: object of type ${t.getClass} is not a sub-type for ${implicitly[ClassTag[T]]}\n" +
-                  s"Are you sure that, in the appropriate rendererSuperN definition, you've included all possible sub-types?" +
+          Failure(XmlException(s"rendererSuper1: object of type ${t.getClass} is not a subtype for ${implicitly[ClassTag[T]]}\n" +
+                  s"Are you sure that, in the appropriate rendererSuperN definition, you've included all possible subtypes?" +
                   s" (compare with the corresponding extractor definition"))
       }
   }
 
   /**
-   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for two sub-types of T (R0 or R1).
+   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for two subtypes of T
+   * (R0 or R1).
    *
    * @tparam T  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of T.
-   * @tparam R1 another sub-type of T.
+   * @tparam R0 one subtype of T.
+   * @tparam R1 another subtype of T.
    * @return a Renderer[T].
    */
   def rendererSuper2[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
@@ -458,12 +450,13 @@ trait Renderers {
   }
 
   /**
-   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for three sub-types of T (R0, R1, or R2).
+   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for three subtypes of T
+   * (R0, R1, or R2).
    *
    * @tparam T  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of T.
-   * @tparam R1 another sub-type of T.
-   * @tparam R2 another sub-type of T.
+   * @tparam R0 one subtype of T.
+   * @tparam R1 another subtype of T.
+   * @tparam R2 another subtype of T.
    * @return a Renderer[T].
    */
   def rendererSuper3[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag, R2 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
@@ -475,13 +468,14 @@ trait Renderers {
   }
 
   /**
-   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for four sub-types of T (R0, R1, R2, or R3).
+   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for four subtypes of T
+   * (R0, R1, R2, or R3).
    *
    * @tparam T  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of T.
-   * @tparam R1 another sub-type of T.
-   * @tparam R2 another sub-type of T.
-   * @tparam R3 another sub-type of T.
+   * @tparam R0 one subtype of T.
+   * @tparam R1 another subtype of T.
+   * @tparam R2 another subtype of T.
+   * @tparam R3 another subtype of T.
    * @return a Renderer[T].
    */
   def rendererSuper4[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag, R2 <: T : Renderer : ClassTag, R3 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
@@ -496,14 +490,15 @@ trait Renderers {
   }
 
   /**
-   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for five sub-types of T (R0, R1, R2, R3, or R4).
+   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for five subtypes of T
+   * (R0, R1, R2, R3, or R4).
    *
    * @tparam T  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of T.
-   * @tparam R1 another sub-type of T.
-   * @tparam R2 another sub-type of T.
-   * @tparam R3 another sub-type of T.
-   * @tparam R4 another sub-type of T.
+   * @tparam R0 one subtype of T.
+   * @tparam R1 another subtype of T.
+   * @tparam R2 another subtype of T.
+   * @tparam R3 another subtype of T.
+   * @tparam R4 another subtype of T.
    * @return a Renderer[T].
    */
   def rendererSuper5[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag, R2 <: T : Renderer : ClassTag, R3 <: T : Renderer : ClassTag, R4 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
@@ -518,15 +513,16 @@ trait Renderers {
   }
 
   /**
-   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for six sub-types of T (R0, R1, R2, R3, R4, or R5).
+   * Method to yield a Renderer[T] such that the rendering can be performed according to the renderables for six subtypes of T
+   * (R0, R1, R2, R3, R4, or R5).
    *
    * @tparam T  the super-type and the underlying type of the result.
-   * @tparam R0 one sub-type of T.
-   * @tparam R1 another sub-type of T.
-   * @tparam R2 another sub-type of T.
-   * @tparam R3 another sub-type of T.
-   * @tparam R4 another sub-type of T.
-   * @tparam R5 another sub-type of T.
+   * @tparam R0 one subtype of T.
+   * @tparam R1 another subtype of T.
+   * @tparam R2 another subtype of T.
+   * @tparam R3 another subtype of T.
+   * @tparam R4 another subtype of T.
+   * @tparam R5 another subtype of T.
    * @return a Renderer[T].
    */
   def rendererSuper6[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag, R2 <: T : Renderer : ClassTag, R3 <: T : Renderer : ClassTag, R4 <: T : Renderer : ClassTag, R5 <: T : Renderer : ClassTag]: Renderer[T] = Renderer { (t: T, format, stateR) =>

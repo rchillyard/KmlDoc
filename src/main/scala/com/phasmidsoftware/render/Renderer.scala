@@ -27,17 +27,23 @@ trait Renderer[T] extends NamedFunction[Renderer[T]] {
   def render(t: T, format: Format, stateR: StateR): Try[String]
 
   /**
-   * Lifts the current Renderer to operate on optional values.
-   * When the provided value is `Some`, it renders the contained value using the current Renderer.
-   * When the provided value is `None`, it produces an empty result.
+   * Transforms a Renderer for a type `T` into a Renderer for an `Option[T]`.
+   * Returns an empty string for `None` and delegates rendering to the wrapped Renderer for `Some` values,
+   * applying the necessary transformations based on rendering state.
+   * If the member name is `maybeX` (as expected), this is transformed into `X`.
    *
-   * @return a Renderer for `Option[T]` that renders `Some[T]` using the current Renderer and returns
-   *         an empty result for `None`.
+   * @return a Renderer for `Option[T]`, capable of handling both `Some` and `None` cases.
    */
   def lift: Renderer[Option[T]] = Renderer.apply {
-    (t, f, s) =>
-      t match {
-        case Some(x) => render(x, f, s)
+    (ro, f, s) =>
+      ro match {
+        case Some(r) =>
+          val wo = s.maybeName match {
+            case Some(Extractor.optional(x)) => Some(x)
+            case Some(x) => Some(x)
+            case None => None
+          }
+          render(r, f, StateR(wo))
         case None => Success("")
       }
   }
