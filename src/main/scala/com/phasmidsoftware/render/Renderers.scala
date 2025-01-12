@@ -38,7 +38,7 @@ trait Renderers {
   def renderer1[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
       r.productElement(0) match {
-        case p0: P0 =>
+        case p0: P0 @unchecked =>
           for {
             wOuter <- renderOuter(r, p0, 0, format.indent)
             result <- doNestedRender(format, stateR, "", wOuter, r.productElementName(0))
@@ -58,7 +58,7 @@ trait Renderers {
   def renderer1Special[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R, prefix: String): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
       r.productElement(0) match {
-        case p0: P0 =>
+        case p0: P0 @unchecked =>
           for {
             // XXX See renderer1 for better way to get a P0 parameter
             wOuter <- renderOuter(r, p0, 0, format.indent)
@@ -79,10 +79,9 @@ trait Renderers {
   def renderer2[P0: Renderer, P1: Renderer, R <: Product : ClassTag](construct: (P0, P1) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
       (r.productElement(0), r.productElement(1)) match {
-        case (p0: P0, p1: P1) =>
+        case (p0: P0 @unchecked, p1: P1 @unchecked) =>
           val constructorInner: P0 => R = construct(_, p1)
-          val objectInner = constructorInner(p0)
-          for {wInner <- renderer1(constructorInner).render(objectInner, format, stateR.recurse)
+          for {wInner <- renderer1(constructorInner).render(constructorInner(p0), format, stateR.recurse)
                wOuter <- renderOuter(r, p1, 1, format.indent)
                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(1))
                } yield result
@@ -102,11 +101,10 @@ trait Renderers {
   def renderer3[P0: Renderer, P1: Renderer, P2: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
       (r.productElement (0), r.productElement(1), r.productElement(2)) match {
-        case (p0: P0, p1: P1, p2: P2) =>
+        case (p0: P0 @unchecked, p1: P1 @unchecked, p2: P2 @unchecked) =>
           val constructorInner: (P0, P1) => R = construct(_, _, p2)
-          val objectInner = constructorInner(p0, p1)
           for {
-            wInner <- renderer2(constructorInner).render(objectInner, format, stateR.recurse)
+            wInner <- renderer2(constructorInner).render(constructorInner(p0, p1), format, stateR.recurse)
             wOuter <- renderOuter(r, p2, 2, format.indent)
             result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
           } yield result
@@ -128,10 +126,9 @@ trait Renderers {
   def renderer4[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
       (r.productElement(0), r.productElement(1), r.productElement(2), r.productElement(3)) match {
-        case (p0: P0, p1: P1, p2: P2, p3: P3) =>
+        case (p0: P0 @unchecked, p1: P1 @unchecked, p2: P2 @unchecked, p3: P3 @unchecked) =>
           val constructorInner: (P0, P1, P2) => R = construct(_, _, _, p3)
-          val objectInner = constructorInner(p0, p1, p2)
-          for {wInner <- renderer3(constructorInner).render(objectInner, format, stateR.recurse)
+          for {wInner <- renderer3(constructorInner).render(constructorInner(p0, p1, p2), format, stateR.recurse)
                wOuter <- renderOuter(r, p3, 3, format.indent)
                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(3))
                } yield result
@@ -156,10 +153,9 @@ trait Renderers {
   def renderer5[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
       (r.productElement(0), r.productElement(1), r.productElement(2), r.productElement(3), r.productElement(4)) match {
-        case (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4) =>
+        case (p0: P0 @unchecked, p1: P1 @unchecked, p2: P2 @unchecked, p3: P3 @unchecked, p4: P4 @unchecked) =>
           val constructorInner: (P0, P1, P2, P3) => R = construct(_, _, _, _, p4)
-          val objectInner = constructorInner(p0, p1, p2, p3)
-          for {wInner <- renderer4(constructorInner).render(objectInner, format, stateR.recurse)
+          for {wInner <- renderer4(constructorInner).render(constructorInner(p0, p1, p2, p3), format, stateR.recurse)
                wOuter <- renderOuter(r, p4, 4, format.indent)
                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(4))
                } yield result
@@ -183,10 +179,9 @@ trait Renderers {
   def renderer6[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, P5: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
       (r.productElement(0), r.productElement(1), r.productElement(2), r.productElement(3), r.productElement(4), r.productElement(5)) match {
-        case (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) =>
+        case (p0: P0 @unchecked, p1: P1 @unchecked, p2: P2 @unchecked, p3: P3 @unchecked, p4: P4 @unchecked, p5: P5 @unchecked) =>
           val constructorInner: (P0, P1, P2, P3, P4) => R = construct(_, _, _, _, _, p5)
-          val objectInner = constructorInner(p0, p1, p2, p3, p4)
-          for {wInner <- renderer5(constructorInner).render(objectInner, format, stateR.recurse)
+          for {wInner <- renderer5(constructorInner).render(constructorInner(p0, p1, p2, p3, p4), format, stateR.recurse)
                wOuter <- renderOuter(r, p5, 5, format.indent)
                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(5))
                } yield result
@@ -213,10 +208,9 @@ trait Renderers {
   def renderer7[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, P5: Renderer, P6: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5, P6) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
       (r.productElement(0), r.productElement(1), r.productElement(2), r.productElement(3), r.productElement(4), r.productElement(5), r.productElement(6)) match {
-        case (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) =>
+        case (p0: P0 @unchecked, p1: P1 @unchecked, p2: P2 @unchecked, p3: P3 @unchecked, p4: P4 @unchecked, p5: P5 @unchecked, p6: P6 @unchecked) =>
           val constructorInner: (P0, P1, P2, P3, P4, P5) => R = construct(_, _, _, _, _, _, p6)
-          val objectInner = constructorInner(p0, p1, p2, p3, p4, p5)
-          for {wInner <- renderer6(constructorInner).render(objectInner, format, stateR.recurse)
+          for {wInner <- renderer6(constructorInner).render(constructorInner(p0, p1, p2, p3, p4, p5), format, stateR.recurse)
                wOuter <- renderOuter(r, p6, 6, format.indent)
                result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(5))
                } yield result
@@ -477,7 +471,10 @@ trait Renderers {
   def rendererSuper3[T: ClassTag, R0 <: T : Renderer : ClassTag, R1 <: T : Renderer : ClassTag, R2 <: T : Renderer : ClassTag]: Renderer[T] = Renderer {
     (t: T, format, stateR) =>
       t match {
-        case r: R0 => for (result <- Renderer.render(r, format, stateR)) yield result
+        case r: R0 =>
+          for {
+            result <- Renderer.render(r, format, stateR)
+          } yield result
         case _ => rendererSuper2[T, R1, R2].render(t, format, stateR)
       }
   }
