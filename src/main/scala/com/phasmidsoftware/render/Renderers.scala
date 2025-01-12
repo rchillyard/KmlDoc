@@ -18,8 +18,8 @@ trait Renderers {
   /**
    * Method to create a renderer for a case class with no members, or a case object.
    *
-   * @tparam R the type of Renderer to be returned (must be a Product).
-   * @return a Renderer[R].
+   * @tparam R the type of `Renderer` to be returned (must be a `Product`).
+   * @return a `Renderer[R]`.
    */
   def renderer0[R <: Product : ClassTag]: Renderer[R] = Renderer {
     (_: R, format, stateR) =>
@@ -29,10 +29,11 @@ trait Renderers {
   /**
    * Method to create a renderer for a Product (e.g., case class) with one member.
    *
-   * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the (single) member of Product type R.
+   * @param ignored (unused) a function which takes a `P0` and yields an `R`
+   *                (this is usually the `apply` method of a case class).
+   * @tparam P0 the (`Renderer`) type of the (single) member of `Product` type `R`.
    * @tparam R  the type of Renderer to be returned (must be a Product).
-   * @return a Renderer[R].
+   * @return a `Renderer[R]`.
    */
   def renderer1[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
@@ -46,12 +47,13 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with one member.
+   * Method to create a renderer for a `Product` (e.g., case class) with one member.
    *
-   * @param ignored (unused) a function which takes a P0 and yields an R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the (single) member of Product type R.
-   * @tparam R  the type of Renderer to be returned (must be a Product).
-   * @return a Renderer[R].
+   * @param ignored (unused) a function which takes a `P0` and yields an `R`
+   *                (this is usually the `apply` method of a case class).
+   * @tparam P0 the (`Renderer`) type of the (single) member of `Product` type `R`.
+   * @tparam R  the type of `Renderer` to be returned (must be a `Product`).
+   * @return a `Renderer[R]`.
    */
   def renderer1Special[P0: Renderer, R <: Product : ClassTag](@unused ignored: P0 => R, prefix: String): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
@@ -66,13 +68,13 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with two members.
+   * Method to create a renderer for a `Product` (e.g., case class) with two members.
    *
-   * @param construct a function (P0, P1) => R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the first member of Product type R.
-   * @tparam P1 the (Renderer) type of the second member of Product type R.
-   * @tparam R  the type of Renderer to be returned (must be a Product).
-   * @return a function which takes an R, a Format, and a StateR as parameters and yields a Renderer[R].
+   * @param construct a function `(P0, P1) => R` (this is usually the `apply` method of a case class).
+   * @tparam P0 the (`Renderer`) type of the first member of `Product` type `R`.
+   * @tparam P1 the (`Renderer`) type of the second member of `Product` type `R`.
+   * @tparam R  the underlying type of the `Renderer` to be returned (must be a `Product`).
+   * @return a `Renderer[R]`.
    */
   def renderer2[P0: Renderer, P1: Renderer, R <: Product : ClassTag](construct: (P0, P1) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
@@ -88,14 +90,14 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with three members.
+   * Method to create a renderer for a `Product` (e.g., case class) with three members.
    *
-   * @param construct a function (P0, P1, P2) => R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the first member of Product type R.
-   * @tparam P1 the (Renderer) type of the second member of Product type R.
-   * @tparam P2 the (Renderer) type of the third member of Product type R.
-   * @tparam R  the type of Renderer to be returned (must be a Product).
-   * @return a Renderer[R].
+   * @param construct a function `(P0, P1, P2) => R` (this is usually the `apply` method of a case class).
+   * @tparam P0 the (`Renderer`) type of the first member of `Product` type `R`.
+   * @tparam P1 the (`Renderer`) type of the second member of `Product` type `R`.
+   * @tparam P2 the (`Renderer`) type of the third member of `Product` type `R`.
+   * @tparam R  the underlying type of `Renderer` to be returned (must be a `Product`).
+   * @return a `Renderer[R]`.
    */
   def renderer3[P0: Renderer, P1: Renderer, P2: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
@@ -113,15 +115,15 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with four members.
+   * Method to create a renderer for a `Product` (e.g., case class) with four members.
    *
-   * @param construct a function (P0, P1, P2, P3) => R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the first member of Product type R.
-   * @tparam P1 the (Renderer) type of the second member of Product type R.
-   * @tparam P2 the (Renderer) type of the third member of Product type R.
-   * @tparam P3 the (Renderer) type of the fourth member of Product type R.
-   * @tparam R  the type of Renderer to be returned (must be a Product).
-   * @return Renderer[R].
+   * @param construct a function `(P0, P1, P2, P3) => R` (this is usually the `apply` method of a case class).
+   * @tparam P0 the (`Renderer`) type of the first member of `Product` type `R`.
+   * @tparam P1 the (`Renderer`) type of the second member of `Product` type `R`.
+   * @tparam P2 the (`Renderer`) type of the third member of `Product` type `R`.
+   * @tparam P3 the (`Renderer`) type of the fourth member of `Product` type `R`.
+   * @tparam R  the underlying type of the `Renderer` to be returned (must be a `Product`).
+   * @return `Renderer[R]`.
    */
   def renderer4[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
@@ -138,16 +140,18 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with five members.
+   * Provides a renderer for a product type with five elements. Uses the provided constructor
+   * to render the product type by handling recursive states and formatting.
    *
-   * @param construct a function (P0, P1, P2, P3, P4) => R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the first member of Product type R.
-   * @tparam P1 the (Renderer) type of the second member of Product type R.
-   * @tparam P2 the (Renderer) type of the third member of Product type R.
-   * @tparam P3 the (Renderer) type of the fourth member of Product type R.
-   * @tparam P4 the (Renderer) type of the fifth member of Product type R.
-   * @tparam R  the (Renderer) type of Renderer to be returned (must be a Product).
-   * @return Renderer[R].
+   * @param construct A function that takes five parameters of types `P0`, `P1`, `P2`, `P3`, `P4`
+   *                  and constructs an instance of the product type `R`.
+   * @tparam P0 The type of the first element in the product type, which must have an implicit `Renderer` instance provided.
+   * @tparam P1 The type of the second element in the product type, which must have an implicit `Renderer` instance provided.
+   * @tparam P2 The type of the third element in the product type, which must have an implicit `Renderer` instance provided.
+   * @tparam P3 The type of the fourth element in the product type, which must have an implicit `Renderer` instance provided.
+   * @tparam P4 The type of the fifth element in the product type, which must have an implicit `Renderer` instance provided.
+   * @tparam R  The product type being rendered. It must extend `Product` and have an implicit `ClassTag`.
+   * @return A `Renderer` instance for the product type `R`.
    */
   def renderer5[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) =>
@@ -163,17 +167,18 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with six members.
+   * Creates a `Renderer` for a product type `R` with six type parameters.
    *
-   * @param construct a function which takes a P0, P1, P2, P3, P4, P5 and yields an R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the first member of Product type R.
-   * @tparam P1 the (Renderer) type of the second member of Product type R.
-   * @tparam P2 the (Renderer) type of the third member of Product type R.
-   * @tparam P3 the (Renderer) type of the fourth member of Product type R.
-   * @tparam P4 the (Renderer) type of the fifth member of Product type R.
-   * @tparam P5 the (Renderer) type of the sixth member of Product type R.
-   * @tparam R  the (Renderer) type of Renderer to be returned (must be a Product).
-   * @return Renderer[R].
+   * @param construct A function that takes six parameters of types `P0`, `P1`, `P2`, `P3`, `P4`, `P5` and
+   *                  constructs an instance of type `R`.
+   * @tparam P0 The type of the first parameter to the constructor.
+   * @tparam P1 The type of the second parameter to the constructor.
+   * @tparam P2 The type of the third parameter to the constructor.
+   * @tparam P3 The type of the fourth parameter to the constructor.
+   * @tparam P4 The type of the fifth parameter to the constructor.
+   * @tparam P5 The type of the sixth parameter to the constructor.
+   * @tparam R  The resulting product type that can be constructed by the `construct` function.
+   * @return A `Renderer` for the product type `R` that renders objects of this type based on its six components and their respective renderers.
    */
   def renderer6[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, P5: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
@@ -190,18 +195,20 @@ trait Renderers {
   }
 
   /**
-   * Method to create a renderer for a Product (e.g., case class) with seven members.
+   * Creates a Renderer instance for a product type with seven elements, where all elements have associated Renderers.
    *
-   * @param construct a function which takes a P0, P1, P2, P3, P4, P5, P6 and yields an R (this is usually the apply method of a case class).
-   * @tparam P0 the (Renderer) type of the first member of Product type R.
-   * @tparam P1 the (Renderer) type of the second member of Product type R.
-   * @tparam P2 the (Renderer) type of the third member of Product type R.
-   * @tparam P3 the (Renderer) type of the fourth member of Product type R.
-   * @tparam P4 the (Renderer) type of the fifth member of Product type R.
-   * @tparam P5 the (Renderer) type of the sixth member of Product type R.
-   * @tparam P6 the (Renderer) type of the seventh member of Product type R.
-   * @tparam R  the (Renderer) type of Renderer to be returned (must be a Product).
-   * @return Renderer[R].
+   * @param construct A function that takes seven parameters of types P0, P1, P2, P3, P4, P5, and P6, and constructs
+   *                  an instance of type R.
+   * @tparam P0 The type of the first element, which must have a Renderer instance available.
+   * @tparam P1 The type of the second element, which must have a Renderer instance available.
+   * @tparam P2 The type of the third element, which must have a Renderer instance available.
+   * @tparam P3 The type of the fourth element, which must have a Renderer instance available.
+   * @tparam P4 The type of the fifth element, which must have a Renderer instance available.
+   * @tparam P5 The type of the sixth element, which must have a Renderer instance available.
+   * @tparam P6 The type of the seventh element, which must have a Renderer instance available.
+   * @tparam R  The resulting product type, constrained to be a subclass of Product and require a ClassTag.
+   * @return A Renderer instance that can render objects of type R, utilizing the provided construct function
+   *         and the Renderers for each corresponding parameter type.
    */
   def renderer7[P0: Renderer, P1: Renderer, P2: Renderer, P3: Renderer, P4: Renderer, P5: Renderer, P6: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2, P3, P4, P5, P6) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
