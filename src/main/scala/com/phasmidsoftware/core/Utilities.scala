@@ -57,7 +57,7 @@ class MappableRegex(r: String, f: List[String] => List[String]) extends Regex(r)
     super.unapplySeq(s) map f
 }
 
-class LowerCaseInitialRegex(r: String) extends MappableRegex(r, ws => ws map { w => w.head.toLower + w.tail })
+class LowerCaseInitialRegex(r: String) extends MappableRegex(r, ws => ws map { w => s"${w.head.toLower}${w.tail}" })
 
 class XmlBaseException(message: String, cause: Throwable) extends Exception(message, cause)
 

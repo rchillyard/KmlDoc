@@ -96,14 +96,16 @@ trait Renderers {
    */
   def renderer3[P0: Renderer, P1: Renderer, P2: Renderer, R <: Product : ClassTag](construct: (P0, P1, P2) => R): Renderer[R] = Renderer {
     (r: R, format, stateR) => {
-      // XXX See renderer2 for better way to get P0, P1, ... parameters
-      val objectOuter = r.productElement(2).asInstanceOf[P2]
-      val constructorInner: (P0, P1) => R = construct(_, _, objectOuter)
-      val objectInner = constructorInner(r.productElement(0).asInstanceOf[P0], r.productElement(1).asInstanceOf[P1])
-      for {wInner <- renderer2(constructorInner).render(objectInner, format, stateR.recurse)
-           wOuter <- renderOuter(r, objectOuter, 2, format.indent)
-           result <- doNestedRender(format, stateR, wInner, wOuter, r.productElementName(2))
-           } yield result
+      (r.productElement (0), r.productElement(1), r.productElement(2)) match {
+        case (p0: P0, p1: P1, p2: P2) =>
+      val constructorInner: (P0, P1) => R = construct (_, _, p2)
+      val objectInner = constructorInner (p0, p1 )
+      for {
+      wInner <- renderer2 (constructorInner).render (objectInner, format, stateR.recurse)
+      wOuter <- renderOuter (r, p2, 2, format.indent)
+      result <- doNestedRender (format, stateR, wInner, wOuter, r.productElementName (2) )
+      } yield result
+      }
     }
   }
 

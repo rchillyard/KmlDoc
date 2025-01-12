@@ -429,7 +429,7 @@ object Extractor {
   /**
    * Unit extractor.
    */
-  implicit val unitExtractor: Extractor[Unit] = Extractor(Success())
+  implicit val unitExtractor: Extractor[Unit] = Extractor(Success(()))
 
   /**
    * CharSequence extractor.

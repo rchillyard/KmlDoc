@@ -91,7 +91,7 @@ class FPSpec extends AnyFlatSpec with should.Matchers {
     val try2 = Success(1)
     val try3 = Success(2)
     val try1 = Failure(FPException(""))
-    val result: Try[Seq[Int]] = sequenceForgiving(x => System.err.println(s"failure ignored: ${x}"))(Seq(try1, try2, try3))
+    val result: Try[Seq[Int]] = sequenceForgiving(x => System.err.println(s"failure ignored: $x"))(Seq(try1, try2, try3))
     result should matchPattern { case Success(List(1, 2)) => }
   }
 
@@ -99,7 +99,7 @@ class FPSpec extends AnyFlatSpec with should.Matchers {
     val try1 = Success(1)
     val try2 = Success(2)
     val try3 = Failure(new OutOfMemoryError(""))
-    val result: Try[Iterable[Int]] = sequenceForgiving(x => System.err.println(s"failure ignored: ${x}"))(Seq(try1, try2, try3))
+    val result: Try[Iterable[Int]] = sequenceForgiving(x => System.err.println(s"failure ignored: $x"))(Seq(try1, try2, try3))
     result should matchPattern { case Failure(_) => }
   }
   it should "tryToOption" in {

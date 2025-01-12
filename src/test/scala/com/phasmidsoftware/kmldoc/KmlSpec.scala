@@ -1273,7 +1273,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         styleSelector match {
           case Style(styles) =>
             styles.size shouldBe 3
-            styles(0) match {
+            styles.head match {
               case LabelStyle(ls) =>
                 ls.$ shouldBe 1.5
             }
