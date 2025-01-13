@@ -868,18 +868,16 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<RefreshMode>onChange</RefreshMode>"
   }
 
-//kml file don't have <styleState> element. I'm not sure below test method is right, but below test passed.
-  it should "extract (optional) style state" in {
-    val xml = <styleState>highlight</styleState>
-    val po = extract[Option[StyleState]](xml)
+  it should "extract style state" in {
+    val xml = <Key>highlight</Key>
+    val po = extract[Key](xml)
     po.isSuccess shouldBe true
     val p = po.get
-    p.isDefined shouldBe true
-    p.get.$ shouldBe StyleStateEnum.highlight
+    p.$ shouldBe StyleStateEnum.highlight
     // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
-    val triedString = Renderer.render[Option[StyleState]](p, FormatXML(), StateR())
+    val triedString = Renderer.render[Key](p, FormatXML(), StateR())
     triedString.isSuccess shouldBe true
-    triedString.get shouldBe "<StyleState>highlight</StyleState>"
+    triedString.get shouldBe "<Key>highlight</Key>"
   }
 
 
@@ -1343,7 +1341,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             }
           case StyleMap(pairs) =>
             pairs.size shouldBe 2
-            pairs.head shouldBe Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal"))
+            pairs.head shouldBe Pair(Key(StyleStateEnum.normal), StyleURL("#icon-22-nodesc-normal"))
         }
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleSelector](styleSelector, FormatXML(), sr))
         wy.isSuccess shouldBe true
@@ -1371,7 +1369,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ss) =>
         ss.size shouldBe 1
         val styleMap: StyleMap = ss.head.asInstanceOf[StyleMap] // use pattern-matching
-        styleMap shouldBe StyleMap(List(Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal")), Pair(Key("highlight"), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
+        styleMap shouldBe StyleMap(List(Pair(Key(StyleStateEnum.normal), StyleURL("#icon-22-nodesc-normal")), Pair(Key(StyleStateEnum.highlight), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
         wy.isSuccess shouldBe true
         wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n  <Pair>\n    <key>normal</key>\n    <styleUrl>#icon-22-nodesc-normal</styleUrl>\n  </Pair>\n  <Pair>\n    <key>highlight</key>\n    <styleUrl>#icon-22-nodesc-highlight</styleUrl>\n  </Pair>\n</StyleMap>"

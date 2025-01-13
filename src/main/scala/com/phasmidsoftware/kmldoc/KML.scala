@@ -4,7 +4,6 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.kmldoc.ViewRefreshMode.{extractor10, renderer1}
 import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
@@ -1391,7 +1390,7 @@ object ImagePyramid extends Extractors with Renderers {
  * It is commonly used in contexts
  * that require symbolic or string-based identifiers.
  */
-case class Key($: CharSequence)
+case class Key($: StyleStateEnum.Value)
 
 /**
  * Object `Key` serves as a companion to the `Key` case class and provides
@@ -1408,8 +1407,6 @@ case class Key($: CharSequence)
  * from the `Key` type to human-readable or serialized formats.
  */
 object Key extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractor: Extractor[Key] = extractor10(apply) ^^ "extractorKey"
   implicit val renderer: Renderer[Key] = renderer1(apply) ^^ "rendererKey"
