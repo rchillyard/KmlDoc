@@ -2369,6 +2369,30 @@ object Range extends Extractors with Renderers {
 }
 
 /**
+ * RefreshMode which has values "onChange" , "onInterval" or "onExpire".
+ * Used by Link, Icon.
+ *
+ * @param $ the mode of Refresh
+ */
+case class RefreshMode($: RefreshModeEnum.Value)
+
+/**
+ * Companion object for the RefreshMode case class.
+ * Provides extractors and renderers for handling RefreshMode instances.
+ *
+ * Contains implicit values for:
+ * - Extracting a RefreshMode instance.
+ * - Extracting an optional RefreshMode instance.
+ * - Rendering a RefreshMode instance.
+ * - Rendering an optional RefreshMode instance.
+ */
+object RefreshMode extends Extractors with Renderers {
+
+  implicit val extractorOpt: Extractor[Option[RefreshMode]] = extractor10(apply).lift ^^ "extractMaybeRefreshMode"
+  implicit val rendererOpt: Renderer[Option[RefreshMode]] = renderer1(apply).lift ^^ "rendererOptionRefreshMode"
+}
+
+/**
  * Represents the roll angle in degrees or radians, depending on the specific context of usage.
  *
  * The `Roll` class is a wrapper for a `Double` value that signifies the roll angle.

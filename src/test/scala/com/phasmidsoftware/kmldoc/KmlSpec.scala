@@ -842,6 +842,33 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<ColorMode>random</ColorMode>"
   }
 
+  it should "extract (optional) display mode" in {
+    val xml = <displayMode>default</displayMode>
+    val po = extract[Option[DisplayMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe DisplayModeEnum.default
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[DisplayMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<DisplayMode>default</DisplayMode>"
+  }
+
+  it should "extract (optional) refresh mode" in {
+    val xml = <refreshMode>onChange</refreshMode>
+    val po = extract[Option[RefreshMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe RefreshModeEnum.onChange
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[RefreshMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<RefreshMode>onChange</RefreshMode>"
+  }
+
+
   behavior of "HotSpot"
 
   it should "extract HotSpot" in {
