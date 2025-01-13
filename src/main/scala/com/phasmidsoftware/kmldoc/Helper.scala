@@ -5,13 +5,14 @@ import com.phasmidsoftware.kmldoc.KmlEdit.editFeatures
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor
+
 import scala.reflect.ClassTag
 import scala.util.Success
 import scala.util.matching.Regex
 import scala.xml.NamespaceBinding
 
 /**
- * The Helper object provides a collection of utility functions and methods
+ * The Helper object provides a collection of geometric utility functions and methods
  * designed to facilitate common tasks and simplify code implementation.
  *
  * It serves as a central location for reusable helper logic, aiming to promote
@@ -21,6 +22,7 @@ object Helper
 
 /**
  * Case class Coordinate to represent a three-dimensional point.
+ * Although this is part of the KML spec, it is treated somewhat differently than the others.
  *
  * @param long longitude.
  * @param lat  latitude.
@@ -68,8 +70,6 @@ object Coordinate {
   private val longLatAlt: Regex = """^\s*([\d\-\.]+),\s*([\d\-\.]+),\s*([\d\-\.]+)\s*$""".r
 //    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
 
-
-
   /**
    * Parses a coordinate string and converts it into a `Coordinate` instance,
    * if the string matches the expected format.
@@ -91,6 +91,19 @@ object Coordinate {
  * Trait to define the property of owning features.
  */
 trait HasFeatures {
+  /**
+   * Represents a sequence of `Feature` objects associated with a given entity.
+   * This field is part of classes or traits that extend `HasFeatures`.
+   *
+   * Features are core abstract elements defined under the `Feature` trait,
+   * which is a sub-type of `KmlObject` and serves as a super-type for elements
+   * such as `Placemark` and `Container`.
+   * They encapsulate KML-specific entities
+   * and their behaviors, including the ability to edit with regard to sibling features.
+   *
+   * The `features` sequence typically includes all such `Feature` subtypes relevant
+   * to the containing object.
+   */
   val features: Seq[Feature]
 }
 
@@ -221,4 +234,9 @@ object KmlRenderers extends Renderers {
   // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
 }
 
+/**
+ * Represents an exception specific to KML processing errors.
+ *
+ * @param str A message describing the details of the exception.
+ */
 case class KmlException(str: String) extends Exception(str)

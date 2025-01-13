@@ -32,5 +32,5 @@ package object xml {
         def render: String = renderNode(node)
     }
 
-    val logger: Logger = LoggerFactory.getLogger(this.getClass)
+    val logger: Logger = LoggerFactory.getLogger(classOf[RichXml])
 }

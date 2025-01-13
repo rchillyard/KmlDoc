@@ -56,4 +56,10 @@ object Reflection {
 
 }
 
+/**
+ * A case class representing an exception that occurs during reflection operations.
+ *
+ * @param str The error message associated with the exception.
+ * @param ex  The underlying cause of the exception.
+ */
 case class ReflectionException(str: String, ex: Throwable) extends Exception(str, ex)

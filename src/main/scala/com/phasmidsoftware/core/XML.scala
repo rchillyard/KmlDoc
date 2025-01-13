@@ -2,13 +2,23 @@ package com.phasmidsoftware.core
 
 import com.phasmidsoftware.kmldoc.Mergeable
 import com.phasmidsoftware.xml.{Extractor, Extractors}
+
 import scala.collection.mutable
 import scala.util.{Success, Try}
 import scala.xml.{Node, PCData}
 
+/**
+ * The `XML` object does nothing other than give a name to this module.
+ */
 object XML
 
-
+/**
+ * Represents a text element that wraps a CharSequence and provides functionality for
+ * merging text and matching content.
+ *
+ * @constructor Creates a new Text instance.
+ * @param $ the wrapped CharSequence representing the text content.
+ */
 case class Text($: CharSequence) extends Mergeable[Text] {
   /**
    * Method to merge this and another Text element.
@@ -39,6 +49,9 @@ case class Text($: CharSequence) extends Mergeable[Text] {
   }
 }
 
+/**
+ * Companion object for the `Text` case class. Provides extractor utilities for `Text` and `Option[Text]`.
+ */
 object Text extends Extractors {
 
   /**
@@ -88,12 +101,36 @@ object TagProperties {
  * @param post    the postfix (probably a newline).
  */
 case class CDATA(content: String, pre: String, post: String) extends CharSequence with Mergeable[CDATA] {
+  /**
+   * Converts the CDATA node with its content and surrounding context into an XML-compatible string.
+   *
+   * @return a Try containing the resulting XML string, or a failure if the operation could not be completed.
+   */
   def toXML: Try[String] = Success(s"""$pre<![CDATA[$content]]>$post""")
 
+  /**
+   * Computes the length of the content string of this CDATA node.
+   *
+   * @return the number of characters in the content string.
+   */
   def length(): Int = content.length()
 
+  /**
+   * Returns the character at the specified index in the content string of this CDATA node.
+   *
+   * @param index the index of the character to be returned, starting from 0.
+   * @return the character at the specified index in the content string.
+   */
   def charAt(index: Int): Char = content.charAt(index)
 
+  /**
+   * Returns a subsequence of the content string of this CDATA node, starting from the specified
+   * start index and ending at the specified end index (exclusive).
+   *
+   * @param start the starting index of the subsequence, inclusive.
+   * @param end   the ending index of the subsequence, exclusive.
+   * @return a CharSequence that is a subsequence of the content string.
+   */
   def subSequence(start: Int, end: Int): CharSequence = content.subSequence(start, end)
 
   override def toString: String = s"$pre$content$post"
@@ -106,6 +143,13 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
    */
   def merge(t: CDATA, mergeName: Boolean = true): Option[CDATA] = Some(CDATA(content + separator(post, t.pre) + t.content, pre, t.post))
 
+  /**
+   * Concatenates two strings and replaces newline characters with "<br>".
+   *
+   * @param a the first string to be concatenated.
+   * @param b the second string to be concatenated.
+   * @return a new string resulting from the concatenation of a and b, with all newline characters replaced by "<br>".
+   */
   private def separator(a: String, b: String): String = (a + b).replaceAll("\n", "<br>")
 }
 
@@ -114,21 +158,106 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
  */
 object CDATA {
 
+  /**
+   * Constructs a new CDATA instance with the provided content and trimmed prefix and postfix strings.
+   *
+   * @param x    the string content of the CDATA node.
+   * @param pre  the prefix string, typically surrounding whitespace or newlines.
+   * @param post the postfix string, typically surrounding whitespace or newlines.
+   * @return a new instance of the CDATA case class with trimmed prefix and postfix.
+   */
   def apply(x: String, pre: String, post: String): CDATA = new CDATA(x, trimSpace(pre), trimSpace(post))
 
+  /**
+   * Constructs a new CDATA instance with the provided content and default empty prefix and postfix strings.
+   *
+   * @param x the string content of the CDATA node.
+   * @return a new instance of the CDATA case class with default empty prefix and postfix.
+   */
   def apply(x: String): CDATA = apply(x, "", "")
 
+  /**
+   * Constructs a new CDATA instance with the provided content and default prefix and postfix strings
+   * set to newlines ("\n").
+   *
+   * @param x the string content of the CDATA node.
+   * @return a new instance of the CDATA case class with default prefix and postfix strings set to newlines.
+   */
   def wrapped(x: String): CDATA = apply(x, "\n", "\n")
 
-  private def trimSpace(w: String): String = {
-    val sb = new StringBuilder(w)
-    SmartBuffer.trimStringBuilder(sb)
-    sb.toString()
-  }
-
+  /**
+   * Extracts a CDATA instance from a given XML `Node`, if the node contains a matching CDATA structure.
+   *
+   * @param node the XML node to be analyzed for CDATA content.
+   * @return an `Option` containing the CDATA instance if the node matches the CDATA pattern; otherwise, `None`.
+   */
   def unapply(node: Node): Option[CDATA] = node.child match {
     case Seq(pre, PCData(x), post) => Some(CDATA(x, pre.text, post.text))
     case Seq(PCData(x)) => Some(CDATA(x))
     case _ => None
   }
+
+  /**
+   * Trims trailing spaces from the given string using a `StringBuilder`.
+   *
+   * @param w the input string to be trimmed of trailing spaces
+   * @return the trimmed string with no trailing spaces
+   */
+  private def trimSpace(w: String): String = {
+    val sb = new StringBuilder(w)
+    SmartBuffer.trimStringBuilder(sb)
+    sb.toString()
+  }
 }
+
+/**
+ * A base exception class for handling XML-related errors.
+ *
+ * This class serves as a parent exception for all XML-specific exceptions, allowing
+ * developers to catch and manage errors pertaining to XML processing.
+ * It extends the standard `Exception` class in Scala to provide additional context
+ * for XML-related errors through custom messages and causes.
+ *
+ * @param message A detailed error message describing the cause of the exception.
+ * @param cause   The underlying throwable that triggered this exception, if available.
+ */
+class XmlBaseException(message: String, cause: Throwable) extends Exception(message, cause)
+
+/**
+ * CONSIDER renaming as ExtractorException.
+ *
+ * @param message the message.
+ * @param cause   the cause (or null).
+ */
+case class XmlException(message: String, cause: Throwable) extends XmlBaseException(message, cause)
+
+/**
+ * Companion object for the XmlException case class.
+ * Provides a utility method to create an instance of XmlException.
+ *
+ * The apply method creates an XmlException with the specified message,
+ * and optionally allows the cause to be set to null by default.
+ */
+object XmlException {
+  /**
+   * Creates an instance of XmlException with the specified message and a null cause.
+   *
+   * @param message the error message describing the exception.
+   * @return an instance of XmlException with the given message and a null cause.
+   */
+  def apply(message: String): XmlException = apply(message, null)
+}
+
+/**
+ * Represents an exception thrown when a required field is missing during an XML-related operation.
+ *
+ * This exception indicates that an expected field was absent, typically during parsing
+ * or validation of XML content.
+ * It provides additional context regarding the missing field
+ * and the reason for its absence through custom error messages.
+ *
+ * @param message A detailed error message describing the missing field.
+ * @param reason  A string explaining the reason for the field's absence.
+ * @param cause   The underlying throwable that caused this exception, if available.
+ */
+case class MissingFieldException(message: String, reason: String, cause: Throwable) extends XmlBaseException(s"$message ($reason)", cause)
