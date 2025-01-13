@@ -1382,13 +1382,16 @@ object ImagePyramid extends Extractors with Renderers {
   implicit val renderer: Renderer[ImagePyramid] = renderer4(apply)
 }
 
-
 /**
- * A case class representing a symbolic key with a character sequence value.
+ * Represents a `Key` that associates a style state with a style map.
  *
- * The `Key` class encapsulates a key as a `CharSequence`.
- * It is commonly used in contexts
- * that require symbolic or string-based identifiers.
+ * The `Key` case class encapsulates a value from the `StyleStateEnum`, which
+ * defines the specific state of a style, such as `normal` or `highlight`. This
+ * class is integral to managing and distinguishing between different visual
+ * representations of styles, particularly in applications like Google Earth.
+ *
+ * @param $ Represents the state of the style and must be one of the values
+ *          defined in the `StyleStateEnum` enumeration.
  */
 case class Key($: StyleStateEnum.Value)
 
