@@ -868,6 +868,33 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<RefreshMode>onChange</RefreshMode>"
   }
 
+//kml file don't have <styleState> element. I'm not sure below test method is right, but below test passed.
+  it should "extract (optional) style state" in {
+    val xml = <styleState>highlight</styleState>
+    val po = extract[Option[StyleState]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe StyleStateEnum.highlight
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[StyleState]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<StyleState>highlight</StyleState>"
+  }
+
+
+  it should "extract (optional) view refresh mode" in {
+    val xml = <viewRefreshMode>onRequest</viewRefreshMode>
+    val po = extract[Option[ViewRefreshMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe ViewRefreshEnum.onRequest
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[ViewRefreshMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<ViewRefreshMode>onRequest</ViewRefreshMode>"
+  }
 
   behavior of "HotSpot"
 
