@@ -2797,12 +2797,6 @@ object StyleSelectorData extends Extractors with Renderers {
   implicit val renderer: Renderer[StyleSelectorData] = renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
 }
 
-case class StyleState($: StyleStateEnum.Value)
-
-object StyleState extends Extractors with Renderers {
-  implicit val extractorOpt: Extractor[Option[StyleState]] = extractor10(apply).lift ^^ "extractMaybeStyleState"
-  implicit val rendererOpt: Renderer[Option[StyleState]] = renderer1(apply).lift ^^ "rendererOptionStyleState"
-}
 /**
  * A case class representing a style URL in the KML document context.
  *
