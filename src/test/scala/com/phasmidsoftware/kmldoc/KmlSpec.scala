@@ -869,6 +869,19 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<DisplayMode>default</DisplayMode>"
   }
 
+  it should "extract (optional) listItemType" in {
+    val xml = <listItemType>checkOffOnly</listItemType>
+    val po = extract[Option[ListItemType]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe ListItemTypeEnum.checkOffOnly
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[ListItemType]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<ListItemType>checkOffOnly</ListItemType>"
+  }
+
   it should "extract (optional) refresh mode" in {
     val xml = <refreshMode>onChange</refreshMode>
     val po = extract[Option[RefreshMode]](xml)

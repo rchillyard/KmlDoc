@@ -208,7 +208,7 @@ object RefreshModeEnum extends Enumeration with Extractors with Renderers {
  */
 object StyleStateEnum extends Enumeration with Extractors with Renderers {
   val normal, highlight = Value
-  implicit val extractor: Extractor[StyleStateEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val extractor: Extractor[StyleStateEnum.Value] = extractorEnum[Value, this.type](this)(identity)
   implicit val renderer: Renderer[StyleStateEnum.Value] = enumObjectRenderer
 }
 
