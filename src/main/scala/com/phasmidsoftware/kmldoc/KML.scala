@@ -69,52 +69,11 @@ object KmlData extends Extractors with Renderers {
 // ================ See https://developers.google.com/kml/documentation/kmlreference#kml-fields
 
 /**
- * An enumeration object representing a collection of shapes.
- * `Shapes` supports extraction and rendering functionalities.
- *
- * Shapes include:
- * - rectangle
- * - cylinder
- * - sphere
- *
- * This object provides implicit values for extraction and rendering:
- * - `extractor`: Extracts instances of `Shapes.ShapeValue` from a defined context.
- * - `renderer`: Renders `Shapes.ShapeValue` instances as their string representations.
- *
- * The `ShapeValue` type is an alias for the `Value` type in this enumeration.
- */
-object Shapes extends Enumeration with Extractors with Renderers {
-  val rectangle, cylinder, sphere = Value
-  implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
-  implicit val renderer: Renderer[Shapes.Value] = enumObjectRenderer
-}
-
-/**
- * Enumeration representing various units that can be used.
- *
- * The available units in this enumeration are:
- * - fraction: Represents fractional units
- * - pixels: Represents pixel-based units
- * - insetPixels: Represents pixel units used for insets
- *
- * This object extends the capabilities of Enumeration to include Extractors and Renderers.
- *
- * Implicit members:
- * - extractor: Provides an Extractor instance for extracting values of UnitsEnum.
- * - renderer: Provides a Renderer instance for rendering values of UnitsEnum.
- */
-object UnitsEnum extends Enumeration with Extractors with Renderers {
-  val fraction, pixels, insetPixels = Value
-  implicit val extractor: Extractor[UnitsEnum.Value] = extractorEnum[Value, this.type](this)(identity)
-  implicit val renderer: Renderer[UnitsEnum.Value] = enumAttributeRenderer
-}
-
-/**
  * Enumeration representing various methods how the `altitude` is interpreted
  *
  * The available altitudeMode in this enumeration are:
  * - clampToGround: (default) Represents to ignore the altitude specification
- *                  and drape the overlay over the terrain.
+ * and drape the overlay over the terrain.
  * - relativeToGround: Represents the altitude of the element relative to the actual ground elevation of a particular location.
  * - absolute: Represents the altitude of the coordinate relative to sea level
  *
@@ -127,7 +86,7 @@ object UnitsEnum extends Enumeration with Extractors with Renderers {
  */
 object AltitudeModeEnum extends Enumeration with Extractors with Renderers {
   val clampToGround, relativeToGround, absolute = Value
-  implicit val extractor: Extractor[AltitudeModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val extractor: Extractor[AltitudeModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
   implicit val renderer: Renderer[AltitudeModeEnum.Value] = enumObjectRenderer
 }
 
@@ -146,7 +105,7 @@ object AltitudeModeEnum extends Enumeration with Extractors with Renderers {
  */
 object ColorModeEnum extends Enumeration with Extractors with Renderers {
   val normal, random = Value
-  implicit val extractor: Extractor[ColorModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val extractor: Extractor[ColorModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
   implicit val renderer: Renderer[ColorModeEnum.Value] = enumObjectRenderer
 }
 
@@ -165,8 +124,52 @@ object ColorModeEnum extends Enumeration with Extractors with Renderers {
  */
 object DisplayModeEnum extends Enumeration with Extractors with Renderers {
   val default, hide = Value
-  implicit val extractor: Extractor[DisplayModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val extractor: Extractor[DisplayModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
   implicit val renderer: Renderer[DisplayModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing different types of list item behaviors or attributes.
+ *
+ * The `ListItemTypeEnum` object provides a set of predefined values:
+ * - `check`: Represents a list item that can be checked.
+ * - `checkOffOnly`: Represents a list item that can only be unchecked.
+ * - `checkHideChildren`: Represents a list item that hides its children when checked.
+ * - `radioFolder`: Represents a list item with behavior similar to a radio button within a folder.
+ *
+ * This object extends `Enumeration` to define the set of values, and integrates
+ * with the `Extractors` and `Renderers` traits to provide functionality for
+ * extracting and rendering enumeration values.
+ *
+ * Contains implicit components:
+ * - An extractor for converting to and from `ListItemTypeEnum.Value`.
+ * - A renderer for rendering `ListItemTypeEnum.Value`.
+ */
+object ListItemTypeEnum extends Enumeration with Extractors with Renderers {
+  val check, checkOffOnly, checkHideChildren, radioFolder = Value
+  implicit val extractor: Extractor[ListItemTypeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[ListItemTypeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * An enumeration object representing a collection of shapes.
+ * `Shapes` supports extraction and rendering functionalities.
+ *
+ * Shapes include:
+ * - rectangle
+ * - cylinder
+ * - sphere
+ *
+ * This object provides implicit values for extraction and rendering:
+ * - `extractor`: Extracts instances of `Shapes.ShapeValue` from a defined context.
+ * - `renderer`: Renders `Shapes.ShapeValue` instances as their string representations.
+ *
+ * The `ShapeValue` type is an alias for the `Value` type in this enumeration.
+ */
+object Shapes extends Enumeration with Extractors with Renderers {
+  val rectangle, cylinder, sphere = Value
+  implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
+  implicit val renderer: Renderer[Shapes.Value] = enumObjectRenderer
 }
 
 /**
@@ -207,6 +210,26 @@ object StyleStateEnum extends Enumeration with Extractors with Renderers {
   val normal, highlight = Value
   implicit val extractor: Extractor[StyleStateEnum.Value] = extractorEnum[Value,this.type](this)(identity)
   implicit val renderer: Renderer[StyleStateEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing various units that can be used.
+ *
+ * The available units in this enumeration are:
+ * - fraction: Represents fractional units
+ * - pixels: Represents pixel-based units
+ * - insetPixels: Represents pixel units used for insets
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of UnitsEnum.
+ * - renderer: Provides a Renderer instance for rendering values of UnitsEnum.
+ */
+object UnitsEnum extends Enumeration with Extractors with Renderers {
+  val fraction, pixels, insetPixels = Value
+  implicit val extractor: Extractor[UnitsEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[UnitsEnum.Value] = enumAttributeRenderer
 }
 
 /**
@@ -1726,12 +1749,18 @@ object LineStyle extends Extractors with Renderers {
 }
 
 /**
- * ListItemType
- * - CONSIDER this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
+ * Represents a type of list item defined by the enumeration `ListItemTypeEnum`.
  *
- * @param $ the value.
+ * The `ListItemType` case class encapsulates a value from `ListItemTypeEnum`, which defines
+ * the behavior or attributes associated with various types of list items.
+ *
+ * This class is used in conjunction with the companion object and other utility traits to
+ * facilitate rendering and extraction of `ListItemType` instances.
+ *
+ * @param $ The enumeration value specifying the type of list item. This value must be one
+ *          of the predefined values in the `ListItemTypeEnum` object.
  */
-case class ListItemType($: CharSequence)
+case class ListItemType($: ListItemTypeEnum.Value)
 
 /**
  * The `ListItemType` object provides extractors and renderers for the `ListItemType` case class.
@@ -1744,8 +1773,6 @@ case class ListItemType($: CharSequence)
  * - `rendererOpt`: Renderers for optional `ListItemType` instances.
  */
 object ListItemType extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractorOpt: Extractor[Option[ListItemType]] = extractor10(apply).lift ^^ "extractMaybeListItemType"
   implicit val rendererOpt: Renderer[Option[ListItemType]] = renderer1(apply).lift ^^ "rendererOptionListItemType"
