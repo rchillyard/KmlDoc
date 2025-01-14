@@ -654,8 +654,6 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
   }
 
   private val result: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- first vector last) yield v
-  private lazy val vector: Option[Cartesian] =
-    result
 
   /**
    * Computes the gap (distance) between this Coordinates instance and another Coordinates instance, if possible.
@@ -1913,8 +1911,7 @@ object Outline extends Extractors with Renderers {
  *  Abstract Overlay element.
  *  Overlay is a subtype of Feature and a super-type of PhotoOverlay, ScreenOverlay, GroundOverlay.
  *  See [[https://developers.google.com/kml/documentation/kmlreference#overlay Overlay]].
- * The trait Overlay is extended, abstractly, by
- * {@link BaseOverlay}.
+ * The trait Overlay is extended, abstractly, by [[BaseOverlay]].
  * A Overlay has properties (color, maybeDrawOrder and Icon ) of its own.
  *  color The order of expression is aabbggrr in hexadecimal notation,
  *               where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).

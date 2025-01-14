@@ -12,11 +12,7 @@ import scala.util.matching.Regex
 import scala.xml.NamespaceBinding
 
 /**
- * The Helper object provides a collection of geometric utility functions and methods
- * designed to facilitate common tasks and simplify code implementation.
- *
- * It serves as a central location for reusable helper logic, aiming to promote
- * code modularity and reduce code duplication throughout the application.
+ * The Helper object does nothing other than provide a name for this module.
  */
 object Helper
 

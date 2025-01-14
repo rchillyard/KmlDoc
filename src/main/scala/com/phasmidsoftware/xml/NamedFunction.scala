@@ -52,7 +52,7 @@ trait NamedFunction[E] {
  * including methods to assert and combine named function instances.
  */
 object NamedFunction {
-    def assertNamedNotNullMember[N: NamedFunction, T: ClassTag](caller: String, member: String): Unit = {
+    private def assertNamedNotNullMember[N: NamedFunction, T: ClassTag](caller: String, member: String): Unit = {
         // NOTE: for now we do nothing to actually evaluate the implicit evidence of NamedFunction[N].
 //        Option(implicitly[NamedFunction[N]]) match {
 //            case None =>

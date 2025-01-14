@@ -434,7 +434,7 @@ trait Renderers {
         case _ =>
           Failure(XmlException(s"rendererSuper1: object of type ${t.getClass} is not a subtype for ${implicitly[ClassTag[T]]}\n" +
             s"Are you sure that, in the appropriate rendererSuperN definition, you've included all possible subtypes?" +
-            s" (compare with the corresponding extractor definition"))
+            s" (compare with the corresponding (multi) extractor definition"))
       }
   }
 
@@ -588,7 +588,7 @@ object Renderers {
    * @tparam T the type of the object to be rendered.
    * @return a `Renderer[T]` that renders objects of type `T` with an optional name.
    */
-  def rendererAnyWithName[T]: Renderer[T] = {
+  private def rendererAnyWithName[T]: Renderer[T] = {
     (t, _, stateR) => renderAny(t, stateR.maybeName)
   }
 
