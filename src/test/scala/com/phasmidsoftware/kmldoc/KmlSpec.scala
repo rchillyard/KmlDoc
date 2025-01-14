@@ -281,6 +281,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(gs) =>
         gs.size shouldBe 1
         val polygon = gs.head.asInstanceOf[Polygon]
+        polygon.geometryData.maybeAltitudeMode shouldBe Some(AltitudeMode(AltitudeModeEnum.relativeToGround))
         val outerBoundary: OuterBoundaryIs = polygon.outerBoundaryIs
         val coordinates: Seq[Coordinates] = outerBoundary.LinearRing.coordinates
         coordinates.size shouldBe 1

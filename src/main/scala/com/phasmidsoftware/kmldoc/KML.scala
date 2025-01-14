@@ -291,7 +291,7 @@ object AbstractViewData extends Extractors with Renderers {
 
 /**
  * Case class representing an altitude value.
- * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
+ * See [[https://developers.google.com/kml/documentation/kmlreference#altitude Altitude]]
  *
  * @param $ the altitude value, typically measured in meters.
  */
@@ -299,6 +299,7 @@ case class Altitude($: Double)
 
 /**
  * Object representing utilities for working with the Altitude case class.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#altitude Altitude]]
  *
  * Provides implementations for `Extractor` and `Renderer` type classes,
  * enabling extraction and rendering functionality for `Altitude` and `Option[Altitude]`.
@@ -314,12 +315,20 @@ object Altitude extends Extractors with Renderers {
 }
 
 /**
- * Represents the altitude mode for a specific KML element.
+ * Represents the mode by which altitude is specified and interpreted.
  * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
  *
- * An altitude mode defines the way altitude values are interpreted.
+ * This case class wraps a value from the AltitudeModeEnum enumeration, which specifies
+ * how the altitude should behave relative to the terrain or sea level.
  *
- * @param $ a character sequence representing the altitude mode.
+ * The possible altitude modes are defined in the AltitudeModeEnum object and include:
+ *  - clampToGround: Ignores the altitude value and drapes the element on the ground.
+ *  - relativeToGround: Specifies the altitude as relative to the ground elevation.
+ *  - absolute: Specifies the altitude relative to sea level.
+ *
+ * The AltitudeMode class serves as a wrapper, enabling seamless integration with extractors
+ * and renderers for handling data transformations and operations within systems that support
+ * AltitudeModeEnum values.
  */
 case class AltitudeMode($: AltitudeModeEnum.Value)
 
@@ -332,8 +341,6 @@ case class AltitudeMode($: AltitudeModeEnum.Value)
  * with AltitudeMode objects in the context of data transformation and rendering pipelines.
  */
 object AltitudeMode extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractor10(apply).lift ^^ "extractorOptAltitudeMode"
   implicit val rendererOpt: Renderer[Option[AltitudeMode]] = renderer1(apply).lift
@@ -383,6 +390,7 @@ object BalloonStyle extends Extractors with Renderers {
 /**
  * This case class represents a background color element with a single parameter.
  * Used by `BalloonStyle` and `ListStyle`.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#bgcolor bgColor]]
  *
  * @param $ a CharSequence value that defines the background color.
  */
@@ -627,6 +635,7 @@ object ContainerData extends Extractors with Renderers {
 /**
  * Represents a sequence of `Coordinate` objects and provides operations for merging, reversing, and computing
  * geometric properties such as gaps and directions.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#coordinates Linear Ring coordinates]]
  *
  * @constructor Creates an instance of `Coordinates` with the specified sequence of `Coordinate` objects.
  * @param coordinates A sequence of `Coordinate` objects representing this collection.
@@ -759,10 +768,16 @@ object Coordinates extends Extractors with Renderers {
 }
 
 /**
- * DisplayMode which has values "default" or "hide".
- * Used by BalloonStyle.
+ * DisplayMode represents a display preference in association with the DisplayModeEnum enumeration.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#displaymode displayMode]]
  *
- * @param $ the mode.
+ * It is defined as a case class wrapping a value from the DisplayModeEnum enumeration.
+ * The DisplayMode can be rendered or extracted for usage, utilizing the implicit values
+ * defined in its companion object.
+ *
+ * The case class is closely associated with the DisplayModeEnum which provides the following options:
+ * - default: Uses the provided information to generate a visible representation.
+ * - hide: Suppresses the display of the associated representation.
  */
 case class DisplayMode($: DisplayModeEnum.Value)
 
@@ -826,6 +841,7 @@ object Document extends Extractors with Renderers {
 
 /**
  * Represents a draw order value as an Int.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#draworder draworder]]
  *
  */
 case class DrawOrder($: Int)
@@ -850,6 +866,7 @@ object DrawOrder extends Extractors with Renderers {
  * Class Extrude which represents a `Boolean`.
  * Used by `LineString` and `Polygon`.
  * Similar to `Tessellate`--and in fact they often go together.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#extrude Linear Ring extrude]]
  *
  * @param $ the value.
  */
@@ -980,6 +997,7 @@ object FeatureData extends Extractors with Renderers {
 /**
  * Fill.
  * NOTE that this is a boolean that is represented by 0 or 1.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#fill fill]]
  *
  * @param boolean whether to fill or not.
  */
@@ -1140,6 +1158,7 @@ object GeometryData extends Extractors with Renderers {
  * Represents a GroundOverlay, which is a KML feature that overlays an image on the surface
  * of the Earth. The image is geographically bound to a `LatLonBox` and can have an optional
  * altitude and altitude mode.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#groundoverlay GroundOverlay]]
  *
  * A `GroundOverlay` extends the `BaseOverlay` class to include additional geographic attributes
  * such as the bounding box and altitude-related data.
@@ -1190,6 +1209,7 @@ object GroundOverlay extends Extractors with Renderers {
 
 /**
  * Case class to represent a Heading which is represented in XML as, for example: <heading>1.1</heading>
+ * See [[https://developers.google.com/kml/documentation/kmlreference#heading heading]]
  *
  * @param $ the value of the heading (a Double).
  */
@@ -1219,8 +1239,7 @@ object Heading extends Extractors with Renderers {
 
 /**
  * Case class to model a HotSpot.
- *
- * TODO change _xunits and _yunits to be of type String.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#hotspot hotSpot]]
  *
  * @param _x      optional x field.
  * @param _xunits optional xunits field.
