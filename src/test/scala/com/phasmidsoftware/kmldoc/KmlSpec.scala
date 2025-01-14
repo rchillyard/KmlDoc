@@ -957,7 +957,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     Extractor.extract[OverlayXY](nodeSeq.head) match {
       case Success(overlayXY) =>
-        overlayXY shouldBe OverlayXY(0.5, 0.5,"fraction", "fraction")
+        overlayXY shouldBe OverlayXY(0.5, 0.5,UnitsEnum.fraction, UnitsEnum.fraction)
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering an OverlayXY object as is.
         val wy1 = TryUsing(StateR())(sr => Renderer.render[OverlayXY](overlayXY, FormatXML(), sr))
@@ -982,7 +982,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     Extractor.extract[ScreenXY](nodeSeq.head) match {
       case Success(screenXY) =>
-        screenXY shouldBe ScreenXY(0.5, 0.5,"fraction", "fraction")
+        screenXY shouldBe ScreenXY(0.5, 0.5, UnitsEnum.fraction, UnitsEnum.fraction)
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a ScreenXY object as is.
         val wy1 = TryUsing(StateR())(sr => Renderer.render[ScreenXY](screenXY, FormatXML(), sr))
@@ -1007,7 +1007,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     Extractor.extract[RotationXY](nodeSeq.head) match {
       case Success(rotationXY) =>
-        rotationXY shouldBe RotationXY(0.5, 0.5,"fraction", "fraction")
+        rotationXY shouldBe RotationXY(0.5, 0.5,UnitsEnum.fraction, UnitsEnum.fraction)
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a RotationXY object as is.
         val wy1 = TryUsing(StateR())(sr => Renderer.render[RotationXY](rotationXY, FormatXML(), sr))
@@ -1032,7 +1032,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     Extractor.extract[Size](nodeSeq.head) match {
       case Success(size) =>
-        size shouldBe Size(0, 0,"pixels", "pixels")
+        size shouldBe Size(0, 0,UnitsEnum.pixels, UnitsEnum.pixels)
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a Size object as is.
         val wy1 = TryUsing(StateR())(sr => Renderer.render[Size](size, FormatXML(), sr))

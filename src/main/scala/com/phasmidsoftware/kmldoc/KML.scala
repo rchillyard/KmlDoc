@@ -2079,7 +2079,7 @@ object OverlayData extends Extractors with Renderers {
  *                A value of "pixels" indicates the y value in pixels.
  *                A value of "insetPixels" indicates the indent from the top edge of the image.
  */
-case class OverlayXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class OverlayXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
 object OverlayXY extends Extractors with Renderers {
   implicit val extractor: Extractor[OverlayXY] = extractor40(apply)
@@ -2501,7 +2501,7 @@ object Rotation extends Extractors with Renderers {
  *                A value of "pixels" indicates the y value in pixels.
  *                A value of "insetPixels" indicates the indent from the top edge of the image.
  */
-case class RotationXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class RotationXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
 /**
  * Object RotationXY provides implicit extractor and renderer instances for the RotationXY case class.
@@ -2614,7 +2614,7 @@ object ScreenOverlay extends Extractors with Renderers {
  *                A value of "pixels" indicates the y value in pixels.
  *                A value of "insetPixels" indicates the indent from the top edge of the screen.
  */
-case class ScreenXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class ScreenXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
 /**
  * Companion object for the `ScreenXY` case class that provides implicit extractors
@@ -2678,7 +2678,7 @@ object Shape extends Extractors with Renderers {
  * @param _xunits The units in which the x-axis measurement is expressed.
  * @param _yunits The units in which the y-axis measurement is expressed.
  */
-case class Size(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class Size(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
 object Size extends Extractors with Renderers {
   implicit val extractor: Extractor[Size] = extractor40(apply)
