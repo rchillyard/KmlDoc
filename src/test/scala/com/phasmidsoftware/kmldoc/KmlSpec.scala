@@ -895,7 +895,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<RefreshMode>onChange</RefreshMode>"
   }
 
-  it should "extract style state" in {
+  it should "extract styleState" in {
     val xml = <Key>highlight</Key>
     val po = extract[Key](xml)
     po.isSuccess shouldBe true
@@ -907,6 +907,17 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<Key>highlight</Key>"
   }
 
+  it should "extract state" in {
+    val xml = <state>open</state>
+    val po = extract[State](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.$ shouldBe ItemIconModeEnum.open
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[State](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<State>open</State>"
+  }
 
   it should "extract (optional) view refresh mode" in {
     val xml = <viewRefreshMode>onRequest</viewRefreshMode>

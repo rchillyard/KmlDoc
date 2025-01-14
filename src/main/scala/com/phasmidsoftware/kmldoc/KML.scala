@@ -128,6 +128,13 @@ object DisplayModeEnum extends Enumeration with Extractors with Renderers {
   implicit val renderer: Renderer[DisplayModeEnum.Value] = enumObjectRenderer
 }
 
+object ItemIconModeEnum extends Enumeration with Extractors with Renderers {
+  val open, closed, error, fetching0, fetching1,fetching2 = Value
+  implicit val extractor: Extractor[ItemIconModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[ItemIconModeEnum.Value] = enumObjectRenderer
+}
+
+
 /**
  * Enumeration representing different types of list item behaviors or attributes.
  *
@@ -2690,7 +2697,7 @@ object Size extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class State($: CharSequence)
+case class State($: ItemIconModeEnum.Value)
 
 /**
  * Provides utility functions and implicits for the `State` case class.
