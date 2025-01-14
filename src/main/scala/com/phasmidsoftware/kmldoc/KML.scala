@@ -321,7 +321,7 @@ object Altitude extends Extractors with Renderers {
  *
  * @param $ a character sequence representing the altitude mode.
  */
-case class AltitudeMode($: CharSequence)
+case class AltitudeMode($: AltitudeModeEnum.Value)
 
 /**
  * Companion object for the AltitudeMode case class, providing extractors and renderers.

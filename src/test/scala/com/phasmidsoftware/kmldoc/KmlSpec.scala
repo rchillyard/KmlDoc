@@ -829,6 +829,19 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     triedString.get shouldBe "<Shape>rectangle\n</Shape>"
   }
 
+  it should "extract (optional) altitude mode" in {
+    val xml = <altitudeMode>clampToGround</altitudeMode>
+    val po = extract[Option[AltitudeMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe AltitudeModeEnum.clampToGround
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[AltitudeMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<AltitudeMode>clampToGround</AltitudeMode>"
+  }
+
   it should "extract (optional) color mode" in {
     val xml = <colorMode>random</colorMode>
     val po = extract[Option[ColorMode]](xml)
