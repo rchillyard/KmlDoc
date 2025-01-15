@@ -823,7 +823,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val po = extract[Shape](xml)
     po.isSuccess shouldBe true
     val p = po.get
-    p.shape shouldBe Shapes.rectangle
+    p.shape shouldBe ShapeEnum.rectangle
     // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
     val triedString = Renderer.render[Shape](p, FormatXML(), StateR())
     triedString.isSuccess shouldBe true

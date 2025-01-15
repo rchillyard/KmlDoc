@@ -128,8 +128,25 @@ object DisplayModeEnum extends Enumeration with Extractors with Renderers {
   implicit val renderer: Renderer[DisplayModeEnum.Value] = enumObjectRenderer
 }
 
+/**
+ * Enumeration representing Values for ItemIconModeEnum are open, closed, error, fetching0, fetching1 or fetching2.
+ *
+ * The available ItemIconModeEnum in this enumeration are:
+ * - open
+ * - closed
+ * - error
+ * - fetching0
+ * - fetching1
+ * - fetching2
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of ItemIconModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of ItemIconModeEnum.
+ */
 object ItemIconModeEnum extends Enumeration with Extractors with Renderers {
-  val open, closed, error, fetching0, fetching1,fetching2 = Value
+  val open, closed, error, fetching0, fetching1, fetching2 = Value
   implicit val extractor: Extractor[ItemIconModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
   implicit val renderer: Renderer[ItemIconModeEnum.Value] = enumObjectRenderer
 }
@@ -160,23 +177,23 @@ object ListItemTypeEnum extends Enumeration with Extractors with Renderers {
 
 /**
  * An enumeration object representing a collection of shapes.
- * `Shapes` supports extraction and rendering functionalities.
+ * `ShapeEnum` supports extraction and rendering functionalities.
  *
- * Shapes include:
+ * ShapeEnum include:
  * - rectangle
  * - cylinder
  * - sphere
  *
  * This object provides implicit values for extraction and rendering:
- * - `extractor`: Extracts instances of `Shapes.ShapeValue` from a defined context.
- * - `renderer`: Renders `Shapes.ShapeValue` instances as their string representations.
+ * - `extractor`: Extracts instances of `ShapeEnum.Value` from a defined context.
+ * - `renderer`: Renders `ShapeEnum.Value` instances as their string representations.
  *
- * The `ShapeValue` type is an alias for the `Value` type in this enumeration.
+ * The `ShapeEnum.Value` type is an alias for the `Value` type in this enumeration.
  */
-object Shapes extends Enumeration with Extractors with Renderers {
+object ShapeEnum extends Enumeration with Extractors with Renderers {
   val rectangle, cylinder, sphere = Value
-  implicit val extractor: Extractor[Shapes.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
-  implicit val renderer: Renderer[Shapes.Value] = enumObjectRenderer
+  implicit val extractor: Extractor[ShapeEnum.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
+  implicit val renderer: Renderer[ShapeEnum.Value] = enumObjectRenderer
 }
 
 /**
@@ -2639,7 +2656,7 @@ object ScreenXY extends Extractors with Renderers {
 }
 
 /**
- * Represents a shape based on the `Shapes.Value` enumeration.
+ * Represents a shape based on the `ShapeEnum.Value` enumeration.
  *
  * This case class encapsulates a single shape value, which can represent predefined
  * shapes such as `rectangle`, `cylinder`, or `sphere`.
@@ -2655,7 +2672,7 @@ object ScreenXY extends Extractors with Renderers {
  * The companion object for this class provides the necessary extractor and renderer
  * implementations for seamless integration.
  */
-case class Shape(shape: Shapes.Value)
+case class Shape(shape: ShapeEnum.Value)
 
 /**
  * Companion object for the `Shape` case class.
