@@ -4,7 +4,7 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
@@ -2153,10 +2153,10 @@ object Pair extends Extractors with Renderers {
  *
  * @constructor Creates a new `PhotoOverlay` instance.
  * @param rotation the rotation angle of the photo overlay, represented as a `Rotation`.
- * @param viewVolume Defines how much of the current scene is visible.
- * @param imagePyramid a hierarchical set of images,
+ * @param ViewVolume Defines how much of the current scene is visible.
+ * @param ImagePyramid a hierarchical set of images,
  *                     each of which is an increasingly lower resolution version of the original image.
- * @param point  the geographical position for the photo overlay, represented as a `Point`.
+ * @param Point the geographical position for the photo overlay, represented as a `Point`.
  * @param shape The PhotoOverlay is projected onto the <shape>.
  *              The <shape> can be one of the following:
  *              rectangle (default) - for an ordinary photo
@@ -2164,7 +2164,7 @@ object Pair extends Extractors with Renderers {
  *              sphere - for spherical panoramas
  * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
-case class PhotoOverlay(rotation: Rotation, viewVolume: ViewVolume, imagePyramid: ImagePyramid, point: Point, shape: Shape)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
+case class PhotoOverlay(rotation: Rotation, ViewVolume: ViewVolume, ImagePyramid: ImagePyramid, Point: Point, shape: Shape)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Object `PhotoOverlay` provides extractors and renderers for the case class `PhotoOverlay`.
@@ -2432,8 +2432,8 @@ object Range extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Range] = extractor10(apply)
-  implicit val renderer: Renderer[Range] = renderer1(apply)
+  implicit val extractor: Extractor[Range] = extractor10(apply) ^^ "extractorRange"
+  implicit val renderer: Renderer[Range] = renderer1(apply) ^^ "rendererRange"
 }
 
 /**
@@ -2456,7 +2456,7 @@ case class RefreshMode($: RefreshModeEnum.Value)
  */
 object RefreshMode extends Extractors with Renderers {
 
-  implicit val extractorOpt: Extractor[Option[RefreshMode]] = extractor10(apply).lift ^^ "extractMaybeRefreshMode"
+  implicit val extractorOpt: Extractor[Option[RefreshMode]] = extractor10(apply).lift ^^ "extractOptionRefreshMode"
   implicit val rendererOpt: Renderer[Option[RefreshMode]] = renderer1(apply).lift ^^ "rendererOptionRefreshMode"
 }
 
@@ -2486,8 +2486,8 @@ object Roll extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Roll] = extractor10(apply)
-  implicit val renderer: Renderer[Roll] = renderer1(apply)
+  implicit val extractor: Extractor[Roll] = extractor10(apply) ^^ "extractorRoll"
+  implicit val renderer: Renderer[Roll] = renderer1(apply) ^^ "rendererRoll"
 }
 
 /**
@@ -2505,10 +2505,10 @@ object Rotation extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Rotation] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Rotation]] = extractorOption[Rotation]
-  implicit val renderer: Renderer[Rotation] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Rotation]] = optionRenderer[Rotation]
+  implicit val extractor: Extractor[Rotation] = extractor10(apply) ^^ "extractorRotation"
+  implicit val extractorOpt: Extractor[Option[Rotation]] = extractorOption[Rotation] ^^ "extractorOptionRotation"
+  implicit val renderer: Renderer[Rotation] = renderer1(apply) ^^ "rendererRotation"
+  implicit val rendererOpt: Renderer[Option[Rotation]] = optionRenderer[Rotation] ^^ "rendererOptionRotation"
 }
 
 /**
@@ -2540,8 +2540,8 @@ case class RotationXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: Un
  * of the RotationXY case class for output.
  */
 object RotationXY extends Extractors with Renderers {
-  implicit val extractor: Extractor[RotationXY] = extractor40(apply)
-  implicit val renderer: Renderer[RotationXY] = renderer4(apply)
+  implicit val extractor: Extractor[RotationXY] = extractor40(apply) ^^ "extractorRotationXY"
+  implicit val renderer: Renderer[RotationXY] = renderer4(apply) ^^ "rendererRotationXY"
 }
 
 /**
@@ -2615,7 +2615,7 @@ case class ScreenOverlay(overlayXY: OverlayXY, screenXY: ScreenXY, rotationXY: R
  * and are intended to support working with structured representations of screen overlays.
  */
 object ScreenOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial50(apply) ^^ "extractorCD2ScreenOverlay"
+  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial50(apply) ^^ "extractorOD2ScreenOverlay"
   implicit val extractor: Extractor[ScreenOverlay] = extractorPartial(extractorPartial) ^^ "extractorScreenOverlay"
   implicit val renderer: Renderer[ScreenOverlay] = renderer5Super(apply)(_.overlayData) ^^ "renderScreenOverlay"
   implicit val renderSeq: Renderer[Seq[ScreenOverlay]] = sequenceRenderer[ScreenOverlay] ^^ "rendererScreenOverlays"
@@ -2651,8 +2651,8 @@ case class ScreenXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: Unit
  * It simplifies the process of transforming `ScreenXY` to and from other representations.
  */
 object ScreenXY extends Extractors with Renderers {
-  implicit val extractor: Extractor[ScreenXY] = extractor40(apply)
-  implicit val renderer: Renderer[ScreenXY] = renderer4(apply)
+  implicit val extractor: Extractor[ScreenXY] = extractor40(apply) ^^ "extractorScreenXY"
+  implicit val renderer: Renderer[ScreenXY] = renderer4(apply) ^^ "rendererScreenXY"
 }
 
 /**
@@ -2672,7 +2672,7 @@ object ScreenXY extends Extractors with Renderers {
  * The companion object for this class provides the necessary extractor and renderer
  * implementations for seamless integration.
  */
-case class Shape(shape: ShapeEnum.Value)
+case class Shape($: ShapeEnum.Value)
 
 /**
  * Companion object for the `Shape` case class.
@@ -2687,8 +2687,8 @@ case class Shape(shape: ShapeEnum.Value)
  * rendering of `Shape` instances.
  */
 object Shape extends Extractors with Renderers {
-  implicit val extractor: Extractor[Shape] = extractor10(Shape.apply)
-  implicit val renderer: Renderer[Shape] = renderer1(Shape.apply)
+  implicit val extractor: Extractor[Shape] = extractor10(apply) ^^ "extractorShape"
+  implicit val renderer: Renderer[Shape] = renderer1(apply) ^^ "rendererShape"
 }
 
 /**
@@ -2704,9 +2704,15 @@ object Shape extends Extractors with Renderers {
  */
 case class Size(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
+/**
+ * Companion object for the `Size` case class.
+ * Provides implicit instances of `Extractor` and `Renderer` for the `Size` type.
+ * The `Extractor` allows parsing and extracting `Size` values from a data source.
+ * The `Renderer` facilitates rendering `Size` values into a specific output format.
+ */
 object Size extends Extractors with Renderers {
-  implicit val extractor: Extractor[Size] = extractor40(apply)
-  implicit val renderer: Renderer[Size] = renderer4(apply)
+  implicit val extractor: Extractor[Size] = extractor40(apply) ^^ "extractorSize"
+  implicit val renderer: Renderer[Size] = renderer4(apply) ^^ "rendererSize"
 }
 /**
  * State
@@ -2731,8 +2737,6 @@ case class State($: ItemIconModeEnum.Value)
  *  - A renderer for serializing an optional `State`.
  */
 object State extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractor: Extractor[State] = extractor10(apply) ^^ "extractorState"
   implicit val renderer: Renderer[State] = renderer1(apply) ^^ "rendererState"

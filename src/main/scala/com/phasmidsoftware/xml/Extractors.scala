@@ -1998,14 +1998,21 @@ object Extractors extends Extractors {
   implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[CharSequence] flatMap (xo => Success(xo map (_.toString)))
 
   /**
-   * Method to extract an optional value from a NodeSeq.
-   * NOTE: this code looks very wrong.
-   * But, as Galileo said, "eppur si muove."
-   * CONSIDER re-writing by using the `lift` method.
+   * Method to extract an optional value of type `P` from the provided `NodeSeq`.
+   * If the `NodeSeq` is empty, it returns a `Success` containing `None` as `P`.
+   * If the `NodeSeq` contains nodes, it uses the implicit `Extractor[P]` to attempt to extract the value.
+   *
+   * TODO this method is incorrect. Fix it.
+   *
+   * @param nodeSeq the sequence of XML nodes from which the extraction is performed.
+   * @tparam P the type of form Option[T] extracted value.
+   *           Requires implicit evidence of an `Extractor[P]`.
+   * @return a `Try[P]` containing the extracted value or an error if extraction fails.
    */
   def extractOptional[P: Extractor](nodeSeq: NodeSeq): Try[P] =
     nodeSeq.headOption map extract[P] match {
-      case Some(value) => value
+      case Some(value) if nodeSeq.tail.isEmpty => value
+      case Some(_) => Failure(XmlException(s"extractOptional: logic error: too many elements for optional value"))
       case None => Success(None.asInstanceOf[P])
     }
 

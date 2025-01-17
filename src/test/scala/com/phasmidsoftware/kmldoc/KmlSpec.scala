@@ -741,7 +741,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   }
 
   // TODO Issue #38
-  ignore should "extract PhotoOverlay" in {
+  it should "extract PhotoOverlay" in {
     val xml = <PhotoOverlay>
       <!-- inherited from Feature element -->
       <name>Test Photo Overlay</name> <!-- string -->
@@ -817,17 +817,15 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "enumerated types"
 
   it should "extract shape" in {
-    val xml = <xml>
-      <shape>rectangle</shape>
-    </xml>
+    val xml = <shape>rectangle</shape>
     val po = extract[Shape](xml)
     po.isSuccess shouldBe true
     val p = po.get
-    p.shape shouldBe ShapeEnum.rectangle
+    p.$ shouldBe ShapeEnum.rectangle
     // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
     val triedString = Renderer.render[Shape](p, FormatXML(), StateR())
     triedString.isSuccess shouldBe true
-    triedString.get shouldBe "<Shape>rectangle\n</Shape>"
+    triedString.get shouldBe "<Shape>rectangle</Shape>"
   }
 
   it should "extract (optional) altitude mode" in {
