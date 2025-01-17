@@ -57,12 +57,12 @@ object Text extends Extractors {
   /**
    * Text extractor.
    */
-  implicit val extractorText: Extractor[Text] = extractor10(apply)
+  implicit val extractor: Extractor[Text] = extractor10(apply)
 
   /**
    * Optional text extractor.
    */
-  implicit val extractorOptionalText: Extractor[Option[Text]] = extractorOption[Text]
+  implicit val extractorOptionalText: Extractor[Option[Text]] = extractor.lift
 
 }
 

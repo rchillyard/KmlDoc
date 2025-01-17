@@ -7,7 +7,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 /**
  * Trait which defines generic and standard renderers.
@@ -667,7 +667,7 @@ object Renderers {
   implicit val rendererOptionInt: Renderer[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 
   implicit val booleanRenderer: Renderer[Boolean] = Renderer[Boolean] {
-    (t, _, stateR) => Success(if (t) "1" else "0")
+    (t, _, stateR) => renderAttribute(if (t) "1" else "0", stateR.maybeName)
   } ^^ "booleanRenderer"
 
   implicit val rendererOptionBoolean: Renderer[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
