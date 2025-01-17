@@ -4,7 +4,7 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, byteRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
@@ -517,7 +517,7 @@ object Camera extends Extractors with Renderers {
  *
  * @param $ the color as a hexadecimal string.
  */
-case class Color($: CharSequence)
+case class Color($: Hex4)
 
 /**
  * The `Color` object provides implicit extractors and renderers for the `Color` case class.
@@ -1316,6 +1316,16 @@ object HotSpot extends Extractors with Renderers {
   implicit val rendererOpt: Renderer[Option[HotSpot]] = optionRenderer[HotSpot] ^^ "rendererOptionHotSpot"
 }
 
+case class Hex4(alpha: Byte, red: Byte, green: Byte, blue: Byte) {
+  override def toString: String = f"$alpha%02x$red%02x$green%02x$blue%02x"
+}
+
+object Hex4 extends Extractors with Renderers {
+
+  implicit val extractor: Extractor[Hex4] = extractor40(apply)
+  implicit val renderer: Renderer[Hex4] = renderer4(apply)
+
+}
 /**
  * Case class Icon.
  * NOTE: we do not currently support Link.

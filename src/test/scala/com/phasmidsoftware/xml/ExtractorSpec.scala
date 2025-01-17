@@ -2,7 +2,7 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP
 import com.phasmidsoftware.core.Text.multiExtractorBase
-import com.phasmidsoftware.xml.Extractor.{booleanExtractor, createLazy, doubleExtractor, extractChildren, extractSequence, fieldExtractor, inferAttributeType, intExtractor, longExtractor}
+import com.phasmidsoftware.xml.Extractor.{booleanExtractor, createLazy, doubleExtractor, extractChildren, extractSequence, fieldExtractor, inferAttributeType, intExtractor, longExtractor, byteExtractor}
 import com.phasmidsoftware.xml.MultiExtractorBase.Positive
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -92,6 +92,13 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
     target.extract(<junk>1</junk>) shouldBe Try(1)
     target.extract(<junk>X</junk>) should matchPattern { case Failure(_) => }
   }
+
+  it should "byteExtractor" in {
+    val target = byteExtractor
+    target.extract(<junk>1</junk>) shouldBe Try(1)
+    target.extract(<junk>X</junk>) should matchPattern { case Failure(_) => }
+  }
+
 
   it should "extractSequence2" in {
     val target = extractSequence[Int](<junk>1</junk> <junk>2</junk>)

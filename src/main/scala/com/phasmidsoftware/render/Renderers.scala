@@ -7,7 +7,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Failure, Try}
+import scala.util.{Success, Failure, Try}
 
 /**
  * Trait which defines generic and standard renderers.
@@ -656,6 +656,13 @@ object Renderers {
   implicit val rendererSequenceString: Renderer[Seq[String]] = new Renderers {}.sequenceRenderer[String] ^^ "rendererSequenceString"
 
   implicit val intRenderer: Renderer[Int] = rendererAnyWithName ^^ "intRenderer"
+
+
+  implicit val byteRenderer: Renderer[Byte] = Renderer[Byte] {
+    (t, _, stateR) => Success(f"$t%02x")
+
+
+  } ^^ "byteRenderer"
 
   implicit val rendererOptionInt: Renderer[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 

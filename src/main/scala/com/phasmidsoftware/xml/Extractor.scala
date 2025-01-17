@@ -465,6 +465,14 @@ object Extractor {
     case x => Failure(XmlException(s"cannot convert $x to an Int"))
   }
 
+
+  /**
+   * Byte extractor.
+   */
+  implicit val byteExtractor: Extractor[Byte] = charSequenceExtractor flatMap {
+    case w: String => Success(w.toByte)
+    case x => Failure(XmlException(s"cannot convert $x to a Byte"))
+  }
   /**
    * Boolean extractor.
    */
