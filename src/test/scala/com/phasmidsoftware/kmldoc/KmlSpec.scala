@@ -138,6 +138,27 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  behavior of "LineStyle"
+
+  it should "extract LineStyle" in {
+    val xml: Elem = <LineStyle>
+      <color>ff0000ff</color>
+      <width>5</width>
+    </LineStyle>
+    val triedLineStyle: Try[LineStyle] = extract[LineStyle](xml)
+    println(s"triedLineStyle: $triedLineStyle")
+    triedLineStyle.isSuccess shouldBe true
+    triedLineStyle.get shouldBe LineStyle(Some(Width(5.0)))(ColorStyleData(Some(Color(Hex4("ff0000ff"))), None)(SubStyleData(KmlData(None))))
+  }
+
+  it should "extract Color" in {
+    val xml: Elem = <color>ff0000ff</color>
+    val triedColor: Try[Color] = extract[Color](xml)
+    println(s"triedLineStyle: $triedColor")
+    triedColor.isSuccess shouldBe true
+    triedColor.get shouldBe Color(Hex4("ff0000ff"))
+  }
+
   behavior of "Coordinate"
 
   it should "parse Coordinate pair" in {

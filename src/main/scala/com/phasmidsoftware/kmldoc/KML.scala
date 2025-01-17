@@ -4,7 +4,7 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, byteRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
@@ -535,10 +535,10 @@ case class Color($: Hex4)
  */
 object Color extends Extractors with Renderers {
 
-  import Renderers._
-
-  implicit val extractorOpt: Extractor[Option[Color]] = extractor10(apply).lift ^^ "extractMaybeColor"
-  implicit val rendererOpt: Renderer[Option[Color]] = renderer1(apply).lift ^^ "rendererOptionColor"
+  implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractColor"
+  implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
+  implicit val optExtractor: Extractor[Option[Color]] = extractor.lift ^^ "extractOptionColor"
+  implicit val optRenderer: Renderer[Option[Color]] = renderer.lift ^^ "rendererOptionColor"
 }
 
 /**
@@ -1316,16 +1316,79 @@ object HotSpot extends Extractors with Renderers {
   implicit val rendererOpt: Renderer[Option[HotSpot]] = optionRenderer[HotSpot] ^^ "rendererOptionHotSpot"
 }
 
+/**
+ * Represents a color in the RGBA hexadecimal format using four bytes.
+ *
+ * @param alpha The alpha (transparency) component of the color, represented as a byte.
+ * @param red   The red component of the color, represented as a byte.
+ * @param green The green component of the color, represented as a byte.
+ * @param blue  The blue component of the color, represented as a byte.
+ *
+ *              Overrides the `toString` method to return the color as a hexadecimal string with each byte formatted as a two-digit hexadecimal number.
+ */
 case class Hex4(alpha: Byte, red: Byte, green: Byte, blue: Byte) {
   override def toString: String = f"$alpha%02x$red%02x$green%02x$blue%02x"
 }
 
-object Hex4 extends Extractors with Renderers {
+/**
+ * Companion object for the `Hex4` case class that provides utility methods and functionality
+ * for working with `Hex4` instances, including creation, parsing, and rendering.
+ */
+object Hex4 {
 
-  implicit val extractor: Extractor[Hex4] = extractor40(apply)
-  implicit val renderer: Renderer[Hex4] = renderer4(apply)
+  /**
+   * Constructs a `Hex4` instance using the specified alpha, red, green, and blue color components.
+   *
+   * @param alpha the alpha component represented as a string
+   * @param red   the red component represented as a string
+   * @param green the green component represented as a string
+   * @param blue  the blue component represented as a string
+   * @return a `Hex4` instance created from the provided color component values
+   */
+  def apply(alpha: String, red: String, green: String, blue: String): Hex4 = Hex4(byte(alpha), byte(red), byte(green), byte(blue))
 
+  /**
+   * Constructs a `Hex4` instance by parsing a single string containing the concatenated
+   * two-character hexadecimal representations of the alpha, red, green, and blue components.
+   *
+   * @param s A string containing exactly 8 characters, where the first two characters
+   *          represent the alpha component, the next two represent the red component,
+   *          the following two represent the green component, and the last two represent the blue component.
+   * @return A `Hex4` instance created from the parsed hexadecimal component values.
+   */
+  def apply(s: String): Hex4 = apply(s.substring(0, 2), s.substring(2, 4), s.substring(4, 6), s.substring(6, 8))
+
+  /**
+   * Provides an implicit `Extractor[Hex4]` instance for converting a `CharSequence` into
+   * a `Hex4` instance. The conversion is performed by mapping the `CharSequence` to its string
+   * representation and then creating a `Hex4` using the string constructor of `Hex4`.
+   *
+   * This extractor is named "extractorHex4".
+   */
+  implicit val extractor: Extractor[Hex4] =
+    implicitly[Extractor[CharSequence]].map(s => Hex4(s.toString)) ^^ "extractorHex4"
+  /**
+   * An implicit `Renderer` instance for the `Hex4` type.
+   *
+   * This renderer transforms a `Hex4` object into its hexadecimal string representation
+   * by invoking the overridden `toString` method of `Hex4`. The process is wrapped in a `Try`
+   * to handle potential exceptions during rendering.
+   *
+   * The `^^` operator is used to assign the name "rendererHex4" to the renderer instance.
+   */
+  implicit val renderer: Renderer[Hex4] = Renderer[Hex4] {
+    (t, _, _) => Try(t.toString)
+  } ^^ "rendererHex4"
+
+  /**
+   * Parses a hexadecimal string to a byte value.
+   *
+   * @param w the string representing a two-character hexadecimal value
+   * @return the byte value corresponding to the parsed hexadecimal string
+   */
+  private def byte(w: String): Byte = Integer.parseInt(w, 16).toByte
 }
+
 /**
  * Case class Icon.
  * NOTE: we do not currently support Link.
