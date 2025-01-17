@@ -3102,7 +3102,7 @@ object ViewVolume extends Extractors with Renderers {
  * This case class encapsulates a `CharSequence` value that signifies visibility attributes in KML data.
  * Visibility settings often dictate whether a specific KML element should be displayed in a viewer.
  */
-case class Visibility($: CharSequence)
+case class Visibility($: Boolean)
 
 /**
  * Companion object for the `Visibility` case class.

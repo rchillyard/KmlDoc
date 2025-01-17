@@ -469,7 +469,7 @@ object Extractor {
    * Boolean extractor.
    */
   implicit val booleanExtractor: Extractor[Boolean] = charSequenceExtractor flatMap {
-    case "true" | "yes" | "T" | "Y" => Success(true)
+    case "1" | "true" | "T" | "Y" => Success(true)
     case _: String => Success(false)
     case x => Failure(XmlException(s"cannot convert $x to a Boolean"))
   }
