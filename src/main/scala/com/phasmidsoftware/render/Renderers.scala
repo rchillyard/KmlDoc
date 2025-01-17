@@ -666,7 +666,9 @@ object Renderers {
 
   implicit val rendererOptionInt: Renderer[Option[Int]] = optionRenderer[Int]// ^^ "rendererOptionInt"
 
-  implicit val booleanRenderer: Renderer[Boolean] = rendererAnyWithName ^^ "booleanRenderer"
+  implicit val booleanRenderer: Renderer[Boolean] = Renderer[Boolean] {
+    (t, _, stateR) => Success(if (t) "1" else "0")
+  } ^^ "booleanRenderer"
 
   implicit val rendererOptionBoolean: Renderer[Option[Boolean]] = optionRenderer[Boolean]// ^^ "rendererOptionBoolean"
 
