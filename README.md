@@ -13,7 +13,7 @@ https://developers.google.com/kml/documentation/kmlreference
 
 Versions
 ========
-Version 1.0.4 ???
+Version 1.0.4 Many issues fixed. All non-gx entities are implemented now.
 
 Version 1.0.3 Fixed Issue #19, various other mostly cosmetic changes.
 
