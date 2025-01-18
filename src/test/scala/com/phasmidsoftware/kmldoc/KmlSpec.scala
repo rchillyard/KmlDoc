@@ -5,9 +5,10 @@ import com.phasmidsoftware.core.{CDATA, Text, TryUsing, XmlException}
 import com.phasmidsoftware.render.{FormatXML, Renderer, StateR}
 import com.phasmidsoftware.xml.Extractor.{extract, extractAll, extractMulti}
 import com.phasmidsoftware.xml.{Extractor, Extractors, RichXml}
-import java.io.FileWriter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
+import java.io.FileWriter
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
@@ -18,7 +19,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "renderers"
 
   it should "render Open" in {
-    val target = Open("1")
+    val target = Open("1" == "1")
     val wy = TryUsing(StateR())(sr => Renderer.render[Open](target, FormatXML(), sr))
     wy.isSuccess shouldBe true
     wy.get shouldBe "<Open>1</Open>"
@@ -49,11 +50,43 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
   behavior of "KmlObject"
 
-  it should "parse Scale with id" in {
+  it should "parse Scale with id 0" in {
     val xml: Elem = <scale id="Hello">2.0</scale>
     val triedScale = extract[Scale](xml)
     triedScale.isSuccess shouldBe true
-    triedScale.get.$ shouldBe 2.0
+    val scale = triedScale.get
+    scale.$ shouldBe 2.0
+    val wy = TryUsing(StateR())(sr => Renderer.render[Scale](scale, FormatXML(), sr))
+    wy.isSuccess shouldBe true
+    // CONSIDER should we force this result to have tag of "scale" instead of "Scale"?
+    wy.get shouldBe "<Scale id=\"Hello\">2</Scale>"
+  }
+
+  it should "parse Scale with id 1" in {
+    val xml: Elem =
+      <scale id="Hello">2.0</scale>
+    val triedScale = extract[Scale](xml)
+    triedScale.isSuccess shouldBe true
+    val scale = triedScale.get
+    scale.$ shouldBe 2.0
+    val wy = TryUsing(StateR())(sr => Renderer.render[Scale](scale, FormatXML(), sr))
+    wy.isSuccess shouldBe true
+    wy.get.contains(""""Hello">2""") shouldBe true
+  }
+
+  // Issue #43 Resolved by adding Some("scale")
+  it should "parse Scale with id 2" in {
+    val xml: Elem =
+      <scale id="Hello">2.0</scale>
+    val triedScale = extract[Scale](xml)
+    triedScale.isSuccess shouldBe true
+    val scale = triedScale.get
+    scale.$ shouldBe 2.0
+    // NOTE that because, in this test, scale is at the top-level,
+    //  we have to help out by specifying the correct tag name in the inital StateR.
+    val wy = TryUsing(StateR(Some("scale")))(sr => Renderer.render[Scale](scale, FormatXML(), sr))
+    wy.isSuccess shouldBe true
+    wy.get shouldBe "<scale id=\"Hello\">2</scale>"
   }
 
   it should "parse Scale without id" in {
@@ -115,6 +148,27 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         }
       case Failure(x) => fail(x)
     }
+  }
+
+  behavior of "LineStyle"
+
+  it should "extract LineStyle" in {
+    val xml: Elem = <LineStyle>
+      <color>ff0000ff</color>
+      <width>5</width>
+    </LineStyle>
+    val triedLineStyle: Try[LineStyle] = extract[LineStyle](xml)
+    println(s"triedLineStyle: $triedLineStyle")
+    triedLineStyle.isSuccess shouldBe true
+    triedLineStyle.get shouldBe LineStyle(Some(Width(5.0)))(ColorStyleData(Some(Color(Hex4("ff0000ff"))), None)(SubStyleData(KmlData(None))))
+  }
+
+  it should "extract Color" in {
+    val xml: Elem = <color>ff0000ff</color>
+    val triedColor: Try[Color] = extract[Color](xml)
+    println(s"triedLineStyle: $triedColor")
+    triedColor.isSuccess shouldBe true
+    triedColor.get shouldBe Color(Hex4("ff0000ff"))
   }
 
   behavior of "Coordinate"
@@ -185,7 +239,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val lsHead = gs.head
         lsHead match {
           case LineString(tessellate, cs) =>
-            tessellate shouldBe Tessellate("1")
+            tessellate shouldBe Tessellate(true)
             cs.size shouldBe 1
             cs.head.coordinates.size shouldBe 18
         }
@@ -260,6 +314,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(gs) =>
         gs.size shouldBe 1
         val polygon = gs.head.asInstanceOf[Polygon]
+        polygon.geometryData.maybeAltitudeMode shouldBe Some(AltitudeMode(AltitudeModeEnum.relativeToGround))
         val outerBoundary: OuterBoundaryIs = polygon.outerBoundaryIs
         val coordinates: Seq[Coordinates] = outerBoundary.LinearRing.coordinates
         coordinates.size shouldBe 1
@@ -394,7 +449,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             val geometry: Seq[Geometry] = placemark.Geometry
             geometry.size shouldBe 1
             geometry.head match {
-              case LineString(Tessellate("1"), coordinates) =>
+              case LineString(Tessellate(true), coordinates) =>
                 coordinates.size shouldBe 1
                 val coordinate = coordinates.head
                 coordinate.coordinates.size shouldBe 8
@@ -668,6 +723,246 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     println("End extract Container/Document")
   }
 
+  behavior of "Overlay"
+
+  it should "extract GroundOverlay" in {
+    val xml = <xml><GroundOverlay>
+      <name>Large-scale overlay on terrain</name>
+      <visibility>0</visibility>
+      <description>Overlay shows Mount Etna erupting on July 13th, 2001.</description>
+      <LookAt>
+        <longitude>15.02468937557116</longitude>
+        <latitude>37.67395167941667</latitude>
+        <altitude>0</altitude>
+        <heading>-16.5581842842829</heading>
+        <tilt>58.31228652890705</tilt>
+        <range>30350.36838438907</range>
+      </LookAt>
+      <Icon>
+        <href>https://developers.google.com/kml/documentation/images/etna.jpg</href>
+      </Icon>
+      <LatLonBox>
+        <north>37.91904192681665</north>
+        <south>37.46543388598137</south>
+        <east>15.35832653742206</east>
+        <west>14.60128369746704</west>
+        <rotation>-0.1556640799496235</rotation>
+      </LatLonBox>
+    </GroundOverlay></xml>
+    extractAll[Seq[Overlay]](xml) match {
+      case Success(os) =>
+        os.size shouldBe 1
+        val overlay: Overlay = os.head
+        overlay match {
+          case g@GroundOverlay(maybeAltitude, maybeAltitudeMode, latLonBox) =>
+            g.name shouldBe Text("Large-scale overlay on terrain")
+            maybeAltitude shouldBe None
+            maybeAltitudeMode shouldBe None
+            latLonBox.north shouldBe Latitude(37.91904192681665)
+            latLonBox.south shouldBe Latitude(37.46543388598137)
+            latLonBox.east shouldBe Longitude(15.35832653742206)
+            latLonBox.west shouldBe Longitude(14.60128369746704)
+            latLonBox.rotation shouldBe Rotation(-0.1556640799496235)
+            g.maybeDrawOrder shouldBe None
+            g.maybeColor shouldBe None
+            g.Icon shouldBe Icon(Text("https://developers.google.com/kml/documentation/images/etna.jpg"))
+//            val overlayData: OverlayData = g.overlayData
+//            val featureData: FeatureData = overlayData.featureData
+        }
+      case Failure(x) => fail(x)
+    }
+  }
+
+  // TODO Issue #38
+  it should "extract PhotoOverlay" in {
+    val xml = <PhotoOverlay>
+      <!-- inherited from Feature element -->
+      <name>Test Photo Overlay</name> <!-- string -->
+      <visibility>1</visibility> <!-- boolean -->
+      <open>0</open> <!-- boolean -->
+      <!-- xmlns:atom -->
+      <!-- xmlns:atom -->
+      <address>110 Huntingdon Avenue</address> <!-- string -->
+      <!-- xmlns:xal -->
+      <phoneNumber>123456789</phoneNumber> <!-- string -->
+      <!-- <Snippet maxLines="2">...</Snippet> --> <!-- string -->
+      <description>Fiction</description> <!-- string -->
+      <LookAt>
+        <longitude>15.02468937557116</longitude>
+        <latitude>37.67395167941667</latitude>
+        <altitude>0</altitude>
+        <heading>-16.5581842842829</heading>
+        <tilt>58.31228652890705</tilt>
+        <range>30350.36838438907</range>
+      </LookAt> <!-- Camera or LookAt -->
+      <!-- <TimePrimitive>...</TimePrimitive> -->
+      <styleUrl>#icon-22-nodesc-normal</styleUrl> <!-- anyURI -->
+      <StyleMap id="icon-22-nodesc">
+        <Pair>
+          <key>normal</key>
+          <styleUrl>#icon-22-nodesc-normal</styleUrl>
+        </Pair>
+        <Pair>
+          <key>highlight</key>
+          <styleUrl>#icon-22-nodesc-highlight</styleUrl>
+        </Pair>
+      </StyleMap>
+      <!-- <Region>...</Region> -->
+      <!-- <Metadata>...</Metadata> --> <!-- deprecated in KML 2.2 -->
+      <!-- <ExtendedData>...</ExtendedData> --> <!-- new in KML 2.2 -->
+
+      <!-- inherited from Overlay element -->
+      <color>ffffffff</color> <!-- kml:color -->
+      <drawOrder>0</drawOrder> <!-- int -->
+      <Icon>
+        <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href> <!-- anyURI -->
+      </Icon>
+
+      <!-- specific to PhotoOverlay -->
+      <rotation>0</rotation> <!-- kml:angle180 -->
+      <ViewVolume>
+        <leftFov>0</leftFov> <!-- kml:angle180 -->
+        <rightFov>0</rightFov> <!-- kml:angle180 -->
+        <bottomFov>0</bottomFov> <!-- kml:angle90 -->
+        <topFov>0</topFov> <!-- kml:angle90 -->
+        <near>0</near> <!-- double -->
+      </ViewVolume>
+      <ImagePyramid>
+        <tileSize>256</tileSize> <!-- int -->
+        <maxWidth>10</maxWidth> <!-- int -->
+        <maxHeight>99</maxHeight> <!-- int -->
+        <gridOrigin>lowerLeft</gridOrigin> <!-- lowerLeft or upperLeft -->
+      </ImagePyramid>
+      <Point>
+        <coordinates>
+          -71.380341,42.571137,0
+        </coordinates>
+      </Point>
+      <shape>rectangle</shape> <!-- kml:shape -->
+    </PhotoOverlay>
+
+    val po = extract[PhotoOverlay](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    po.get should matchPattern { case PhotoOverlay(_, _, _, _, _) => }
+  }
+
+  behavior of "enumerated types"
+
+  it should "extract shape" in {
+    val xml = <shape>rectangle</shape>
+    val po = extract[Shape](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.$ shouldBe ShapeEnum.rectangle
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Shape](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<Shape>rectangle</Shape>"
+  }
+
+  it should "extract (optional) altitude mode" in {
+    val xml = <altitudeMode>clampToGround</altitudeMode>
+    val po = extract[Option[AltitudeMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe AltitudeModeEnum.clampToGround
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[AltitudeMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<AltitudeMode>clampToGround</AltitudeMode>"
+  }
+
+  it should "extract (optional) color mode" in {
+    val xml = <colorMode>random</colorMode>
+    val po = extract[Option[ColorMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe ColorModeEnum.random
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[ColorMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<ColorMode>random</ColorMode>"
+  }
+
+  it should "extract (optional) display mode" in {
+    val xml = <displayMode>default</displayMode>
+    val po = extract[Option[DisplayMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe DisplayModeEnum.default
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[DisplayMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<DisplayMode>default</DisplayMode>"
+  }
+
+  it should "extract (optional) listItemType" in {
+    val xml = <listItemType>checkOffOnly</listItemType>
+    val po = extract[Option[ListItemType]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe ListItemTypeEnum.checkOffOnly
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[ListItemType]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<ListItemType>checkOffOnly</ListItemType>"
+  }
+
+  it should "extract (optional) refresh mode" in {
+    val xml = <refreshMode>onChange</refreshMode>
+    val po = extract[Option[RefreshMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe RefreshModeEnum.onChange
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[RefreshMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<RefreshMode>onChange</RefreshMode>"
+  }
+
+  it should "extract styleState" in {
+    val xml = <Key>highlight</Key>
+    val po = extract[Key](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.$ shouldBe StyleStateEnum.highlight
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Key](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<Key>highlight</Key>"
+  }
+
+  it should "extract state" in {
+    val xml = <state>open</state>
+    val po = extract[State](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.$ shouldBe ItemIconModeEnum.open
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[State](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<State>open</State>"
+  }
+
+  it should "extract (optional) view refresh mode" in {
+    val xml = <viewRefreshMode>onRequest</viewRefreshMode>
+    val po = extract[Option[ViewRefreshMode]](xml)
+    po.isSuccess shouldBe true
+    val p = po.get
+    p.isDefined shouldBe true
+    p.get.$ shouldBe ViewRefreshEnum.onRequest
+    // CONSIDER how can we make the rendered string flat (no newline) and also with lower case tag "scale"?
+    val triedString = Renderer.render[Option[ViewRefreshMode]](p, FormatXML(), StateR())
+    triedString.isSuccess shouldBe true
+    triedString.get shouldBe "<ViewRefreshMode>onRequest</ViewRefreshMode>"
+  }
+
   behavior of "HotSpot"
 
   it should "extract HotSpot" in {
@@ -679,7 +974,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
 
     Extractor.extract[HotSpot](nodeSeq.head) match {
       case Success(hotSpot) =>
-        hotSpot shouldBe HotSpot(16, "pixels", 32, "insetPixels")
+        hotSpot shouldBe HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels)
         // XXX we test two versions of rendering here:
         // XXX the first is simply rendering a HotSpot object as is.
         val wy1 = TryUsing(StateR())(sr => Renderer.render[HotSpot](hotSpot, FormatXML(), sr))
@@ -691,6 +986,140 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         wy2.get shouldBe """<hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"></hotSpot>"""
       case Failure(x) => fail(x)
     }
+  }
+
+  behavior of "OverlayXY"
+
+  it should "extract OverlayXY" in {
+    val xml = <xml>
+      <overlayXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
+    </xml>
+    val nodeSeq = xml / "overlayXY"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[OverlayXY](nodeSeq.head) match {
+      case Success(overlayXY) =>
+        overlayXY shouldBe OverlayXY(0.5, 0.5,UnitsEnum.fraction, UnitsEnum.fraction)
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering an OverlayXY object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[OverlayXY](overlayXY, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<OverlayXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></OverlayXY>"""
+        // XXX the second is rendering an OverlayXY object as if it was in the context of its parent where the attribute name starts with lower case h.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[OverlayXY](overlayXY, FormatXML(), sr.setName("overlayXY")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<overlayXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></overlayXY>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "ScreenXY"
+
+  it should "extract ScreenXY" in {
+    val xml = <xml>
+      <screenXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
+    </xml>
+    val nodeSeq = xml / "screenXY"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[ScreenXY](nodeSeq.head) match {
+      case Success(screenXY) =>
+        screenXY shouldBe ScreenXY(0.5, 0.5, UnitsEnum.fraction, UnitsEnum.fraction)
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a ScreenXY object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[ScreenXY](screenXY, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<ScreenXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></ScreenXY>"""
+        // XXX the second is rendering a ScreenXY object as if it was in the context of its parent where the attribute name starts with lower case h.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[ScreenXY](screenXY, FormatXML(), sr.setName("screenXY")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<screenXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></screenXY>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "RotationXY"
+
+  it should "extract RotationXY" in {
+    val xml = <xml>
+      <rotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
+    </xml>
+    val nodeSeq = xml / "rotationXY"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[RotationXY](nodeSeq.head) match {
+      case Success(rotationXY) =>
+        rotationXY shouldBe RotationXY(0.5, 0.5,UnitsEnum.fraction, UnitsEnum.fraction)
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a RotationXY object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[RotationXY](rotationXY, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<RotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></RotationXY>"""
+        // XXX the second is rendering a RotationXY object as if it was in the context of its parent where the attribute name starts with lower case r.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[RotationXY](rotationXY, FormatXML(), sr.setName("rotationXY")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<rotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"></rotationXY>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "Size"
+
+  it should "extract Size" in {
+    val xml = <xml>
+      <size x="0" y="0" xunits="pixels" yunits="pixels"/>
+    </xml>
+    val nodeSeq = xml / "size"
+    nodeSeq.size shouldBe 1
+
+    Extractor.extract[Size](nodeSeq.head) match {
+      case Success(size) =>
+        size shouldBe Size(0, 0,UnitsEnum.pixels, UnitsEnum.pixels)
+        // XXX we test two versions of rendering here:
+        // XXX the first is simply rendering a Size object as is.
+        val wy1 = TryUsing(StateR())(sr => Renderer.render[Size](size, FormatXML(), sr))
+        wy1.isSuccess shouldBe true
+        wy1.get shouldBe """<Size x="0" y="0" xunits="pixels" yunits="pixels"></Size>"""
+        // XXX the second is rendering a Size object as if it was in the context of its parent where the attribute name starts with lower case r.
+        val wy2 = TryUsing(StateR())(sr => Renderer.render[Size](size, FormatXML(), sr.setName("size")))
+        wy2.isSuccess shouldBe true
+        wy2.get shouldBe """<size x="0" y="0" xunits="pixels" yunits="pixels"></size>"""
+      case Failure(x) => fail(x)
+    }
+  }
+
+  behavior of "ViewVolume"
+
+  it should "extract ViewVolume" in {
+    val xml = <ViewVolume>
+      <leftFov>0</leftFov> <!-- kml:angle180 -->
+      <rightFov>0</rightFov> <!-- kml:angle180 -->
+      <bottomFov>0</bottomFov> <!-- kml:angle90 -->
+      <topFov>0</topFov> <!-- kml:angle90 -->
+      <near>0</near> <!-- double -->
+    </ViewVolume>
+
+    val po = extract[ViewVolume](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    po.get should matchPattern { case ViewVolume(_, _, _, _, _) => }
+  }
+
+  behavior of "ImagePyramid"
+  it should "extract ImagePyramid" in {
+
+    val xml =
+      <ImagePyramid>
+        <tileSize>256</tileSize> <!-- int -->
+        <maxWidth>10</maxWidth> <!-- int -->
+        <maxHeight>99</maxHeight> <!-- int -->
+        <gridOrigin>lowerLeft</gridOrigin> <!-- lowerLeft or upperLeft -->
+      </ImagePyramid>
+
+    val po = extract[ImagePyramid](xml)
+    println(po)
+    po.isSuccess shouldBe true
+    po.get should matchPattern { case ImagePyramid(_, _, _, _) => }
   }
 
   behavior of "Style"
@@ -706,11 +1135,12 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       |</IconStyle>""".stripMargin
   private val iconStyleText = "<IconStyle>\n    <scale>1.1</scale>\n    <Icon>\n      <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>\n    </Icon>\n    <hotSpot x=\"16\" xunits=\"pixels\" y=\"32\" yunits=\"insetPixels\"/>\n  </IconStyle>"
   private val balloonStyleText = "<BalloonStyle>\n    <text>\n<![CDATA[<h3>$[name]</h3>]]>\n</text>\n  </BalloonStyle>"
-  private val labelStyleText = "<LabelStyle>\n    <scale>0</scale>\n  </LabelStyle>"
+  private val labelStyleText = "<LabelStyle>\n    <color>ff0000cc</color>\n    <colorMode>random</colorMode>\n    <scale>1.5</scale>\n  </LabelStyle>"
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
 
-  it should "extract IconStyle" in {
+  // Issue #42
+  it should "extract IconStyle1" in {
     val xml = <xml>
       <IconStyle>
         <scale>1.1</scale>
@@ -729,7 +1159,43 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
             maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
             icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
-            maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+            maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
+            maybeHeading shouldBe None
+            x.colorStyleData match {
+              case c@ColorStyleData(_, _) =>
+                println(c)
+            }
+        }
+        val wy = TryUsing(StateR())(sr => Renderer.render[IconStyle](is, FormatXML(), sr))
+        wy.isSuccess shouldBe true
+        wy shouldBe Success(
+          s"""<IconStyle>
+             |  <scale>1.1</scale>
+             |  <Icon>
+             |    <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+             |  </Icon>
+             |  <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+             |</IconStyle>""".stripMargin)
+      case Failure(x) => fail(x)
+    }
+  }
+  it should "extract IconStyle2" in {
+    val xml =
+      <IconStyle>
+        <scale>1.1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+        </Icon>
+        <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+      </IconStyle>
+
+    extract[IconStyle](xml) match {
+      case Success(is) =>
+        is match {
+          case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
+            maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
+            icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
+            maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
             maybeHeading shouldBe None
             x.colorStyleData match {
               case c@ColorStyleData(_, _) =>
@@ -767,6 +1233,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           <text>
             <![CDATA[<h3>$[name]</h3>]]>
           </text>
+          <displayMode>default</displayMode>
         </BalloonStyle>
       </Style>
       <Style id="icon-22-nodesc-highlight">
@@ -817,7 +1284,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
               case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
                 maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
                 icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
-                maybeHotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+                maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
                 maybeHeading shouldBe None
                 x.colorStyleData match {
                   case c@ColorStyleData(_, _) =>
@@ -831,7 +1298,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 text.$ shouldBe cdata
                 maybeBgColor shouldBe None
                 maybeTextColor shouldBe None
-                maybeDisplayMode shouldBe None
+                maybeDisplayMode shouldBe Some(DisplayMode(DisplayModeEnum.default))
                 x.colorStyleData match {
                   case c@ColorStyleData(_, _) =>
                     println(c)
@@ -854,6 +1321,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                  |  </IconStyle>
                  |  <BalloonStyle>
                  |    <text>$cdata</text>
+                 |    <displayMode>default</displayMode>
                  |  </BalloonStyle>
                  |</Style>""".stripMargin
             wy.get shouldBe expected
@@ -880,7 +1348,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
         </IconStyle>
         <LabelStyle>
-          <scale>0</scale>
+          <color>ff0000cc</color>
+          <colorMode>random</colorMode>
+          <scale>1.5</scale>
         </LabelStyle>
         <BalloonStyle>
           <text>
@@ -924,20 +1394,23 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         styleSelector match {
           case Style(styles) =>
             styles.size shouldBe 3
-            val style: SubStyle = styles(1)
-            style match {
+            styles.head match {
+              case LabelStyle(ls) =>
+                ls.$ shouldBe 1.5
+            }
+            styles(1) match {
               case IconStyle(scale, Icon(Text(w)), hotSpot, maybeHeading) =>
                 scale shouldBe Some(Scale(1.1)(KmlData(None)))
                 w shouldBe "https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"
-                hotSpot shouldBe Some(HotSpot(16, "pixels", 32, "insetPixels"))
+                hotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
                 maybeHeading shouldBe None
-                val wy = TryUsing(StateR())(sr => Renderer.render[SubStyle](style, FormatXML(), sr))
+                val wy = TryUsing(StateR())(sr => Renderer.render[SubStyle](styles(1), FormatXML(), sr))
                 wy.isSuccess shouldBe true
                 wy.get shouldBe iconStyleText1
             }
           case StyleMap(pairs) =>
             pairs.size shouldBe 2
-            pairs.head shouldBe Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal"))
+            pairs.head shouldBe Pair(Key(StyleStateEnum.normal), StyleURL("#icon-22-nodesc-normal"))
         }
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleSelector](styleSelector, FormatXML(), sr))
         wy.isSuccess shouldBe true
@@ -965,7 +1438,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
       case Success(ss) =>
         ss.size shouldBe 1
         val styleMap: StyleMap = ss.head.asInstanceOf[StyleMap] // use pattern-matching
-        styleMap shouldBe StyleMap(List(Pair(Key("normal"), StyleURL("#icon-22-nodesc-normal")), Pair(Key("highlight"), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
+        styleMap shouldBe StyleMap(List(Pair(Key(StyleStateEnum.normal), StyleURL("#icon-22-nodesc-normal")), Pair(Key(StyleStateEnum.highlight), StyleURL("#icon-22-nodesc-highlight"))))(StyleSelectorData(KmlData(Some("icon-22-nodesc"))))
         val wy = TryUsing(StateR())(sr => Renderer.render[StyleMap](styleMap, FormatXML(), sr))
         wy.isSuccess shouldBe true
         wy.get shouldBe "<StyleMap id=\"icon-22-nodesc\">\n  <Pair>\n    <key>normal</key>\n    <styleUrl>#icon-22-nodesc-normal</styleUrl>\n  </Pair>\n  <Pair>\n    <key>highlight</key>\n    <styleUrl>#icon-22-nodesc-highlight</styleUrl>\n  </Pair>\n</StyleMap>"
@@ -4066,7 +4539,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 94
                     }
@@ -4082,7 +4555,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 17
                     }
@@ -4125,7 +4598,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 94
                     }
@@ -4140,7 +4613,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 169
                     }
@@ -4290,7 +4763,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   val coordinates1: Seq[Coordinates] = Seq(Coordinates(cs1))
   val coordinates2: Seq[Coordinates] = Seq(Coordinates(cs2))
   val coordinates2a: Seq[Coordinates] = Seq(Coordinates(cs2a))
-  val tessellate: Tessellate = Tessellate("1")
+  val tessellate: Tessellate = Tessellate(true)
   val p1: Placemark = Placemark(Seq(LineString(tessellate, coordinates1)(gd)))(fd1)
   val p2: Placemark = Placemark(Seq(LineString(tessellate, coordinates2)(gd)))(fd1)
   val p2a: Placemark = Placemark(Seq(LineString(tessellate, coordinates2a)(gd)))(fd1)

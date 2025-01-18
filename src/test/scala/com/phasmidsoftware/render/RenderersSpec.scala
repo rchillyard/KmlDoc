@@ -4,6 +4,7 @@ import com.phasmidsoftware.core.TryUsing
 import com.phasmidsoftware.kmldoc.{KmlData, Scale}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
 import scala.util.Success
 
 class RenderersSpec extends AnyFlatSpec with should.Matchers {
@@ -64,7 +65,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererKVVV: Renderer[KVVV] = renderer4(KVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatText(0), sr))
-    wy shouldBe Success("""KVVV{k="a" v="-1" b="false" x="3.141592653589793"}""")
+    wy shouldBe Success("""KVVV{k="a" v="-1" b="0" x="3.141592653589793"}""")
   }
 
   it should "intRenderer" in {
@@ -79,7 +80,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "booleanRenderer" in {
     val wy = TryUsing(StateR())(sr => Renderers.booleanRenderer.render(true, FormatText(0), sr))
-    wy shouldBe Success("true")
+    wy shouldBe Success("1")
   }
 
   it should "doubleRenderer" in {
@@ -111,7 +112,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererKVVV: Renderer[KVVVV] = renderer5(KVVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatText(0), sr))
-    wy shouldBe Success("""KVVVV{k="a" v="-1" b="false" x="3.141592653589793" l="42"}""")
+    wy shouldBe Success("""KVVVV{k="a" v="-1" b="0" x="3.141592653589793" l="42"}""")
   }
 
   it should "optionRenderer" in {
@@ -133,7 +134,20 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererKVV: Renderer[KVV] = renderer3(KVV)
     }
     val wy = TryUsing(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatText(0), sr))
-    wy shouldBe Success("""KVV{k="a" v="-1" b="false"}""")
+    wy shouldBe Success("""KVV{k="a" v="-1" b="0"}""")
+  }
+
+  behavior of "lift"
+
+  it should "render Some" in {
+    val renderer = implicitly[Renderer[Int]].lift
+    val wy = TryUsing(StateR())(sr => renderer.render(Some(42), FormatText(0), sr))
+    wy shouldBe Success("42")
+  }
+  it should "render None" in {
+    val renderer = implicitly[Renderer[Int]].lift
+    val wy = TryUsing(StateR())(sr => renderer.render(None, FormatText(0), sr))
+    wy shouldBe Success("")
   }
 
   behavior of "Renderers (FormatXML)"
@@ -179,7 +193,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "booleanRenderer" in {
     val wy = TryUsing(StateR())(sr => Renderers.booleanRenderer.render(true, FormatXML(), sr))
-    wy shouldBe Success("true")
+    wy shouldBe Success("1")
   }
 
   it should "renderer2A" in {
@@ -203,7 +217,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererKVVV: Renderer[KVVV] = renderer4(KVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(), sr))
-    wy shouldBe Success("""<KVVV k="a" v="-1" b="false" x="3.141592653589793"></KVVV>""")
+    wy shouldBe Success("""<KVVV k="a" v="-1" b="0" x="3.141592653589793"></KVVV>""")
   }
 
   it should "doubleRenderer" in {
@@ -234,7 +248,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererKVVV: Renderer[KVVVV] = renderer5(KVVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(), sr))
-    wy shouldBe Success("""<KVVVV k="a" v="-1" b="false" x="3.141592653589793" l="42"></KVVVV>""")
+    wy shouldBe Success("""<KVVVV k="a" v="-1" b="0" x="3.141592653589793" l="42"></KVVVV>""")
   }
 
   it should "optionRenderer" in {
@@ -256,6 +270,6 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
       val rendererKVV: Renderer[KVV] = renderer3(KVV)
     }
     val wy = TryUsing(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(), sr))
-    wy shouldBe Success("""<KVV k="a" v="-1" b="false"></KVV>""")
+    wy shouldBe Success("""<KVV k="a" v="-1" b="0"></KVV>""")
   }
 }

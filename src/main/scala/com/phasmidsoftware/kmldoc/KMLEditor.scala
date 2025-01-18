@@ -7,8 +7,9 @@ import com.phasmidsoftware.core.FP.mapTryGuarded
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLs
 import com.phasmidsoftware.kmldoc.KMLEditor.{addExtension, write}
 import com.phasmidsoftware.render.FormatXML
-import java.io.{BufferedWriter, File, FileWriter, Writer}
 import org.slf4j.{Logger, LoggerFactory}
+
+import java.io.{BufferedWriter, File, FileWriter, Writer}
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.util._
@@ -88,7 +89,14 @@ case class KMLEditor(edits: Seq[KmlEdit]) {
   }
 }
 
+/**
+ * Singleton object providing functionalities to parse and process KML files.
+ */
 object KMLEditor {
+  /**
+   * Logger instance for the KMLEditor object.
+   * Used to log messages and events related to the processing and editing of KML files.
+   */
   val logger: Logger = LoggerFactory.getLogger(KMLEditor.getClass)
 
   /**
@@ -118,7 +126,23 @@ object KMLEditor {
     } yield result
   }
 
+  /**
+   * Writes a sequence of strings to a buffered writer, returning a sequence of IO operations
+   * that represent the writing actions for each string.
+   *
+   * @param bW the BufferedWriter where the strings will be written.
+   * @param ws the sequence of strings to write to the BufferedWriter.
+   * @return a sequence of IO operations containing the Writer after each string has been appended.
+   */
   private def write(bW: BufferedWriter, ws: Seq[String]): Seq[IO[Writer]] = for (w <- ws) yield IO(bW.append(w))
 
+  /**
+   * Appends a provided extension to the string contained within a Try, if the Try is successful.
+   *
+   * @param triedBasename the base name wrapped in a Try. If successful, contains the string to which the extension will be appended.
+   * @param ext           the extension to append to the base name.
+   * @return a Try containing the resulting string with the appended extension if the input Try is successful,
+   *         otherwise propagates the failure of the input Try.
+   */
   private def addExtension(triedBasename: Try[String], ext: String): Try[String] = triedBasename map (_ + ext)
 }
