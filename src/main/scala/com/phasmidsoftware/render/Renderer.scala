@@ -526,7 +526,7 @@ case class FormatXML(indents: Int, flat: Boolean = false) extends BaseFormat(ind
    * @return A formatted string representing the name or tag, appropriately formatted based on the given state and context.
    */
   def formatName[T: ClassTag](open: Option[Boolean], stateR: StateR): String = {
-    val name = stateR.getClassName // getClassName(stateR)
+    val name = stateR.getClassName
     open match {
       case Some(true) => (if (indents > 0) newline else "") + s"<$name"
       case Some(false) => (if (flat) "" else newline) + s"</$name>"

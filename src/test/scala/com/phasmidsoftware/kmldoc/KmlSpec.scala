@@ -74,17 +74,18 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     wy.get.contains(""""Hello">2""") shouldBe true
   }
 
-  // Issue #43
-  ignore should "parse Scale with id 2" in {
+  // Issue #43 Resolved by adding Some("scale")
+  it should "parse Scale with id 2" in {
     val xml: Elem =
       <scale id="Hello">2.0</scale>
     val triedScale = extract[Scale](xml)
     triedScale.isSuccess shouldBe true
     val scale = triedScale.get
     scale.$ shouldBe 2.0
-    val wy = TryUsing(StateR())(sr => Renderer.render[Scale](scale, FormatXML(), sr))
+    // NOTE that because, in this test, scale is at the top-level,
+    //  we have to help out by specifying the correct tag name in the inital StateR.
+    val wy = TryUsing(StateR(Some("scale")))(sr => Renderer.render[Scale](scale, FormatXML(), sr))
     wy.isSuccess shouldBe true
-    // CONSIDER should we force this result to have tag of "scale" instead of "Scale"?
     wy.get shouldBe "<scale id=\"Hello\">2</scale>"
   }
 
@@ -1090,13 +1091,13 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "ViewVolume"
 
   it should "extract ViewVolume" in {
-    val xml = <viewVolume>
+    val xml = <ViewVolume>
       <leftFov>0</leftFov> <!-- kml:angle180 -->
       <rightFov>0</rightFov> <!-- kml:angle180 -->
       <bottomFov>0</bottomFov> <!-- kml:angle90 -->
       <topFov>0</topFov> <!-- kml:angle90 -->
       <near>0</near> <!-- double -->
-    </viewVolume>
+    </ViewVolume>
 
     val po = extract[ViewVolume](xml)
     println(po)
