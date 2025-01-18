@@ -3054,7 +3054,7 @@ object SubStyleData extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class Tessellate($: CharSequence) extends Mergeable[Tessellate] {
+case class Tessellate($: Boolean) extends Mergeable[Tessellate] {
   def merge(t: Tessellate, mergeName: Boolean = true): Option[Tessellate] = ($, t.$) match {
     case (a, b) if a == b => Some(Tessellate(a))
     case _ => None

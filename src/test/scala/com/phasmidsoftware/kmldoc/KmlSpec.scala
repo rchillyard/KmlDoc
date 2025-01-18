@@ -239,7 +239,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         val lsHead = gs.head
         lsHead match {
           case LineString(tessellate, cs) =>
-            tessellate shouldBe Tessellate("1")
+            tessellate shouldBe Tessellate(true)
             cs.size shouldBe 1
             cs.head.coordinates.size shouldBe 18
         }
@@ -449,7 +449,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             val geometry: Seq[Geometry] = placemark.Geometry
             geometry.size shouldBe 1
             geometry.head match {
-              case LineString(Tessellate("1"), coordinates) =>
+              case LineString(Tessellate(true), coordinates) =>
                 coordinates.size shouldBe 1
                 val coordinate = coordinates.head
                 coordinate.coordinates.size shouldBe 8
@@ -4539,7 +4539,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 94
                     }
@@ -4555,7 +4555,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 17
                     }
@@ -4598,7 +4598,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 94
                     }
@@ -4613,7 +4613,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                         cs.size shouldBe 1
                         cs.head.coordinates.size shouldBe 1
                       case LineString(tessellate, coordinates) =>
-                        tessellate shouldBe Tessellate("1")
+                        tessellate shouldBe Tessellate(true)
                         coordinates.size shouldBe 1
                         coordinates.head.coordinates.size shouldBe 169
                     }
@@ -4763,7 +4763,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   val coordinates1: Seq[Coordinates] = Seq(Coordinates(cs1))
   val coordinates2: Seq[Coordinates] = Seq(Coordinates(cs2))
   val coordinates2a: Seq[Coordinates] = Seq(Coordinates(cs2a))
-  val tessellate: Tessellate = Tessellate("1")
+  val tessellate: Tessellate = Tessellate(true)
   val p1: Placemark = Placemark(Seq(LineString(tessellate, coordinates1)(gd)))(fd1)
   val p2: Placemark = Placemark(Seq(LineString(tessellate, coordinates2)(gd)))(fd1)
   val p2a: Placemark = Placemark(Seq(LineString(tessellate, coordinates2a)(gd)))(fd1)
