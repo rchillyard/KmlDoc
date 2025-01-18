@@ -1941,9 +1941,9 @@ object LookAt extends Extractors with Renderers {
 }
 
 /**
- * Represents an Open element, usually capturing a character sequence.
+ * Represents an `Open` state with a single boolean parameter.
  *
- * @param $ the content represented as a CharSequence
+ * @param $ A boolean value indicating the open state.
  */
 case class Open($: Boolean)
 
@@ -3044,15 +3044,15 @@ object SubStyleData extends Extractors with Renderers {
 }
 
 /**
- * Class Tessellate which is a Boolean.
+ * Tessellate represents a case class with a Boolean value, extending the Mergeable trait.
+ *
+ * Instances of Tessellate can be merged using the `merge` method, provided the internal
+ * Boolean state is compatible. The merge operation will return a new Tessellate instance
+ * encapsulated in an Option if the merge criteria are satisfied, otherwise it returns None.
  *
  * CONSIDER making this part of GeometryData.
  *
- * CONSIDER making the member have type Int (but mean Boolean) rather than String.
- *
- * TODO this (and similar case classes with "$") define the member as CharSequence. It should be String, unless we make a special KmlBoolean object.
- *
- * @param $ the value.
+ * @param $ a Boolean value encapsulated by the Tessellate instance.
  */
 case class Tessellate($: Boolean) extends Mergeable[Tessellate] {
   def merge(t: Tessellate, mergeName: Boolean = true): Option[Tessellate] = ($, t.$) match {
