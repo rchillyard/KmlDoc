@@ -92,7 +92,7 @@ trait Extractors {
     nodeSeq =>
       labels match {
         case label :: Nil => sequence(extractElementsByLabel[P0](nodeSeq, label))
-        case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs")) // TESTME
+        case fs => Failure(XmlException(s"multiExtractor1: logic error for labels: $fs"))
       }
 
   /**
@@ -1088,8 +1088,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
    *
-   * TESTME
-   *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @param fields    an optional sequence of field names to guide the extraction process,
    *                  defaults to an empty sequence
@@ -1141,8 +1139,6 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with five members and one auxiliary (non-member) parameter.
-   *
-   * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4) => B => T, usually the apply method of a case class.
    * @param fields    an optional sequence of field names to guide the extraction process,
@@ -1449,8 +1445,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with six members and one auxiliary (non-member) parameter.
    *
-   * TESTME
-   *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
    * @param fields    an optional sequence of field names to guide the extraction process,
    *                  defaults to an empty sequence
@@ -1505,8 +1499,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with six members and one auxiliary (non-member) parameter.
    *
-   * TESTME
-   *
    * @param construct a function (P0, P1, P2, P3, P4, P5) => B => T, usually the apply method of a case class.
    * @param fields    an optional sequence of field names to guide the extraction process,
    *                  defaults to an empty sequence
@@ -1532,8 +1524,6 @@ trait Extractors {
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with seven members and one auxiliary (non-member) parameter.
-   *
-   * TESTME
    *
    * @param construct a function (P0, P1, P2, P3, P4, P5, P6) => B => T, usually the apply method of a case class.
    * @param fields    an optional sequence of field names to guide the extraction process,
@@ -1591,8 +1581,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with seven members and one auxiliary (non-member) parameter.
    *
-   * TESTME
-   *
    * @param construct a function (P0, P1, P2, P3, P4, P5, P6) => B => T, usually the apply method of a case class.
    * @param fields    an optional sequence of field names to guide the extraction process,
    *                  defaults to an empty sequence
@@ -1636,7 +1624,7 @@ trait Extractors {
         case member :: Nil => for {
           e0 <- fExtractor(member).extract(node)
         } yield construct(e0)
-        case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs")) // TESTME
+        case fs => Failure(XmlException(s"extractor1: non-unique field name: $fs"))
       }
 
   /**
@@ -1662,7 +1650,7 @@ trait Extractors {
             e0 <- fExtractor(member0).extract(node)
             t <- nestedExtractorFunction(construct.curried(e0), fs).extract(node)
           } yield t
-        case _ => Failure(XmlException(s"extractorPartial2: logic error")) // TESTME
+        case _ => Failure(XmlException(s"extractorPartial2: logic error"))
       }
 
   /**
@@ -1689,7 +1677,7 @@ trait Extractors {
             e0 <- fExtractor(member0).extract(node)
             t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
           } yield t
-        case _ => Failure(XmlException(s"extractorPartial3: logic error")) // TESTME
+        case _ => Failure(XmlException(s"extractorPartial3: logic error"))
       }
 
   /**
@@ -1717,7 +1705,7 @@ trait Extractors {
             e0 <- fExtractor(member0).extract(node)
             t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
           } yield t
-        case _ => Failure(XmlException(s"extractorPartial4: logic error")) // TESTME
+        case _ => Failure(XmlException(s"extractorPartial4: logic error"))
       }
 
   /**
@@ -1746,14 +1734,12 @@ trait Extractors {
             e0 <- fExtractor(member0).extract(node)
             t <- nestedExtractorFunction(uncurried(construct.curried(e0)), fs).extract(node)
           } yield t
-        case _ => Failure(XmlException(s"extractorPartial5: logic error")) // TESTME
+        case _ => Failure(XmlException(s"extractorPartial5: logic error"))
       }
 
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with six members plus
    * an "auxiliary" parameter of type B, declared in its own parameter set.
-   *
-   * TESTME
    *
    * @param fExtractor              the extractor for the first member to yield its (child) element.
    * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.
@@ -1784,8 +1770,6 @@ trait Extractors {
   /**
    * Extractor which will convert an Xml Node into an instance of a case class with seven members plus
    * an "auxiliary" parameter of type B, declared in its own parameter set.
-   *
-   * TESTME
    *
    * @param fExtractor              the extractor for the first member to yield its (child) element.
    * @param nestedExtractorFunction a function which is used to create an Extractor for the remaining members.

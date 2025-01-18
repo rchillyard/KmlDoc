@@ -56,7 +56,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    * TESTME
    *
    * @tparam P the type of the alternative `Extractor`.
-   *           `P` must provide implicit evidence of `Extractor[P]` and `P` must be a subclass of `T`.
+   *           `P` must provide implicit evidence of `Extractor[P]`, and `P` must be a subclass of `T`.
    * @return an `Extractor[T]`.
    */
   def |[P <: T : Extractor](): Extractor[T] = (node: Node) => self.extract(node) orElse implicitly[Extractor[P]].mapTo[T].extract(node)
@@ -111,8 +111,6 @@ object Extractor {
    * Method to create a lazy Extractor[T] from an explicit Extractor[T] which is call-by-name.
    * The purpose of this method is to break the infinite recursion caused when implicit values are defined recursively.
    * See the Play JSON library method in JsPath called lazyRead.
-   *
-   * TESTME
    *
    * @param te an Extractor[T].
    * @tparam T the underlying type of the input and output Extractors.
@@ -180,7 +178,6 @@ object Extractor {
       case Success(Nil) =>
         Failure(XmlException(s"extractSingleton: empty"))
       case Success(p :: Nil) => Success(p)
-      // TESTME
       case Success(ps) => Failure(XmlException(s"extractSingleton: ambiguous values: $ps"))
       case Failure(x) => Failure(x)
     }
@@ -369,7 +366,6 @@ object Extractor {
         s"attribute: $x" -> extractAttribute[P](node, x)
       // NOTE child nodes are extracted using extractChildren, not here, but if the plural-sounding name is present in node, then we are OK
       case Plural(x) if (node \ field).isEmpty =>
-        // NOTE: TESTME: this mechanism is to allow for field names to end in "s" without being plural (such as OuterBoundaryIs).
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
       // NOTE optional members such that the name begins with "maybe"
       case optional(x) =>
@@ -794,7 +790,7 @@ object Plural extends JavaTokenParsers {
    * @return a `Parser[String]` that matches strings starting with "sei", followed by a valid root,
    *         and produces a transformed string with 'y' prepended to the root.
    */
-  private def plural1: Parser[String] = "sei" ~> root ^^ { w: String => s"y${w}" }
+  private def plural1: Parser[String] = "sei" ~> root ^^ { w: String => s"y$w" }
 
   /**
    * Parses a (reversed) string that begins with the sequence "ice" preceded by a valid root.
@@ -804,7 +800,7 @@ object Plural extends JavaTokenParsers {
    * @return a `Parser[String]` that matches strings starting with "eci" followed by a valid root,
    *         and returns the transformed string with "esuo" prepended to the root.
    */
-  private def plural2: Parser[String] = "eci" ~> root ^^ { w: String => s"esuo${w}" }
+  private def plural2: Parser[String] = "eci" ~> root ^^ { w: String => s"esuo$w" }
 
   /**
    * Matches specific singular terms that end in the character "s".
@@ -816,7 +812,7 @@ object Plural extends JavaTokenParsers {
    *
    * @return a `Parser[String]` that matches one of the predefined singular terms ending in "s".
    */
-  private def singularEndsInS: Parser[String] = "innerBoundaryIs" | "coordinates" | "features" | "StyleSelectors" | "Styles"
+  private def singularEndsInS: Parser[String] = "innerBoundaryIs" | "outerBoundaryIs" | "coordinates" | "features" | "StyleSelectors" | "Styles"
 
   /**
    * Parses a valid root string composed of word characters (letters, digits, or underscores).

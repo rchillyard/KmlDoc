@@ -1139,7 +1139,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   private val stylesText = s"\n  $labelStyleText\n  $iconStyleText\n  $balloonStyleText\n"
   private val styleText = s"<Style id=\"icon-22-nodesc-normal\">$stylesText</Style>"
 
-  // TESTME Issue #42
+  // Issue #42
   it should "extract IconStyle1" in {
     val xml = <xml>
       <IconStyle>

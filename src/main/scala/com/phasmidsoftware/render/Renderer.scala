@@ -34,7 +34,7 @@ trait Renderer[T] extends NamedFunction[Renderer[T]] {
    *
    * @return a Renderer for `Option[T]`, capable of handling both `Some` and `None` cases.
    */
-  def lift: Renderer[Option[T]] = Renderer.apply {
+  def lift: Renderer[Option[T]] = Renderer {
     (ro, f, s) =>
       ro match {
         case Some(r) =>

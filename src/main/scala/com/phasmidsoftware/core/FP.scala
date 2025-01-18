@@ -75,8 +75,6 @@ object FP {
   /**
    * Sequence method to combine elements of Try.
    *
-   * TESTME
-   *
    * @param xys       an Iterable of Try[X].
    * @param pfFailure a partial function of type Throwable => Try of Option[X].
    * @tparam X the underlying type.
@@ -180,8 +178,6 @@ object FP {
    * If the `Option` is `Some`, it returns a `Success` containing the value.
    * If the `Option` is `None`, it returns a `Failure` containing the provided or default `Throwable`.
    *
-   * TESTME
-   *
    * @param xo        the input `Option[X]` to convert.
    * @param throwable the `Throwable` to use if the input is `None`. Defaults to `NoSuchElementException`.
    * @tparam X the underlying type of the `Option` and `Try`.
@@ -196,8 +192,6 @@ object FP {
    * Attempts to evaluate the provided expression and wraps the result in a `Success` if it is non-null.
    * If the value is `null`, a `Failure` wrapping a `NoSuchElementException` with the provided message is returned.
    *
-   * TESTME
-   *
    * @param x   a lazily-evaluated expression of type `X`.
    * @param msg a message to include in the exception if the result is `null`.
    * @tparam X the type of the expression's result.
@@ -210,7 +204,6 @@ object FP {
 
   /** Uncurrying for functions of arity 6.
    *
-   * TESTME
    */
   def uncurried[T1, T2, T3, T4, T5, T6, R](f: T1 => T2 => T3 => T4 => T5 => T6 => R): (T1, T2, T3, T4, T5, T6) => R = {
     (x1, x2, x3, x4, x5, x6) => f(x1)(x2)(x3)(x4)(x5)(x6)
