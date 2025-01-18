@@ -439,9 +439,9 @@ object BalloonStyle extends Extractors with Renderers {
  * Used by `BalloonStyle` and `ListStyle`.
  * See [[https://developers.google.com/kml/documentation/kmlreference#bgcolor bgColor]]
  *
- * @param $ a CharSequence value that defines the background color.
+ * @param $ a hexadecimal string that defines the background color.
  */
-case class BgColor($: CharSequence)
+case class BgColor($: Hex4)
 
 /**
  * Companion object for the BgColor case class.
@@ -2989,9 +2989,9 @@ object Tessellate extends Extractors with Renderers {
  * TextColor
  * Used by BalloonStyle.
  *
- * @param $ the color.
+ * @param $ a hexadecimal string that defines the color of Text.
  */
-case class TextColor($: CharSequence)
+case class TextColor($: Hex4)
 
 /**
  * The TextColor object provides extractor and renderer capabilities for the TextColor case class.
