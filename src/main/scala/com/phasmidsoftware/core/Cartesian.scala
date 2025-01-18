@@ -51,7 +51,7 @@ case class Cartesian(x: Double, y: Double, z: Double) {
    * @return The squared result of the difference between the function `f` applied to the given
    *         Cartesian point and the current Cartesian point.
    */
-  def sqr(c: Cartesian)(f: Cartesian => Double): Double = sqr(diff(c)(f)) //sqr(f(this) - f(c))
+  private def sqr(c: Cartesian)(f: Cartesian => Double): Double = sqr(diff(c)(f)) //sqr(f(this) - f(c))
 
   /**
    * Multiplies the result of applying a given function to the current Cartesian point
@@ -63,7 +63,7 @@ case class Cartesian(x: Double, y: Double, z: Double) {
    * @return The product of the results of applying the function `f` to the current Cartesian point
    *         and the specified Cartesian point.
    */
-  def mult(c: Cartesian)(f: Cartesian => Double): Double = f(this) * f(c)
+  private def mult(c: Cartesian)(f: Cartesian => Double): Double = f(this) * f(c)
 
   /**
    * Computes the difference between the value of the function `f` applied to the given Cartesian
@@ -83,5 +83,5 @@ case class Cartesian(x: Double, y: Double, z: Double) {
    * @param x The Double value to be squared.
    * @return The square of the provided Double value.
    */
-  def sqr(x: Double): Double = x * x
+  private def sqr(x: Double): Double = x * x
 }

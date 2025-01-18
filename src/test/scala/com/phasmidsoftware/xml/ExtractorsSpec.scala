@@ -2,10 +2,11 @@ package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.xml.Extractor._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
-import java.util.regex.Matcher
 import org.scalatest.PrivateMethodTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+
+import java.util.regex.Matcher
 import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
 
@@ -269,7 +270,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
   }
 
   // TODO Issue #22 this should be just like the previous test
-  ignore should "extractor3B" in {
+  it should "extractor3B" in {
     val xml: Elem = <xml id="1">
       <empty></empty> <empty></empty>
       <junk></junk>
@@ -277,8 +278,7 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     import MyExtractors._
     implicit val extractMaybeJunk: Extractor[Option[Junk]] = extractorOption
     implicit val extractDocument3: Extractor[Document3] = extractor21(Document3)
-    val extracted = implicitly[Extractor[Document3]].extract(xml) // XXX Three empties
-    // TODO check that the following is correct: shouldn't there be only two Empty elements?
+    val extracted = implicitly[Extractor[Document3]].extract(xml)
     extracted shouldBe Success(Document3(1, Some(Junk()), List(Empty, Empty)))
   }
 
@@ -298,15 +298,6 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     matcher.groupCount() shouldBe 1
     matcher.group(0) shouldBe "__id"
     matcher.group(1) shouldBe "id"
-  }
-
-  it should "match plural" in {
-    plural.matches("xs") shouldBe true
-    val matcher: Matcher = plural.pattern.matcher("xs")
-    matcher.matches() shouldBe true
-    matcher.groupCount() shouldBe 1
-    matcher.group(0) shouldBe "xs"
-    matcher.group(1) shouldBe "x"
   }
 
   it should "match optional" in {
@@ -379,6 +370,17 @@ class ExtractorsSpec extends AnyFlatSpec with should.Matchers with PrivateMethod
     </xml>
     val extractedSeq: Try[Iterable[Empty.type]] = MyExtractors.extractorIterable[Empty.type]("empty").extract(xml)
     extractedSeq should matchPattern { case Success(_ :: _ :: Nil) => }
+  }
+
+  //noinspection ScalaUnusedSymbol
+  it should "extractorEnum" in {
+    object Shapes extends Enumeration with Extractors {
+      type Shape = Value
+      val Rectangle, Cylinder, Sphere = Value
+      val extractor: Extractor[Shape] = extractorEnum[Shape, this.type](this)(s => s.toLowerCase)
+      private val xml = <shape>rectangle</shape>
+      extractor.extract(xml) shouldBe Success(Rectangle)
+    }
   }
 
   case class MyContainer(simple1: Simple1, simple2: Simple1, simple4s: Seq[Simple4])

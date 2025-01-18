@@ -1,9 +1,13 @@
 package com.phasmidsoftware.xml
 
 import com.phasmidsoftware.core.FP
+import com.phasmidsoftware.core.Text.multiExtractorBase
+import com.phasmidsoftware.xml.Extractor.{booleanExtractor, createLazy, doubleExtractor, extractChildren, extractSequence, fieldExtractor, inferAttributeType, intExtractor, longExtractor}
+import com.phasmidsoftware.xml.MultiExtractorBase.Positive
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import scala.util.{Failure, Try}
+
+import scala.util.{Failure, Success, Try}
 import scala.xml.Node
 
 class ExtractorSpec extends AnyFlatSpec with should.Matchers {
@@ -30,39 +34,76 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
     target.extract(node) shouldBe Try(2)
   }
 
-  it should "$bar" in {
-
-  }
-
-  it should "optionalAttribute" in {
-
-  }
-
-  it should "plural" in {
-
-  }
-
-  it should "logger" in {
-
-  }
-
-  it should "createLazy" in {
-
-  }
-
-  it should "booleanExtractor" in {
-
-  }
-
-  it should "doubleExtractor" in {
-
-  }
-
-  it should "extractElementsByLabel" in {
-
+  it should "parse" in {
+    val node = <junk>1</junk>
+    val target: Extractor[Int] = Extractor.parse(w => Try(w.toInt))
+    target.extract(node) shouldBe Try(1)
   }
 
   it should "inferAttributeType" in {
+    inferAttributeType("hello") shouldBe None
+    inferAttributeType("_hello") shouldBe Some(false)
+    inferAttributeType("__hello") shouldBe Some(true)
+  }
+
+  it should "createLazy" in {
+    val target = createLazy(Extractor.parse(w => Try(w.toInt)))
+    target.extract(<junk>1</junk>) shouldBe Try(1)
+  }
+
+  it should "booleanExtractor" in {
+    val target = booleanExtractor
+    target.extract(<junk>true</junk>) shouldBe Try(true)
+    target.extract(<junk>false</junk>) shouldBe Try(false)
+    target.extract(<junk></junk>) should matchPattern { case Failure(_) => }
+  }
+
+  it should "doubleExtractor" in {
+    val target = doubleExtractor
+    target.extract(<junk>1.0</junk>) shouldBe Try(1.0)
+    target.extract(<junk>X</junk>) should matchPattern { case Failure(_) => }
+  }
+
+  it should "longExtractor" in {
+    val target = longExtractor
+    target.extract(<junk>1</junk>) shouldBe Try(1)
+    target.extract(<junk>X</junk>) should matchPattern { case Failure(_) => }
+  }
+
+  it should "fieldExtractor" in {
+    val xml = <xml>
+      <junk>1</junk>
+    </xml>
+    val target = fieldExtractor[Int]("junk")
+    target.extract(xml) shouldBe Success(1)
+  }
+
+  it should "extractChildren" in {
+    val xml = <xml>
+      <junk>1</junk>
+    </xml>
+    implicit val xxx: MultiExtractor[Seq[Int]] = multiExtractorBase[Int](Positive)
+    val target: Extractor[Seq[Int]] = extractChildren[Seq[Int]]("junk")
+    target.extract(xml) shouldBe Success(Seq(1))
+  }
+
+  it should "intExtractor" in {
+    val target = intExtractor
+    target.extract(<junk>1</junk>) shouldBe Try(1)
+    target.extract(<junk>X</junk>) should matchPattern { case Failure(_) => }
+  }
+
+  it should "extractSequence2" in {
+    val target = extractSequence[Int](<junk>1</junk> <junk>2</junk>)
+    target shouldBe Success(Seq(1, 2))
+  }
+
+  it should "extractSequence1" in {
+    val target = extractSequence[Int](<junk>1</junk>)
+    target shouldBe Success(Seq(1))
+  }
+
+  it should "extractElementsByLabel" in {
 
   }
 
@@ -94,28 +135,42 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
 
   }
 
-  it should "extractMulti" in {
+  behavior of "Plural"
 
+  it should "match success" in {
+    val result = Plural.parseAll(Plural.endsInS, "oranges".reverse)
+    result should matchPattern { case Plural.Success("egnaro", _) => }
   }
 
-  it should "longExtractor" in {
-
+  it should "match orange" in {
+    "oranges" match {
+      case Plural(s) => s shouldBe "orange"
+    }
   }
 
-  it should "fieldExtractor" in {
-
+  it should "match empty" in {
+    "empties" match {
+      case Plural(s) => s shouldBe "empty"
+    }
   }
 
-  it should "extractChildren" in {
-
+  it should "not match innerBoundaryIs" in {
+    "innerBoundaryIs" match {
+      case Plural(s) => fail("should not match")
+      case _ =>
+    }
   }
 
-  it should "intExtractor" in {
-
+  it should "match mouse" in {
+    "mice" match {
+      case Plural(s) => s shouldBe "mouse"
+    }
   }
-
-  it should "extractSequence" in {
-
-  }
+  //  it should "extractMulti" in {
+  //    val xml = <xml><junk>1</junk></xml>
+  //    implicit val xxx: MultiExtractor[Int] = (nodeSeq: NodeSeq) => ???
+  //    val z: Try[Int] = extractMulti[Int](xml)
+  //
+  //  }
 
 }

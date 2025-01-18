@@ -4,10 +4,11 @@ import com.phasmidsoftware.core._
 import com.phasmidsoftware.kmldoc.HasFeatures.editHasFeaturesToOption
 import com.phasmidsoftware.kmldoc.KmlEdit.{JOIN, JOINX}
 import com.phasmidsoftware.kmldoc.Mergeable.{mergeOptions, mergeOptionsBiased, mergeSequence, mergeStringsDelimited}
-import com.phasmidsoftware.render.Renderers.{booleanRenderer, charSequenceRenderer, doubleRenderer, intRenderer}
+import com.phasmidsoftware.render.Renderers.{booleanRenderer, doubleRenderer, enumAttributeRenderer, enumObjectRenderer, intRenderer}
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.MultiExtractorBase.{NonNegative, Positive}
 import com.phasmidsoftware.xml._
+
 import scala.io.Source
 import scala.util._
 
@@ -64,7 +65,219 @@ object KmlData extends Extractors with Renderers {
   implicit val renderer: Renderer[KmlData] = renderer1(apply) ^^ "rendererKmlData"
 }
 
-// ============================== From here on, classes are grouped alphabetically
+// ================ The following are enumerated types
+// ================ See https://developers.google.com/kml/documentation/kmlreference#kml-fields
+
+/**
+ * Enumeration representing various methods how the `altitude` is interpreted
+ *
+ * The available altitudeMode in this enumeration are:
+ * - clampToGround: (default) Represents to ignore the altitude specification
+ * and drape the overlay over the terrain.
+ * - relativeToGround: Represents the altitude of the element relative to the actual ground elevation of a particular location.
+ * - absolute: Represents the altitude of the coordinate relative to sea level
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of AltitudeModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of AltitudeModeEnum.
+ *
+ */
+object AltitudeModeEnum extends Enumeration with Extractors with Renderers {
+  val clampToGround, relativeToGround, absolute = Value
+  implicit val extractor: Extractor[AltitudeModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[AltitudeModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing Values for ColorMode are normal (no effect) and random
+ *
+ * The available ColorMode in this enumeration are:
+ * - normal: no effect, base condition
+ * - random: applies a random linear scale to the base `color` as follows.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of ColorModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of ColorModeEnum.
+ */
+object ColorModeEnum extends Enumeration with Extractors with Renderers {
+  val normal, random = Value
+  implicit val extractor: Extractor[ColorModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[ColorModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing Values for DisplayMode are default and hide.
+ *
+ * The available DisplayMode in this enumeration are:
+ * - default: Google Earth uses the information supplied in `text` to create a balloon
+ * - hide: Google Earth does not display the balloon.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of DisplayModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of DisplayModeEnum.
+ */
+object DisplayModeEnum extends Enumeration with Extractors with Renderers {
+  val default, hide = Value
+  implicit val extractor: Extractor[DisplayModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[DisplayModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing Values for ItemIconModeEnum are open, closed, error, fetching0, fetching1 or fetching2.
+ *
+ * The available ItemIconModeEnum in this enumeration are:
+ * - open
+ * - closed
+ * - error
+ * - fetching0
+ * - fetching1
+ * - fetching2
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of ItemIconModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of ItemIconModeEnum.
+ */
+object ItemIconModeEnum extends Enumeration with Extractors with Renderers {
+  val open, closed, error, fetching0, fetching1, fetching2 = Value
+  implicit val extractor: Extractor[ItemIconModeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[ItemIconModeEnum.Value] = enumObjectRenderer
+}
+
+
+/**
+ * Enumeration representing different types of list item behaviors or attributes.
+ *
+ * The `ListItemTypeEnum` object provides a set of predefined values:
+ * - `check`: Represents a list item that can be checked.
+ * - `checkOffOnly`: Represents a list item that can only be unchecked.
+ * - `checkHideChildren`: Represents a list item that hides its children when checked.
+ * - `radioFolder`: Represents a list item with behavior similar to a radio button within a folder.
+ *
+ * This object extends `Enumeration` to define the set of values, and integrates
+ * with the `Extractors` and `Renderers` traits to provide functionality for
+ * extracting and rendering enumeration values.
+ *
+ * Contains implicit components:
+ * - An extractor for converting to and from `ListItemTypeEnum.Value`.
+ * - A renderer for rendering `ListItemTypeEnum.Value`.
+ */
+object ListItemTypeEnum extends Enumeration with Extractors with Renderers {
+  val check, checkOffOnly, checkHideChildren, radioFolder = Value
+  implicit val extractor: Extractor[ListItemTypeEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[ListItemTypeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * An enumeration object representing a collection of shapes.
+ * `ShapeEnum` supports extraction and rendering functionalities.
+ *
+ * ShapeEnum include:
+ * - rectangle
+ * - cylinder
+ * - sphere
+ *
+ * This object provides implicit values for extraction and rendering:
+ * - `extractor`: Extracts instances of `ShapeEnum.Value` from a defined context.
+ * - `renderer`: Renders `ShapeEnum.Value` instances as their string representations.
+ *
+ * The `ShapeEnum.Value` type is an alias for the `Value` type in this enumeration.
+ */
+object ShapeEnum extends Enumeration with Extractors with Renderers {
+  val rectangle, cylinder, sphere = Value
+  implicit val extractor: Extractor[ShapeEnum.Value] = extractorEnum[Value, this.type](this)(s => s.toLowerCase)
+  implicit val renderer: Renderer[ShapeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing a time-based refresh mode.
+ *
+ * The available refreshMode in this enumeration are:
+ * - onChange: refresh when the file is loaded
+ *             and whenever the Link parameters change (the default).
+ * - onInterval: refresh every n seconds (specified in `refreshInterval`)
+ * - onExpire:  refresh the file when the expiration time is reached.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of RefreshModeEnum.
+ * - renderer: Provides a Renderer instance for rendering values of RefreshModeEnum.
+ */
+object RefreshModeEnum extends Enumeration with Extractors with Renderers {
+  val onChange, onInterval,onExpire = Value
+  implicit val extractor: Extractor[RefreshModeEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[RefreshModeEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing two different Styles of `StyleMap`.
+ *
+ * The available StyleState in this enumeration are:
+ * - normal: a normal styles version for a placemark
+ * - highlight: the highlighted version appears when the user mouses over the icon in Google Earth.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of StyleStateEnum.
+ * - renderer: Provides a Renderer instance for rendering values of StyleStateEnum.
+ */
+object StyleStateEnum extends Enumeration with Extractors with Renderers {
+  val normal, highlight = Value
+  implicit val extractor: Extractor[StyleStateEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[StyleStateEnum.Value] = enumObjectRenderer
+}
+
+/**
+ * Enumeration representing various units that can be used.
+ *
+ * The available units in this enumeration are:
+ * - fraction: Represents fractional units
+ * - pixels: Represents pixel-based units
+ * - insetPixels: Represents pixel units used for insets
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of UnitsEnum.
+ * - renderer: Provides a Renderer instance for rendering values of UnitsEnum.
+ */
+object UnitsEnum extends Enumeration with Extractors with Renderers {
+  val fraction, pixels, insetPixels = Value
+  implicit val extractor: Extractor[UnitsEnum.Value] = extractorEnum[Value, this.type](this)(identity)
+  implicit val renderer: Renderer[UnitsEnum.Value] = enumAttributeRenderer
+}
+
+/**
+ * Enumeration representing Specifies how the link is refreshed when the "camera" changes.
+ *
+ * The available ViewRefreshEnum in this enumeration are:
+ * - never: (default) Ignore changes in the view.
+ * - onRequest: Refresh the file only when the user explicitly requests it.
+ * - onStop: Refresh the file n seconds after movement stops.
+ * - onRegion: Refresh the file when the Region becomes active.
+ *
+ * This object extends the capabilities of Enumeration to include Extractors and Renderers.
+ *
+ * Implicit members:
+ * - extractor: Provides an Extractor instance for extracting values of ViewRefreshEnum.
+ * - renderer: Provides a Renderer instance for rendering values of ViewRefreshEnum.
+ */
+object ViewRefreshEnum extends Enumeration with Extractors with Renderers {
+  val never, onRequest, onStop, onRegion = Value
+  implicit val extractor: Extractor[ViewRefreshEnum.Value] = extractorEnum[Value,this.type](this)(identity)
+  implicit val renderer: Renderer[ViewRefreshEnum.Value] = enumObjectRenderer
+}
+
+// ================ From here on, classes (objects) are grouped alphabetically
 
 /**
  * Trait AbstractView: abstract subelement of KmlObject.
@@ -118,14 +331,15 @@ case class AbstractViewData(kmlData: KmlData)
  */
 object AbstractViewData extends Extractors with Renderers {
   private val applyFunction: KmlData => AbstractViewData = new AbstractViewData(_)
-  val extractorPartial: Extractor[KmlData => AbstractViewData] = extractorPartial0[KmlData, AbstractViewData](applyFunction)
-  implicit val extractor: Extractor[AbstractViewData] = extractorPartial[KmlData, AbstractViewData](extractorPartial)
-  implicit val renderer: Renderer[AbstractViewData] = renderer0Super(apply)(_.kmlData) ^^ "rendererAbstractViewData"
+  implicit val extractor: Extractor[AbstractViewData] =
+    extractorPartial[KmlData, AbstractViewData](extractorPartial0(applyFunction))
+  implicit val renderer: Renderer[AbstractViewData] =
+    renderer0Super(apply)(_.kmlData) ^^ "rendererAbstractViewData"
 }
 
 /**
  * Case class representing an altitude value.
- * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
+ * See [[https://developers.google.com/kml/documentation/kmlreference#altitude Altitude]]
  *
  * @param $ the altitude value, typically measured in meters.
  */
@@ -133,6 +347,7 @@ case class Altitude($: Double)
 
 /**
  * Object representing utilities for working with the Altitude case class.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#altitude Altitude]]
  *
  * Provides implementations for `Extractor` and `Renderer` type classes,
  * enabling extraction and rendering functionality for `Altitude` and `Option[Altitude]`.
@@ -141,21 +356,29 @@ object Altitude extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Altitude] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Altitude]] = extractorOption[Altitude]
-  implicit val renderer: Renderer[Altitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Altitude]] = optionRenderer
+  implicit val extractor: Extractor[Altitude] = extractor10(apply) ^^ "extractorAltitude"
+  implicit val extractorOpt: Extractor[Option[Altitude]] = extractor.lift ^^ "extractorOptAltitude"
+  implicit val renderer: Renderer[Altitude] = renderer1(apply) ^^ "rendererAltitude"
+  implicit val rendererOpt: Renderer[Option[Altitude]] = renderer.lift ^^ "rendererOptAltitude"
 }
 
 /**
- * Represents the altitude mode for a specific KML element.
+ * Represents the mode by which altitude is specified and interpreted.
  * See [[https://developers.google.com/kml/documentation/kmlreference#camera Camera]]
  *
- * An altitude mode defines the way altitude values are interpreted.
+ * This case class wraps a value from the AltitudeModeEnum enumeration, which specifies
+ * how the altitude should behave relative to the terrain or sea level.
  *
- * @param $ a character sequence representing the altitude mode.
+ * The possible altitude modes are defined in the AltitudeModeEnum object and include:
+ *  - clampToGround: Ignores the altitude value and drapes the element on the ground.
+ *  - relativeToGround: Specifies the altitude as relative to the ground elevation.
+ *  - absolute: Specifies the altitude relative to sea level.
+ *
+ * The AltitudeMode class serves as a wrapper, enabling seamless integration with extractors
+ * and renderers for handling data transformations and operations within systems that support
+ * AltitudeModeEnum values.
  */
-case class AltitudeMode($: CharSequence)
+case class AltitudeMode($: AltitudeModeEnum.Value)
 
 /**
  * Companion object for the AltitudeMode case class, providing extractors and renderers.
@@ -167,10 +390,8 @@ case class AltitudeMode($: CharSequence)
  */
 object AltitudeMode extends Extractors with Renderers {
 
-  import Renderers._
-
   implicit val extractorOpt: Extractor[Option[AltitudeMode]] = extractor10(apply).lift ^^ "extractorOptAltitudeMode"
-  implicit val rendererOpt: Renderer[Option[AltitudeMode]] = renderer1(apply).lift
+  implicit val rendererOpt: Renderer[Option[AltitudeMode]] = renderer1(apply).lift ^^ "rendererOptAltitudeMode"
 }
 
 /**
@@ -208,19 +429,18 @@ object BalloonStyle extends Extractors with Renderers {
 
   import Renderers._
 
-  val extractorPartial: Extractor[ColorStyleData => BalloonStyle] = extractorPartial40(apply) ^^ "extractorCSD2BalloonStyle"
-  implicit val extractor: Extractor[BalloonStyle] = extractorPartial[ColorStyleData, BalloonStyle](extractorPartial) ^^ "extractorBalloonStyle"
+  implicit val extractor: Extractor[BalloonStyle] = extractorPartial[ColorStyleData, BalloonStyle](extractorPartial40(apply)) ^^ "extractorBalloonStyle"
   implicit val renderer: Renderer[BalloonStyle] = renderer4Super(apply)(_.colorStyleData) ^^ "rendererBalloonStyle"
-  implicit val rendererOpt: Renderer[Option[BalloonStyle]] = optionRenderer[BalloonStyle] ^^ "rendererOptionBalloonStyle"
 }
 
 /**
  * This case class represents a background color element with a single parameter.
  * Used by `BalloonStyle` and `ListStyle`.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#bgcolor bgColor]]
  *
- * @param $ a CharSequence value that defines the background color.
+ * @param $ a hexadecimal string that defines the background color.
  */
-case class BgColor($: CharSequence)
+case class BgColor($: Hex4)
 
 /**
  * Companion object for the BgColor case class.
@@ -242,12 +462,10 @@ case class BgColor($: CharSequence)
  */
 object BgColor extends Extractors with Renderers {
 
-  import Renderers._
-
   implicit val extractor: Extractor[BgColor] = extractor10(apply) ^^ "extractorBgColor"
-  implicit val extractorOpt: Extractor[Option[BgColor]] = extractorOption[BgColor] ^^ "extractorMaybeBgColor"
+  implicit val extractorOpt: Extractor[Option[BgColor]] = extractor.lift ^^ "extractorOptionBgColor"
   implicit val renderer: Renderer[BgColor] = renderer1(apply) ^^ "rendererBgColor"
-  implicit val rendererOpt: Renderer[Option[BgColor]] = optionRenderer[BgColor] ^^ "rendererOptionBgColor"
+  implicit val rendererOpt: Renderer[Option[BgColor]] = renderer.lift ^^ "rendererOptionBgColor"
 }
 
 /**
@@ -283,10 +501,10 @@ case class Camera(long: Longitude, lat: Latitude, alt: Altitude, heading: Headin
  */
 object Camera extends Extractors with Renderers {
 
-  val extractorPartial: Extractor[AbstractViewData => Camera] = extractorPartial70(apply)
-  implicit val extractor: Extractor[Camera] = extractorPartial[AbstractViewData, Camera](extractorPartial)
-  implicit val renderer: Renderer[Camera] = renderer7Super(apply)(_.abstractViewData)
-  implicit val rendererOpt: Renderer[Option[Camera]] = optionRenderer[Camera]
+  implicit val extractor: Extractor[Camera] =
+    extractorPartial[AbstractViewData, Camera](extractorPartial70(apply)) ^^ "extractorCamera"
+  implicit val renderer: Renderer[Camera] =
+    renderer7Super(apply)(_.abstractViewData) ^^ "rendererCamera"
 }
 
 /**
@@ -296,7 +514,7 @@ object Camera extends Extractors with Renderers {
  *
  * @param $ the color as a hexadecimal string.
  */
-case class Color($: CharSequence)
+case class Color($: Hex4)
 
 /**
  * The `Color` object provides implicit extractors and renderers for the `Color` case class.
@@ -314,19 +532,22 @@ case class Color($: CharSequence)
  */
 object Color extends Extractors with Renderers {
 
-  import Renderers._
-
-  implicit val extractorOpt: Extractor[Option[Color]] = extractor10(apply).lift ^^ "extractMaybeColor"
-  implicit val rendererOpt: Renderer[Option[Color]] = renderer1(apply).lift ^^ "rendererOptionColor"
+  implicit val extractor: Extractor[Color] = extractor10(apply) ^^ "extractColor"
+  implicit val optExtractor: Extractor[Option[Color]] = extractor.lift ^^ "extractOptionColor"
+  implicit val renderer: Renderer[Color] = renderer1(apply) ^^ "rendererColor"
+  implicit val optRenderer: Renderer[Option[Color]] = renderer.lift ^^ "rendererOptionColor"
 }
 
 /**
  * Case class to model ColorMode.
  * See [[https://developers.google.com/kml/documentation/kmlreference#colormode ColorMode]]
  *
- * @param $ the color mode as string: "normal" or "random."
+ * `ColorMode` is defined using the `ColorModeEnum` enumeration, which specifies the
+ * possible modes for handling colors. The two primary modes are:
+ * - `normal`: Represents no effect or a base condition.
+ * - `random`: Applies a random linear scale to the base color.
  */
-case class ColorMode($: CharSequence)
+case class ColorMode($: ColorModeEnum.Value)
 
 /**
  * Object companion for the `ColorMode` case class that provides auxiliary utilities.
@@ -342,8 +563,6 @@ case class ColorMode($: CharSequence)
  * - Implicit `Renderer[Option[ColorMode]]`: Renders optional `ColorMode` values.
  */
 object ColorMode extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractorOpt: Extractor[Option[ColorMode]] = extractor10(apply).lift ^^ "extractMaybeColorMode"
   implicit val rendererOpt: Renderer[Option[ColorMode]] = renderer1(apply).lift ^^ "rendererOptionColorMode"
@@ -370,6 +589,7 @@ trait ColorStyle extends SubStyle
  * - All operations are tagged with appropriate identifiers for enhanced traceability and debugging.
  *
  * TODO BalloonStyle and ListStyle don't belong here according to the KML Reference. ColorStyle is a sub-class of SubStyle.
+ * TESTME
  */
 object ColorStyle extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[ColorStyle]] =
@@ -401,9 +621,10 @@ case class ColorStyleData(maybeColor: Option[Color], maybeColorMode: Option[Colo
  */
 object ColorStyleData extends Extractors with Renderers {
 
-  val extractorPartial: Extractor[SubStyleData => ColorStyleData] = extractorPartial20(apply) ^^ "extractorSSD2ColorStyleData"
-  implicit val extractor: Extractor[ColorStyleData] = extractorPartial[SubStyleData, ColorStyleData](extractorPartial) ^^ "extractorColorStyleData"
-  implicit val renderer: Renderer[ColorStyleData] = renderer2Super(apply)(x => x.subStyleData) ^^ "rendererColorStyleData"
+  implicit val extractor: Extractor[ColorStyleData] =
+    extractorPartial[SubStyleData, ColorStyleData](extractorPartial20(apply)) ^^ "extractorColorStyleData"
+  implicit val renderer: Renderer[ColorStyleData] =
+    renderer2Super(apply)(x => x.subStyleData) ^^ "rendererColorStyleData"
 }
 
 /**
@@ -452,14 +673,14 @@ case class ContainerData(featureData: FeatureData)
  */
 object ContainerData extends Extractors with Renderers {
   private val applyFunction: FeatureData => ContainerData = new ContainerData(_)
-  val extractorPartial: Extractor[FeatureData => ContainerData] = extractorPartial0[FeatureData, ContainerData](applyFunction) ^^ "extractorFD2ContainerData"
-  implicit val extractor: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorPartial) ^^ "extractorContainerData"
+  implicit val extractor: Extractor[ContainerData] = extractorPartial[FeatureData, ContainerData](extractorPartial0(applyFunction)) ^^ "extractorContainerData"
   implicit val renderer: Renderer[ContainerData] = renderer0Super(applyFunction)(_.featureData) ^^ "rendererContainerData"
 }
 
 /**
  * Represents a sequence of `Coordinate` objects and provides operations for merging, reversing, and computing
  * geometric properties such as gaps and directions.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#coordinates Linear Ring coordinates]]
  *
  * @constructor Creates an instance of `Coordinates` with the specified sequence of `Coordinate` objects.
  * @param coordinates A sequence of `Coordinate` objects representing this collection.
@@ -473,6 +694,7 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
    * This value is computed lazily and is wrapped in an `Option`.
    * The computation involves retrieving the first and last coordinates from the sequence of coordinates within the `Coordinates` instance.
    * If either the first or last coordinate is missing, or if the distance between them cannot be computed, the result will be `None`.
+   * TESTME
    *
    * @return an `Option` containing the computed distance as a `Double`, or `None` if the distance cannot be determined.
    */
@@ -487,8 +709,6 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
   }
 
   private val result: Option[Cartesian] = for (last <- coordinates.lastOption; first <- coordinates.headOption; v <- first vector last) yield v
-  private lazy val vector: Option[Cartesian] =
-    result
 
   /**
    * Computes the gap (distance) between this Coordinates instance and another Coordinates instance, if possible.
@@ -517,6 +737,7 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
 
   /**
    * Reverses the order of the coordinates contained in this `Coordinates` instance.
+   * TESTME
    *
    * @return a new `Coordinates` instance with the coordinates in reversed order.
    */
@@ -594,12 +815,18 @@ object Coordinates extends Extractors with Renderers {
 }
 
 /**
- * DisplayMode which has values "default" or "hide".
- * Used by BalloonStyle.
+ * DisplayMode represents a display preference in association with the DisplayModeEnum enumeration.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#displaymode displayMode]]
  *
- * @param $ the mode.
+ * It is defined as a case class wrapping a value from the DisplayModeEnum enumeration.
+ * The DisplayMode can be rendered or extracted for usage, utilizing the implicit values
+ * defined in its companion object.
+ *
+ * The case class is closely associated with the DisplayModeEnum which provides the following options:
+ * - default: Uses the provided information to generate a visible representation.
+ * - hide: Suppresses the display of the associated representation.
  */
-case class DisplayMode($: CharSequence)
+case class DisplayMode($: DisplayModeEnum.Value)
 
 /**
  * Companion object for the DisplayMode case class.
@@ -612,8 +839,6 @@ case class DisplayMode($: CharSequence)
  * - Rendering an optional DisplayMode instance.
  */
 object DisplayMode extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractorOpt: Extractor[Option[DisplayMode]] = extractor10(apply).lift ^^ "extractMaybeDisplayMode"
   implicit val rendererOpt: Renderer[Option[DisplayMode]] = renderer1(apply).lift ^^ "rendererOptionDisplayMode"
@@ -655,14 +880,14 @@ case class Document(features: Seq[Feature])(val containerData: ContainerData) ex
  * Extraction and rendering processes are defined through the `Extractors` and `Renderers` mixins.
  */
 object Document extends Extractors with Renderers {
-  val extractorPartial: Extractor[ContainerData => Document] = extractorPartial01(apply) ^^ "extractorCD2Document"
-  implicit val extractor: Extractor[Document] = extractorPartial(extractorPartial) ^^ "extractorDocument"
+  implicit val extractor: Extractor[Document] = extractorPartial(extractorPartial01(apply)) ^^ "extractorDocument"
   implicit val renderer: Renderer[Document] = renderer1Super(apply)(_.containerData) ^^ "rendererDocument"
   implicit val rendererSeq: Renderer[Seq[Document]] = sequenceRenderer[Document] ^^ "rendererDocuments"
 }
 
 /**
  * Represents a draw order value as an Int.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#draworder draworder]]
  *
  */
 case class DrawOrder($: Int)
@@ -678,8 +903,8 @@ object DrawOrder extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[DrawOrder]] = extractor10(apply).lift
-  implicit val rendererOpt: Renderer[Option[DrawOrder]] = renderer1(apply).lift
+  implicit val extractorOpt: Extractor[Option[DrawOrder]] = extractor10(apply).lift ^^ "extractorOptionDrawOrder"
+  implicit val rendererOpt: Renderer[Option[DrawOrder]] = renderer1(apply).lift ^^ "rendererOptionDrawOrder"
 }
 
 
@@ -687,10 +912,11 @@ object DrawOrder extends Extractors with Renderers {
  * Class Extrude which represents a `Boolean`.
  * Used by `LineString` and `Polygon`.
  * Similar to `Tessellate`--and in fact they often go together.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#extrude Linear Ring extrude]]
  *
  * @param $ the value.
  */
-case class Extrude($: CharSequence)
+case class Extrude($: Boolean)
 
 /**
  * The `Extrude` object serves as a companion to the `Extrude` case class.
@@ -714,7 +940,7 @@ object Extrude extends Extractors with Renderers {
   import Renderers._
 
   implicit val extractorOpt: Extractor[Option[Extrude]] = extractor10(apply).lift ^^ "extractorOptionExtrude"
-  implicit val rendererOpt: Renderer[Option[Extrude]] = renderer1(apply).lift
+  implicit val rendererOpt: Renderer[Option[Extrude]] = renderer1(apply).lift ^^ "rendererOptionExtrude"
 }
 
 /**
@@ -728,6 +954,7 @@ trait Feature extends KmlObject {
 
   /**
    * Method to edit this Feature, given a sequence of sibling Features such that we may be able to combine features.
+   * TESTME
    *
    * @param e  the edit to apply.
    * @param fs the siblings (which actually do include this itself).
@@ -809,18 +1036,20 @@ object FeatureData extends Extractors with Renderers {
 
   import Renderers._
 
-  val extractorPartial: Extractor[KmlData => FeatureData] = extractorPartial52(apply)
-  implicit val extractor: Extractor[FeatureData] = extractorPartial[KmlData, FeatureData](extractorPartial) ^^ "extractorFeatureData"
-  implicit val renderer: Renderer[FeatureData] = renderer7Super(apply)(_.kmlData) ^^ "rendererFeatureData"
+  implicit val extractor: Extractor[FeatureData] =
+    extractorPartial[KmlData, FeatureData](extractorPartial52(apply)) ^^ "extractorFeatureData"
+  implicit val renderer: Renderer[FeatureData] =
+    renderer7Super(apply)(_.kmlData) ^^ "rendererFeatureData"
 }
 
 /**
  * Fill.
  * NOTE that this is a boolean that is represented by 0 or 1.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#fill fill]]
  *
  * @param boolean whether to fill or not.
  */
-case class Fill(boolean: Int)
+case class Fill(boolean: Boolean)
 
 /**
  * The `Fill` object provides extractor and renderer implementations for the `Fill` case class.
@@ -841,6 +1070,33 @@ object Fill extends Extractors with Renderers {
   implicit val extractorOpt: Extractor[Option[Fill]] = extractor10(apply).lift ^^ "extractMaybeFill"
   implicit val rendererOpt: Renderer[Option[Fill]] = renderer1(apply).lift ^^ "rendererOptionFill"
 }
+
+/**
+ * A case class representing FlyToView in KML documents.
+ * TESTME
+ *
+ * This case class encapsulates a `Boolean` value that signifies FlyToView attributes in KML data.
+ * FlyToView settings often dictate A value of 1 causes Google Earth to fly to the view of the LookAt or Camera in the NetworkLinkControl (if it exists).
+ */
+case class FlyToView($: Boolean)
+
+/**
+ * Companion object for the `FlyToView` case class.
+ *
+ * This object provides implicits and utilities for serializing and deserializing `FlyToView` instances.
+ * It extends traits `Extractors` and `Renderers` to support extraction and rendering functionalities.
+ *
+ * Implicit extractors and renderers are provided for both `FlyToView` and `Option[FlyToView]`, enabling their usage
+ * in data processing pipelines that require standardized extraction or rendering logic.
+ */
+object FlyToView extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[FlyToView] = extractor10(apply) ^^ "extractorFlyToView"
+  implicit val renderer: Renderer[FlyToView] = renderer1(apply) ^^ "rendererFlyToView"
+}
+
 
 /**
  * Case class Folder: subelement of Container.
@@ -873,8 +1129,7 @@ case class Folder(features: Seq[Feature])(val containerData: ContainerData) exte
  * - `rendererSeq`: Implicit renderer for sequences of `Folder` instances.
  */
 object Folder extends Extractors with Renderers {
-  val extractorPartial: Extractor[ContainerData => Folder] = extractorPartial01(apply) ^^ "extractorCD2Folder"
-  implicit val extractor: Extractor[Folder] = extractorPartial(extractorPartial) ^^ "extractorFolder"
+  implicit val extractor: Extractor[Folder] = extractorPartial(extractorPartial01(apply)) ^^ "extractorFolder"
   implicit val renderer: Renderer[Folder] = renderer1Super(apply)(_.containerData) ^^ "rendererFolder"
   implicit val rendererSeq: Renderer[Seq[Folder]] = sequenceRenderer[Folder] ^^ "rendererFolders"
 }
@@ -968,8 +1223,7 @@ case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option
  */
 object GeometryData extends Extractors with Renderers {
 
-  private val extractorPartial: Extractor[KmlData => GeometryData] = extractorPartial20(apply)
-  implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial)
+  implicit val extractor: Extractor[GeometryData] = extractorPartial[KmlData, GeometryData](extractorPartial20(apply))
   implicit val renderer: Renderer[GeometryData] = renderer2Super(apply)(_.kmlData) ^^ "rendererGeometryData"
 }
 
@@ -977,6 +1231,7 @@ object GeometryData extends Extractors with Renderers {
  * Represents a GroundOverlay, which is a KML feature that overlays an image on the surface
  * of the Earth. The image is geographically bound to a `LatLonBox` and can have an optional
  * altitude and altitude mode.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#groundoverlay GroundOverlay]]
  *
  * A `GroundOverlay` extends the `BaseOverlay` class to include additional geographic attributes
  * such as the bounding box and altitude-related data.
@@ -1018,15 +1273,14 @@ case class GroundOverlay(maybeAltitude: Option[Altitude], maybeAltitudeMode: Opt
  * with the identifier "rendererGroundOverlays".
  */
 object GroundOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => GroundOverlay] = extractorPartial30(apply) ^^ "extractorOD2GroundOverlay"
-  implicit val extractor: Extractor[GroundOverlay] = extractorPartial(extractorPartial) ^^ "extractorGroundOverlay"
+  implicit val extractor: Extractor[GroundOverlay] = extractorPartial(extractorPartial30(apply)) ^^ "extractorGroundOverlay"
   implicit val renderer: Renderer[GroundOverlay] = renderer3Super(apply)(_.overlayData) ^^ "renderGroundOverlay"
   implicit val renderSeq: Renderer[Seq[GroundOverlay]] = sequenceRenderer[GroundOverlay] ^^ "rendererGroundOverlays"
 }
 
-
 /**
  * Case class to represent a Heading which is represented in XML as, for example: <heading>1.1</heading>
+ * See [[https://developers.google.com/kml/documentation/kmlreference#heading heading]]
  *
  * @param $ the value of the heading (a Double).
  */
@@ -1049,22 +1303,21 @@ object Heading extends Extractors with Renderers {
   import Renderers._
 
   implicit val extractor: Extractor[Heading] = extractor10(apply) ^^ "extractorHeading"
-  implicit val extractorOpt: Extractor[Option[Heading]] = extractorOption[Heading] ^^ "extractMaybeHeading"
+  implicit val extractorOpt: Extractor[Option[Heading]] = extractor.lift ^^ "extractMaybeHeading"
   implicit val renderer: Renderer[Heading] = renderer1(apply) ^^ "rendererHeading"
-  implicit val rendererOpt: Renderer[Option[Heading]] = optionRenderer[Heading] ^^ "rendererOptionHeading"
+  implicit val rendererOpt: Renderer[Option[Heading]] = renderer.lift ^^ "rendererOptionHeading"
 }
 
 /**
  * Case class to model a HotSpot.
- *
- * TODO change _xunits and _yunits to be of type String.
+ * See [[https://developers.google.com/kml/documentation/kmlreference#hotspot hotSpot]]
  *
  * @param _x      optional x field.
  * @param _xunits optional xunits field.
  * @param _y      optional y field.
  * @param _yunits optional yunits field.
  */
-case class HotSpot(_x: Int, _xunits: CharSequence, _y: Int, _yunits: CharSequence)
+case class HotSpot(_x: Int, _xunits: UnitsEnum.Value, _y: Int, _yunits: UnitsEnum.Value)
 
 /**
  * The `HotSpot` object serves as a companion to the `HotSpot` case class.
@@ -1082,9 +1335,9 @@ object HotSpot extends Extractors with Renderers {
 
   // XXX we need the (plain) extractor as a val only because it is required in KML_Spec
   implicit val extractor: Extractor[HotSpot] = extractor40(apply) ^^ "extractorHotspot"
-  implicit val extractorOpt: Extractor[Option[HotSpot]] = extractorOption[HotSpot] ^^ "extractMaybeHotSpot"
+  implicit val extractorOpt: Extractor[Option[HotSpot]] = extractor.lift ^^ "extractMaybeHotSpot"
   implicit val renderer: Renderer[HotSpot] = renderer4(apply) ^^ "rendererHotSpot"
-  implicit val rendererOpt: Renderer[Option[HotSpot]] = optionRenderer[HotSpot] ^^ "rendererOptionHotSpot"
+  implicit val rendererOpt: Renderer[Option[HotSpot]] = renderer.lift ^^ "rendererOptionHotSpot"
 }
 
 /**
@@ -1187,10 +1440,12 @@ case class IconStyle(maybeScale: Option[Scale], Icon: Icon, maybeHotSpot: Option
  * - `rendererOpt`: An implicit renderer for rendering optional `IconStyle` instances.
  */
 object IconStyle extends Extractors with Renderers {
-  val extractorPartial: Extractor[ColorStyleData => IconStyle] = extractorPartial40(apply) ^^ "extractorCSP2IconStyle"
-  implicit val extractor: Extractor[IconStyle] = extractorPartial[ColorStyleData, IconStyle](extractorPartial) ^^ "extractorIconStyle"
-  implicit val renderer: Renderer[IconStyle] = renderer4Super(apply)(x => x.colorStyleData) ^^ "rendererIconStyle"
-  implicit val rendererOpt: Renderer[Option[IconStyle]] = optionRenderer[IconStyle] ^^ "rendererOptionIconStyle"
+  implicit val extractor: Extractor[IconStyle] =
+    extractorPartial[ColorStyleData, IconStyle](extractorPartial40(apply)) ^^ "extractorIconStyle"
+  implicit val renderer: Renderer[IconStyle] =
+    renderer4Super(apply)(x => x.colorStyleData) ^^ "rendererIconStyle"
+  implicit val rendererOpt: Renderer[Option[IconStyle]] =
+    renderer.lift ^^ "rendererOptionIconStyle"
 }
 
 /**
@@ -1213,19 +1468,22 @@ case class ImagePyramid(tileSize: Int, maxWidth: Int, maxHeight: Int, gridOrigin
  * Provides implicit instances for Extractor and Renderer typeclasses to facilitate
  */
 object ImagePyramid extends Extractors with Renderers {
-  implicit val extractor: Extractor[ImagePyramid] = extractor40(apply)
-  implicit val renderer: Renderer[ImagePyramid] = renderer4(apply)
+  implicit val extractor: Extractor[ImagePyramid] = extractor40(apply) ^^ "extractorImagePyramid"
+  implicit val renderer: Renderer[ImagePyramid] = renderer4(apply) ^^ "rendererImagePyramid"
 }
 
-
 /**
- * A case class representing a symbolic key with a character sequence value.
+ * Represents a `Key` that associates a style state with a style map.
  *
- * The `Key` class encapsulates a key as a `CharSequence`.
- * It is commonly used in contexts
- * that require symbolic or string-based identifiers.
+ * The `Key` case class encapsulates a value from the `StyleStateEnum`, which
+ * defines the specific state of a style, such as `normal` or `highlight`. This
+ * class is integral to managing and distinguishing between different visual
+ * representations of styles, particularly in applications like Google Earth.
+ *
+ * @param $ Represents the state of the style and must be one of the values
+ *          defined in the `StyleStateEnum` enumeration.
  */
-case class Key($: CharSequence)
+case class Key($: StyleStateEnum.Value)
 
 /**
  * Object `Key` serves as a companion to the `Key` case class and provides
@@ -1242,8 +1500,6 @@ case class Key($: CharSequence)
  * from the `Key` type to human-readable or serialized formats.
  */
 object Key extends Extractors with Renderers {
-
-  import Renderers._
 
   implicit val extractor: Extractor[Key] = extractor10(apply) ^^ "extractorKey"
   implicit val renderer: Renderer[Key] = renderer1(apply) ^^ "rendererKey"
@@ -1358,10 +1614,12 @@ case class LabelStyle(scale: Scale)(val colorStyleData: ColorStyleData) extends 
  * - `rendererOpt`: Renderer for optional LabelStyle instances.
  */
 object LabelStyle extends Extractors with Renderers {
-  val extractorPartial: Extractor[ColorStyleData => LabelStyle] = extractorPartial10(apply) ^^ "extractorCSD2LabelStyle"
-  implicit val extractor: Extractor[LabelStyle] = extractorPartial[ColorStyleData, LabelStyle](extractorPartial) ^^ "extractorLabelStyle"
-  implicit val renderer: Renderer[LabelStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLabelStyle"
-  implicit val rendererOpt: Renderer[Option[LabelStyle]] = optionRenderer[LabelStyle] ^^ "rendererOptionLabelStyle"
+  implicit val extractor: Extractor[LabelStyle] =
+    extractorPartial[ColorStyleData, LabelStyle](extractorPartial10(apply)) ^^ "extractorLabelStyle"
+  implicit val renderer: Renderer[LabelStyle] =
+    renderer1Super(apply)(_.colorStyleData) ^^ "rendererLabelStyle"
+  implicit val rendererOpt: Renderer[Option[LabelStyle]] =
+    renderer.lift ^^ "rendererOptionLabelStyle"
 }
 
 /**
@@ -1392,10 +1650,10 @@ object Latitude extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Latitude] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Latitude]] = extractorOption[Latitude]
-  implicit val renderer: Renderer[Latitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Latitude]] = optionRenderer[Latitude]
+  implicit val extractor: Extractor[Latitude] = extractor10(apply) ^^ "extractorLatitude"
+  implicit val extractorOpt: Extractor[Option[Latitude]] = extractor.lift ^^ "extractorOptionLatitude"
+  implicit val renderer: Renderer[Latitude] = renderer1(apply) ^^ "rendererLatitude"
+  implicit val rendererOpt: Renderer[Option[Latitude]] = renderer.lift ^^ "rendererOptionLatitude"
 }
 
 /**
@@ -1447,9 +1705,10 @@ case class LinearRing(maybeTessellate: Option[Tessellate], coordinates: Seq[Coor
  * The renderer is responsible for rendering LinearRing instances back into a specific representation.
  */
 object LinearRing extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => LinearRing] = extractorPartial11(apply)
-  implicit val extractor: Extractor[LinearRing] = extractorPartial[GeometryData, LinearRing](extractorPartial) ^^ "extractorLinearRing"
-  implicit val renderer: Renderer[LinearRing] = renderer2Super(apply)(_.geometryData) ^^ "rendererLinearRing"
+  implicit val extractor: Extractor[LinearRing] =
+    extractorPartial[GeometryData, LinearRing](extractorPartial11(apply)) ^^ "extractorLinearRing"
+  implicit val renderer: Renderer[LinearRing] =
+    renderer2Super(apply)(_.geometryData) ^^ "rendererLinearRing"
 }
 
 /**
@@ -1509,10 +1768,12 @@ case class LineString(tessellate: Tessellate, coordinates: Seq[Coordinates])(val
  * `Extractor` and `Renderer` abstractions with the `LineString` case class.
  */
 object LineString extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => LineString] = extractorPartial11(apply)
-  implicit val extractor: Extractor[LineString] = extractorPartial[GeometryData, LineString](extractorPartial) ^^ "extractorLineString"
-  implicit val renderer: Renderer[LineString] = renderer2Super(apply)(_.geometryData) ^^ "rendererLineString"
-  implicit val rendererSeq: Renderer[Seq[LineString]] = sequenceRenderer[LineString] ^^ "rendererLineStrings"
+  implicit val extractor: Extractor[LineString] =
+    extractorPartial[GeometryData, LineString](extractorPartial11(apply)) ^^ "extractorLineString"
+  implicit val renderer: Renderer[LineString] =
+    renderer2Super(apply)(_.geometryData) ^^ "rendererLineString"
+  implicit val rendererSeq: Renderer[Seq[LineString]] =
+    sequenceRenderer[LineString] ^^ "rendererLineStrings"
 }
 
 /**
@@ -1536,19 +1797,27 @@ case class LineStyle(maybeWidth: Option[Width])(val colorStyleData: ColorStyleDa
  * - `extractorPartial`: Partial extractor for `ColorStyleData` */
 object LineStyle extends Extractors with Renderers {
 
-  val extractorPartial: Extractor[ColorStyleData => LineStyle] = extractorPartial10(apply)
-  implicit val extractor: Extractor[LineStyle] = extractorPartial[ColorStyleData, LineStyle](extractorPartial) ^^ "extractorLineStyle"
-  implicit val renderer: Renderer[LineStyle] = renderer1Super(apply)(_.colorStyleData) ^^ "rendererLineStyle"
-  implicit val rendererOpt: Renderer[Option[LineStyle]] = optionRenderer[LineStyle] ^^ "rendererOptionLineStyle"
+  implicit val extractor: Extractor[LineStyle] =
+    extractorPartial[ColorStyleData, LineStyle](extractorPartial10(apply)) ^^ "extractorLineStyle"
+  implicit val renderer: Renderer[LineStyle] =
+    renderer1Super(apply)(_.colorStyleData) ^^ "rendererLineStyle"
+  implicit val rendererOpt: Renderer[Option[LineStyle]] =
+    renderer.lift ^^ "rendererOptionLineStyle"
 }
 
 /**
- * ListItemType
- * - CONSIDER this should be an enumerated type with values: check,checkOffOnly,checkHideChildren,radioFolder
+ * Represents a type of list item defined by the enumeration `ListItemTypeEnum`.
  *
- * @param $ the value.
+ * The `ListItemType` case class encapsulates a value from `ListItemTypeEnum`, which defines
+ * the behavior or attributes associated with various types of list items.
+ *
+ * This class is used in conjunction with the companion object and other utility traits to
+ * facilitate rendering and extraction of `ListItemType` instances.
+ *
+ * @param $ The enumeration value specifying the type of list item. This value must be one
+ *          of the predefined values in the `ListItemTypeEnum` object.
  */
-case class ListItemType($: CharSequence)
+case class ListItemType($: ListItemTypeEnum.Value)
 
 /**
  * The `ListItemType` object provides extractors and renderers for the `ListItemType` case class.
@@ -1562,9 +1831,7 @@ case class ListItemType($: CharSequence)
  */
 object ListItemType extends Extractors with Renderers {
 
-  import Renderers._
-
-  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractor10(apply).lift ^^ "extractMaybeListItemType"
+  implicit val extractorOpt: Extractor[Option[ListItemType]] = extractor10(apply).lift ^^ "extractOptionListItemType"
   implicit val rendererOpt: Renderer[Option[ListItemType]] = renderer1(apply).lift ^^ "rendererOptionListItemType"
 }
 
@@ -1598,9 +1865,10 @@ case class ListStyle(bgColor: BgColor, maybeListItemType: Option[ListItemType], 
  * enabling transformation of `ListStyle` instances into a rendered format.
  */
 object ListStyle extends Extractors with Renderers {
-  val extractorPartial: Extractor[ColorStyleData => ListStyle] = extractorPartial30(apply) ^^ "extractorCSD2ListStyle"
-  implicit val extractor: Extractor[ListStyle] = extractorPartial[ColorStyleData, ListStyle](extractorPartial) ^^ "extractorListStyle"
-  implicit val renderer: Renderer[ListStyle] = renderer3Super(apply)(_.colorStyleData) ^^ "rendererListStyle"
+  implicit val extractor: Extractor[ListStyle] =
+    extractorPartial[ColorStyleData, ListStyle](extractorPartial30(apply)) ^^ "extractorListStyle"
+  implicit val renderer: Renderer[ListStyle] =
+    renderer3Super(apply)(_.colorStyleData) ^^ "rendererListStyle"
 }
 
 /**
@@ -1620,10 +1888,10 @@ object Longitude extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Longitude] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Longitude]] = extractorOption[Longitude]
-  implicit val renderer: Renderer[Longitude] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Longitude]] = optionRenderer[Longitude]
+  implicit val extractor: Extractor[Longitude] = extractor10(apply) ^^ "extractorLongitude"
+  implicit val extractorOpt: Extractor[Option[Longitude]] = extractor.lift ^^ "extractorOptionLongitude"
+  implicit val renderer: Renderer[Longitude] = renderer1(apply) ^^ "rendererLongitude"
+  implicit val rendererOpt: Renderer[Option[Longitude]] = renderer.lift ^^ "rendererOptionLongitude"
 }
 
 /**
@@ -1662,19 +1930,22 @@ case class LookAt(longitude: Longitude, latitude: Latitude, maybeAltitude: Optio
  */
 object LookAt extends Extractors with Renderers {
 
-  val extractorPartial: Extractor[AbstractViewData => LookAt] = extractorPartial70(apply)
-  implicit val extractor: Extractor[LookAt] = extractorPartial[AbstractViewData, LookAt](extractorPartial)
-  implicit val extractorOpt: Extractor[Option[LookAt]] = extractorOption[LookAt]
-  implicit val renderer: Renderer[LookAt] = renderer7Super(apply)(_.abstractViewData)
-  implicit val rendererOpt: Renderer[Option[LookAt]] = optionRenderer[LookAt]
+  implicit val extractor: Extractor[LookAt] =
+    extractorPartial[AbstractViewData, LookAt](extractorPartial70(apply)) ^^ "extractorLookAt"
+  implicit val extractorOpt: Extractor[Option[LookAt]] =
+    extractor.lift ^^ "extractorOptionLookAt"
+  implicit val renderer: Renderer[LookAt] =
+    renderer7Super(apply)(_.abstractViewData) ^^ "rendererLookAt"
+  implicit val rendererOpt: Renderer[Option[LookAt]] =
+    renderer.lift ^^ "rendererOptionLookAt"
 }
 
 /**
- * Represents an Open element, usually capturing a character sequence.
+ * Represents an `Open` state with a single boolean parameter.
  *
- * @param $ the content represented as a CharSequence
+ * @param $ A boolean value indicating the open state.
  */
-case class Open($: CharSequence)
+case class Open($: Boolean)
 
 /**
  * Companion object for the `Open` case class.
@@ -1687,9 +1958,9 @@ object Open extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Open]] = extractor10(apply).lift
-  implicit val renderer: Renderer[Open] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Open]] = optionRenderer[Open]
+  implicit val extractorOpt: Extractor[Option[Open]] = extractor10(apply).lift ^^ "extractorOptionOpen"
+  implicit val renderer: Renderer[Open] = renderer1(apply) ^^ "rendererOptionOpen"
+  implicit val rendererOpt: Renderer[Option[Open]] = renderer.lift ^^ "rendererOptionOpen"
 }
 
 /**
@@ -1724,7 +1995,7 @@ object OuterBoundaryIs extends Extractors with Renderers {
  *
  * @param boolean whether to outline or not.
  */
-case class Outline(boolean: Int)
+case class Outline(boolean: Boolean)
 
 /**
  * The `Outline` object provides implicit extractors and renderers for the `Outline` type.
@@ -1739,7 +2010,7 @@ object Outline extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Outline]] = extractor10(apply).lift ^^ "extractMaybeOutline"
+  implicit val extractorOpt: Extractor[Option[Outline]] = extractor10(apply).lift ^^ "extractOptionOutline"
   implicit val rendererOpt: Renderer[Option[Outline]] = renderer1(apply).lift ^^ "rendererOptionOutline"
 }
 
@@ -1747,8 +2018,7 @@ object Outline extends Extractors with Renderers {
  *  Abstract Overlay element.
  *  Overlay is a subtype of Feature and a super-type of PhotoOverlay, ScreenOverlay, GroundOverlay.
  *  See [[https://developers.google.com/kml/documentation/kmlreference#overlay Overlay]].
- * The trait Overlay is extended, abstractly, by
- * {@link BaseOverlay}.
+ * The trait Overlay is extended, abstractly, by [[BaseOverlay]].
  * A Overlay has properties (color, maybeDrawOrder and Icon ) of its own.
  *  color The order of expression is aabbggrr in hexadecimal notation,
  *               where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).
@@ -1770,7 +2040,7 @@ trait Overlay extends Feature
 object Overlay extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[Overlay]] =
     multiExtractor3[Overlay, (GroundOverlay, PhotoOverlay, ScreenOverlay), GroundOverlay, PhotoOverlay, ScreenOverlay]((go, po, so) => (go, po, so), Seq("GroundOverlay", "PhotoOverlay", "ScreenOverlay")) ^^"multiExtractorOverlay"
-  implicit val renderer: Renderer[Overlay] = rendererSuper3[Overlay,PhotoOverlay, ScreenOverlay, GroundOverlay ] ^^ "rendererContainer"
+  implicit val renderer: Renderer[Overlay] = rendererSuper3[Overlay, PhotoOverlay, ScreenOverlay, GroundOverlay] ^^ "rendererOverlay"
 }
 
 /**
@@ -1850,31 +2120,33 @@ case class OverlayData(Icon: Icon, maybeDrawOrder: Option[DrawOrder], maybeColor
  * relevant metadata for rendering tasks.
  */
 object OverlayData extends Extractors with Renderers {
-  val extractorPartial: Extractor[FeatureData => OverlayData] = extractorPartial30(apply) ^^ "extractorFD2OverlayData"
-  implicit val extractor: Extractor[OverlayData] = extractorPartial[FeatureData, OverlayData](extractorPartial) ^^ "extractorOverlayData"
-  implicit val renderer: Renderer[OverlayData] = renderer3Super(apply)(_.featureData) ^^ "rendererOverlayData"
+  implicit val extractor: Extractor[OverlayData] =
+    extractorPartial[FeatureData, OverlayData](extractorPartial30(apply)) ^^ "extractorOverlayData"
+  implicit val renderer: Renderer[OverlayData] =
+    renderer3Super(apply)(_.featureData) ^^ "rendererOverlayData"
 }
 
 /**
+ * Represents a 2D overlay point with defined coordinates and their corresponding units.
  *
- * @param _x Either the number of pixels, a fractional component of the image,
- *           or a pixel inset indicating the x component of a point on the overlay image.
- * @param _y Either the number of pixels, a fractional component of the image,
- *           or a pixel inset indicating the y component of a point on the overlay image.
- * @param _xunits Units in which the x value is specified.
- *                A value of "fraction" indicates the x value is a fraction of the image.
- *                A value of "pixels" indicates the x value in pixels.
- *                A value of "insetPixels" indicates the indent from the right edge of the image.
- * @param _yunits Units in which the y value is specified.
- *                A value of "fraction" indicates the y value is a fraction of the image.
- *                A value of "pixels" indicates the y value in pixels.
- *                A value of "insetPixels" indicates the indent from the top edge of the image.
+ * @param _x      The x-coordinate value.
+ * @param _y      The y-coordinate value.
+ * @param _xunits The unit of measurement for the x-coordinate, defined in the UnitsEnum enumeration.
+ * @param _yunits The unit of measurement for the y-coordinate, defined in the UnitsEnum enumeration.
  */
-case class OverlayXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class OverlayXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
+/**
+ * Companion object for the OverlayXY case class, providing implicit extractor and renderer instances.
+ *
+ * This object facilitates the serialization and deserialization of OverlayXY instances
+ * by utilizing predefined extractor and renderer functionalities.
+ *
+ * It mixes in the Extractors and Renderers traits to provide support for data extraction and rendering.
+ */
 object OverlayXY extends Extractors with Renderers {
-  implicit val extractor: Extractor[OverlayXY] = extractor40(apply)
-  implicit val renderer: Renderer[OverlayXY] = renderer4(apply)
+  implicit val extractor: Extractor[OverlayXY] = extractor40(apply) ^^ "extractorOverlayXY"
+  implicit val renderer: Renderer[OverlayXY] = renderer4(apply) ^^ "rendererOverlayXY"
 }
 
 /**
@@ -1920,10 +2192,10 @@ object Pair extends Extractors with Renderers {
  *
  * @constructor Creates a new `PhotoOverlay` instance.
  * @param rotation the rotation angle of the photo overlay, represented as a `Rotation`.
- * @param viewVolume Defines how much of the current scene is visible.
- * @param imagePyramid a hierarchical set of images,
+ * @param ViewVolume Defines how much of the current scene is visible.
+ * @param ImagePyramid a hierarchical set of images,
  *                     each of which is an increasingly lower resolution version of the original image.
- * @param point  the geographical position for the photo overlay, represented as a `Point`.
+ * @param Point the geographical position for the photo overlay, represented as a `Point`.
  * @param shape The PhotoOverlay is projected onto the <shape>.
  *              The <shape> can be one of the following:
  *              rectangle (default) - for an ordinary photo
@@ -1931,7 +2203,7 @@ object Pair extends Extractors with Renderers {
  *              sphere - for spherical panoramas
  * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
-case class PhotoOverlay(rotation: Rotation,viewVolume: ViewVolume, imagePyramid: ImagePyramid, point: Point, shape: CharSequence)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
+case class PhotoOverlay(rotation: Rotation, ViewVolume: ViewVolume, ImagePyramid: ImagePyramid, Point: Point, shape: Shape)(val overlayData: OverlayData) extends BaseOverlay(overlayData)
 
 /**
  * Object `PhotoOverlay` provides extractors and renderers for the case class `PhotoOverlay`.
@@ -1940,10 +2212,12 @@ case class PhotoOverlay(rotation: Rotation,viewVolume: ViewVolume, imagePyramid:
  * This object serves as a utility companion to the `PhotoOverlay` type.
  */
 object PhotoOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => PhotoOverlay] = extractorPartial50(apply) ^^ "extractorCD2PhotoOverlay"
-  implicit val extractor: Extractor[PhotoOverlay] = extractorPartial(extractorPartial) ^^ "extractorPhotoOverlay"
-  implicit val renderer: Renderer[PhotoOverlay] = renderer5Super(apply)(_.overlayData) ^^ "renderPhotoOverlay"
-  implicit val renderSeq: Renderer[Seq[PhotoOverlay]] = sequenceRenderer[PhotoOverlay] ^^ "rendererPhotoOverlays"
+  implicit val extractor: Extractor[PhotoOverlay] =
+    extractorPartial(extractorPartial50(apply)) ^^ "extractorPhotoOverlay"
+  implicit val renderer: Renderer[PhotoOverlay] =
+    renderer5Super(apply)(_.overlayData) ^^ "renderPhotoOverlay"
+  implicit val renderSeq: Renderer[Seq[PhotoOverlay]] =
+    sequenceRenderer[PhotoOverlay] ^^ "rendererPhotoOverlays"
 }
 
 /**
@@ -1961,6 +2235,7 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    * Inverts the current Placemark instance by reversing the orientation or nature
    * of its underlying geometric structure, if applicable.
    * This is achieved by attempting to invert each associated Geometry.
+   * TESTME
    *
    * @return an Option containing a new Placemark with inverted Geometries,
    *         or None if inversion is not possible.
@@ -1995,6 +2270,7 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
 
   /**
    * Method to edit this Feature, given a sequence of sibling Features such that we may be able to combine features.
+   * TESTME
    *
    * @param e  the edit which may (or may not) apply to <code>this</code>.
    * @param fs a sequence of Features which are the children of <code>this</code>'s family (including <code>p</code> itself).
@@ -2007,6 +2283,7 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
 
   /**
    * Method to edit the given Placemark with zero additional Features.
+   * TESTME
    *
    * @param e the edit which may (or may not) apply to <code>this</code>.
    * @return an optional Feature.
@@ -2087,10 +2364,12 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
  * - `rendererSeq`: An implicit renderer for handling sequences of `Placemark` instances.
  */
 object Placemark extends Extractors with Renderers {
-  val extractorPartial: Extractor[FeatureData => Placemark] = extractorPartial01(apply)
-  implicit val extractor: Extractor[Placemark] = extractorPartial[FeatureData, Placemark](extractorPartial) ^^ "extractorPlacemark"
-  implicit val renderer: Renderer[Placemark] = renderer1Super(apply)(_.featureData) ^^ "rendererPlacemark"
-  implicit val rendererSeq: Renderer[Seq[Placemark]] = sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
+  implicit val extractor: Extractor[Placemark] =
+    extractorPartial[FeatureData, Placemark](extractorPartial01(apply)) ^^ "extractorPlacemark"
+  implicit val renderer: Renderer[Placemark] =
+    renderer1Super(apply)(_.featureData) ^^ "rendererPlacemark"
+  implicit val rendererSeq: Renderer[Seq[Placemark]] =
+    sequenceRenderer[Placemark] ^^ "rendererPlacemarks"
 }
 
 /**
@@ -2115,10 +2394,12 @@ case class Point(coordinates: Seq[Coordinates])(val geometryData: GeometryData) 
  * - Provides a renderer for sequences of Point objects.
  */
 object Point extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => Point] = extractorPartial01(apply)
-  implicit val extractor: Extractor[Point] = extractorPartial[GeometryData, Point](extractorPartial) ^^ "extractorPoint"
-  implicit val renderer: Renderer[Point] = renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
-  implicit val rendererSeq: Renderer[Seq[Point]] = sequenceRenderer[Point] ^^ "rendererPoints"
+  implicit val extractor: Extractor[Point] =
+    extractorPartial[GeometryData, Point](extractorPartial01(apply)) ^^ "extractorPoint"
+  implicit val renderer: Renderer[Point] =
+    renderer1Super(apply)(_.geometryData) ^^ "rendererPoint"
+  implicit val rendererSeq: Renderer[Seq[Point]] =
+    sequenceRenderer[Point] ^^ "rendererPoints"
 }
 
 /**
@@ -2149,9 +2430,10 @@ case class Polygon(maybeTessellate: Option[Tessellate], outerBoundaryIs: OuterBo
  * - `renderer`: An implicit `Renderer[Polygon]` that allows rendering a `Polygon` while leveraging its geometry data.
  */
 object Polygon extends Extractors with Renderers {
-  private val extractorPartial: Extractor[GeometryData => Polygon] = extractorPartial21(apply)
-  implicit val extractor: Extractor[Polygon] = extractorPartial[GeometryData, Polygon](extractorPartial) ^^ "extractorPolygon"
-  implicit val renderer: Renderer[Polygon] = renderer3Super(apply)(_.geometryData) ^^ "rendererPolygon"
+  implicit val extractor: Extractor[Polygon] =
+    extractorPartial[GeometryData, Polygon](extractorPartial21(apply)) ^^ "extractorPolygon"
+  implicit val renderer: Renderer[Polygon] =
+    renderer3Super(apply)(_.geometryData) ^^ "rendererPolygon"
 }
 
 /**
@@ -2175,9 +2457,10 @@ case class PolyStyle(maybeFill: Option[Fill], maybeOutline: Option[Outline])(val
  * - renderer: Implicit Renderer instance for PolyStyle.
  */
 object PolyStyle extends Extractors with Renderers {
-  val extractorPartial: Extractor[ColorStyleData => PolyStyle] = extractorPartial20(apply) ^^ "extractorCSD2PolyStyle"
-  implicit val extractor: Extractor[PolyStyle] = extractorPartial[ColorStyleData, PolyStyle](extractorPartial) ^^ "extractorPolyStyle"
-  implicit val renderer: Renderer[PolyStyle] = renderer2Super(apply)(_.colorStyleData) ^^ "rendererPolyStyle"
+  implicit val extractor: Extractor[PolyStyle] =
+    extractorPartial[ColorStyleData, PolyStyle](extractorPartial20(apply)) ^^ "extractorPolyStyle"
+  implicit val renderer: Renderer[PolyStyle] =
+    renderer2Super(apply)(_.colorStyleData) ^^ "rendererPolyStyle"
 }
 
 /**
@@ -2199,8 +2482,62 @@ object Range extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Range] = extractor10(apply)
-  implicit val renderer: Renderer[Range] = renderer1(apply)
+  implicit val extractor: Extractor[Range] = extractor10(apply) ^^ "extractorRange"
+  implicit val renderer: Renderer[Range] = renderer1(apply) ^^ "rendererRange"
+}
+
+/**
+ * RefreshMode which has values "onChange" , "onInterval" or "onExpire".
+ * Used by Link, Icon.
+ *
+ * @param $ the mode of Refresh
+ */
+case class RefreshMode($: RefreshModeEnum.Value)
+
+/**
+ * Companion object for the RefreshMode case class.
+ * Provides extractors and renderers for handling RefreshMode instances.
+ *
+ * Contains implicit values for:
+ * - Extracting a RefreshMode instance.
+ * - Extracting an optional RefreshMode instance.
+ * - Rendering a RefreshMode instance.
+ * - Rendering an optional RefreshMode instance.
+ */
+object RefreshMode extends Extractors with Renderers {
+
+  implicit val extractor: Extractor[RefreshMode] = extractor10(apply) ^^ "extractRefreshMode"
+  implicit val extractorOpt: Extractor[Option[RefreshMode]] = extractor10(apply).lift ^^ "extractOptionRefreshMode"
+  implicit val renderer: Renderer[RefreshMode] = renderer1(apply) ^^ "rendererRefreshMode"
+  implicit val rendererOpt: Renderer[Option[RefreshMode]] = renderer1(apply).lift ^^ "rendererOptionRefreshMode"
+}
+
+/**
+ * A case class representing RefreshVisibility in KML documents.
+ *
+ * This case class encapsulates a `Boolean` value that signifies RefreshVisibility attributes in KML data.
+ * RefreshVisibility settings often dictate when the NetworkLink is refreshed, whether a specific KML element should be displayed in a viewer.
+ */
+case class RefreshVisibility($: Boolean)
+
+/**
+ * Companion object for the `RefreshVisibility` case class.
+ * TESTME
+ *
+ * This object provides implicits and utilities for serializing and deserializing `RefreshVisibility` instances.
+ * It extends traits `Extractors` and `Renderers` to support extraction and rendering functionalities.
+ *
+ * Implicit extractors and renderers are provided for both `RefreshVisibility` and `Option[RefreshVisibility]`, enabling their usage
+ * in data processing pipelines that require standardized extraction or rendering logic.
+ */
+object RefreshVisibility extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[RefreshVisibility] = extractor10(apply) ^^ "extractorRefreshVisibility"
+  implicit val extractorOpt: Extractor[Option[RefreshVisibility]] = extractor10(apply).lift ^^ "extractorOptionRefreshVisibility"
+  implicit val renderer: Renderer[RefreshVisibility] = renderer1(apply) ^^ "rendererRefreshVisibility"
+  implicit val rendererOpt: Renderer[Option[RefreshVisibility]] = renderer1(apply).lift ^^ "rendererOptionRefreshVisibility"
 }
 
 /**
@@ -2229,8 +2566,8 @@ object Roll extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Roll] = extractor10(apply)
-  implicit val renderer: Renderer[Roll] = renderer1(apply)
+  implicit val extractor: Extractor[Roll] = extractor10(apply) ^^ "extractorRoll"
+  implicit val renderer: Renderer[Roll] = renderer1(apply) ^^ "rendererRoll"
 }
 
 /**
@@ -2248,17 +2585,17 @@ object Rotation extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Rotation] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Rotation]] = extractorOption[Rotation]
-  implicit val renderer: Renderer[Rotation] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Rotation]] = optionRenderer[Rotation]
+  implicit val extractor: Extractor[Rotation] = extractor10(apply) ^^ "extractorRotation"
+  implicit val extractorOpt: Extractor[Option[Rotation]] = extractor.lift ^^ "extractorOptionRotation"
+  implicit val renderer: Renderer[Rotation] = renderer1(apply) ^^ "rendererRotation"
+  implicit val rendererOpt: Renderer[Option[Rotation]] = renderer.lift ^^ "rendererOptionRotation"
 }
 
 /**
  * Represent Point relative to the screen about which the screen overlay is rotated.
  *
- * @param _x
- * @param _y
+ * @param _x the X value, according to the units specified in _xunits.
+ * @param _y the Y value, according to the units specified in _yunits.
  * @param _xunits Units in which the x value is specified.
  *                A value of "fraction" indicates the x value is a fraction of the image.
  *                A value of "pixels" indicates the x value in pixels.
@@ -2268,11 +2605,23 @@ object Rotation extends Extractors with Renderers {
  *                A value of "pixels" indicates the y value in pixels.
  *                A value of "insetPixels" indicates the indent from the top edge of the image.
  */
-case class RotationXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class RotationXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
+/**
+ * Object RotationXY provides implicit extractor and renderer instances for the RotationXY case class.
+ *
+ * RotationXY represents a point relative to the screen about which the screen overlay is rotated. The extractor
+ * and renderer facilitate the serialization and deserialization of the RotationXY data type.
+ *
+ * The extractor is implemented as an `Extractor[RotationXY]`, which handles the deserialization
+ * of the RotationXY case class from a structured source.
+ *
+ * The renderer is implemented as a `Renderer[RotationXY]`, which manages the serialization
+ * of the RotationXY case class for output.
+ */
 object RotationXY extends Extractors with Renderers {
-  implicit val extractor: Extractor[RotationXY] = extractor40(apply)
-  implicit val renderer: Renderer[RotationXY] = renderer4(apply)
+  implicit val extractor: Extractor[RotationXY] = extractor40(apply) ^^ "extractorRotationXY"
+  implicit val renderer: Renderer[RotationXY] = renderer4(apply) ^^ "rendererRotationXY"
 }
 
 /**
@@ -2301,11 +2650,10 @@ object Scale extends Extractors with Renderers {
 
   import Renderers._
 
-  val extractorPartial: Extractor[KmlData => Scale] = extractorPartial10(apply) ^^ "extractorKD2Scale"
-  implicit val extractor: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorPartial)
-  implicit val extractorOpt: Extractor[Option[Scale]] = extractorOption[Scale] ^^ "extractMaybeScale"
+  implicit val extractor: Extractor[Scale] = extractorPartial[KmlData, Scale](extractorPartial10(apply)) ^^ "extractorScale"
+  implicit val extractorOpt: Extractor[Option[Scale]] = extractor.lift ^^ "extractOptionScale"
   implicit val renderer: Renderer[Scale] = renderer1Super(apply)(_.kmlData) ^^ "rendererScale"
-  implicit val rendererOpt: Renderer[Option[Scale]] = optionRenderer[Scale] ^^ "rendererOptionScale"
+  implicit val rendererOpt: Renderer[Option[Scale]] = renderer.lift ^^ "rendererOptionScale"
 
   /**
    * Creates a new instance of the Scale class using the specified value and the `KmlData.nemo` context.
@@ -2322,11 +2670,11 @@ object Scale extends Extractors with Renderers {
  *
  * @constructor
  * Constructs a `ScreenOverlay` instance.
- * @param overlayXY
- * @param screenXY
- * @param rotationXY
- * @param size
- * @param maybeRotation
+ * @param overlayXY an OverlayXY
+ * @param screenXY a ScreenXY
+ * @param rotationXY a RotationXY
+ * @param size a Size
+ * @param maybeRotation an optional Rotation
  * @param overlayData The data associated with the overlay, encapsulated in the `OverlayData` instance.
  */
 case class ScreenOverlay(overlayXY: OverlayXY, screenXY: ScreenXY, rotationXY: RotationXY, size: Size, maybeRotation: Option[Rotation])(val overlayData: OverlayData) extends BaseOverlay(overlayData)
@@ -2346,8 +2694,7 @@ case class ScreenOverlay(overlayXY: OverlayXY, screenXY: ScreenXY, rotationXY: R
  * and are intended to support working with structured representations of screen overlays.
  */
 object ScreenOverlay extends Extractors with Renderers {
-  val extractorPartial: Extractor[OverlayData => ScreenOverlay] = extractorPartial50(apply) ^^ "extractorCD2ScreenOverlay"
-  implicit val extractor: Extractor[ScreenOverlay] = extractorPartial(extractorPartial) ^^ "extractorScreenOverlay"
+  implicit val extractor: Extractor[ScreenOverlay] = extractorPartial(extractorPartial50(apply)) ^^ "extractorScreenOverlay"
   implicit val renderer: Renderer[ScreenOverlay] = renderer5Super(apply)(_.overlayData) ^^ "renderScreenOverlay"
   implicit val renderSeq: Renderer[Seq[ScreenOverlay]] = sequenceRenderer[ScreenOverlay] ^^ "rendererScreenOverlays"
 }
@@ -2369,29 +2716,81 @@ object ScreenOverlay extends Extractors with Renderers {
  *                A value of "pixels" indicates the y value in pixels.
  *                A value of "insetPixels" indicates the indent from the top edge of the screen.
  */
-case class ScreenXY(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class ScreenXY(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
+/**
+ * Companion object for the `ScreenXY` case class that provides implicit extractors
+ * and renderers for the `ScreenXY` type.
+ *
+ * This object includes:
+ * - An implicit `Extractor` instance for parsing or extracting `ScreenXY` objects.
+ * - An implicit `Renderer` instance for rendering `ScreenXY` objects into a specific format.
+ *
+ * It simplifies the process of transforming `ScreenXY` to and from other representations.
+ */
 object ScreenXY extends Extractors with Renderers {
-  implicit val extractor: Extractor[ScreenXY] = extractor40(apply)
-  implicit val renderer: Renderer[ScreenXY] = renderer4(apply)
+  implicit val extractor: Extractor[ScreenXY] = extractor40(apply) ^^ "extractorScreenXY"
+  implicit val renderer: Renderer[ScreenXY] = renderer4(apply) ^^ "rendererScreenXY"
 }
 
 /**
- * Specifies the size of the image for the screen overlay, as follows:
+ * Represents a shape based on the `ShapeEnum.Value` enumeration.
+ *
+ * This case class encapsulates a single shape value, which can represent predefined
+ * shapes such as `rectangle`, `cylinder`, or `sphere`.
+ * The `shape` parameter is of type `Shapes.Value`,
+ * which is a value from the `Shapes` enumeration.
+ *
+ * CONSIDER renaming shape as $ (for consistency with other similar Kml objects).
+ *
+ * This class integrates with the `Extractors` and `Renderers` frameworks to support:
+ * - Automatic extraction using an implicit `Extractor[Shape]`.
+ * - Custom rendering of shape instances through an implicit `Renderer[Shape]`.
+ *
+ * The companion object for this class provides the necessary extractor and renderer
+ * implementations for seamless integration.
+ */
+case class Shape($: ShapeEnum.Value)
+
+/**
+ * Companion object for the `Shape` case class.
+ *
+ * This object provides integration with the `Extractors` and `Renderers` frameworks
+ * by defining the necessary implicit instances for `Extractor` and `Renderer` specific
+ * to the `Shape` type.
+ *
+ * - The `extractor` is an implicit instance of `Extractor[Shape]`, enabling the automatic
+ * extraction of `Shape` instances.
+ * - The `renderer` is an implicit instance of `Renderer[Shape]`, enabling the customized
+ * rendering of `Shape` instances.
+ */
+object Shape extends Extractors with Renderers {
+  implicit val extractor: Extractor[Shape] = extractor10(apply) ^^ "extractorShape"
+  implicit val renderer: Renderer[Shape] = renderer1(apply) ^^ "rendererShape"
+}
+
+/**
+ * Represents the dimensions of a given entity with units for both x and y components.
  * A value of −1 indicates to use the native dimension
  * A value of 0 indicates to maintain the aspect ratio
  * A value of n sets the value of the dimension
  *
- * @param _x
- * @param _y
- * @param _xunits
- * @param _yunits
+ * @param _x      The measurement value along the x-axis.
+ * @param _y      The measurement value along the y-axis.
+ * @param _xunits The units in which the x-axis measurement is expressed.
+ * @param _yunits The units in which the y-axis measurement is expressed.
  */
-case class Size(_x:Double, _y:Double, _xunits:CharSequence, _yunits: CharSequence)
+case class Size(_x:Double, _y:Double, _xunits:UnitsEnum.Value, _yunits: UnitsEnum.Value)
 
+/**
+ * Companion object for the `Size` case class.
+ * Provides implicit instances of `Extractor` and `Renderer` for the `Size` type.
+ * The `Extractor` allows parsing and extracting `Size` values from a data source.
+ * The `Renderer` facilitates rendering `Size` values into a specific output format.
+ */
 object Size extends Extractors with Renderers {
-  implicit val extractor: Extractor[Size] = extractor40(apply)
-  implicit val renderer: Renderer[Size] = renderer4(apply)
+  implicit val extractor: Extractor[Size] = extractor40(apply) ^^ "extractorSize"
+  implicit val renderer: Renderer[Size] = renderer4(apply) ^^ "rendererSize"
 }
 /**
  * State
@@ -2399,7 +2798,7 @@ object Size extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class State($: CharSequence)
+case class State($: ItemIconModeEnum.Value)
 
 /**
  * Provides utility functions and implicits for the `State` case class.
@@ -2417,11 +2816,9 @@ case class State($: CharSequence)
  */
 object State extends Extractors with Renderers {
 
-  import Renderers._
-
   implicit val extractor: Extractor[State] = extractor10(apply) ^^ "extractorState"
   implicit val renderer: Renderer[State] = renderer1(apply) ^^ "rendererState"
-  implicit val rendererOpt: Renderer[Option[State]] = optionRenderer[State] ^^ "rendererOptionState"
+  implicit val rendererOpt: Renderer[Option[State]] = renderer.lift ^^ "rendererOptionState"
 }
 
 /**
@@ -2451,10 +2848,12 @@ case class Style(Styles: Seq[SubStyle])(val styleSelectorData: StyleSelectorData
  * - `rendererSeq`: An implicit renderer to handle sequences of `Style` objects.
  */
 object Style extends Extractors with Renderers {
-  val extractorPartial: Extractor[StyleSelectorData => Style] = extractorPartial01(apply) ^^ "extractorSSD2Style"
-  implicit val extractor: Extractor[Style] = extractorPartial[StyleSelectorData, Style](extractorPartial) ^^ "extractorStyle"
-  implicit val renderer: Renderer[Style] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyle"
-  implicit val rendererSeq: Renderer[Seq[Style]] = sequenceRenderer[Style] ^^ "rendererStyles"
+  implicit val extractor: Extractor[Style] =
+    extractorPartial[StyleSelectorData, Style](extractorPartial01(apply)) ^^ "extractorStyle"
+  implicit val renderer: Renderer[Style] =
+    renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyle"
+  implicit val rendererSeq: Renderer[Seq[Style]] =
+    sequenceRenderer[Style] ^^ "rendererStyles"
 }
 
 /**
@@ -2484,10 +2883,12 @@ object StyleMap extends Extractors {
 
   import KmlRenderers._
 
-  val extractorPartial: Extractor[StyleSelectorData => StyleMap] = extractorPartial01(apply) ^^ "extractorSSD2StyleMap"
-  implicit val extractor: Extractor[StyleMap] = extractorPartial[StyleSelectorData, StyleMap](extractorPartial) ^^ "extractorStyleMap"
-  implicit val renderer: Renderer[StyleMap] = renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyleMap"
-  implicit val rendererSeq: Renderer[Seq[StyleMap]] = sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
+  implicit val extractor: Extractor[StyleMap] =
+    extractorPartial[StyleSelectorData, StyleMap](extractorPartial01(apply)) ^^ "extractorStyleMap"
+  implicit val renderer: Renderer[StyleMap] =
+    renderer1Super(apply)(_.styleSelectorData) ^^ "rendererStyleMap"
+  implicit val rendererSeq: Renderer[Seq[StyleMap]] =
+    sequenceRenderer[StyleMap] ^^ "rendererStyleMaps"
 }
 
 /**
@@ -2519,8 +2920,10 @@ trait StyleSelector extends KmlObject
 object StyleSelector extends Extractors with Renderers {
   implicit val extractorSeq: MultiExtractor[Seq[StyleSelector]] =
     multiExtractor2[StyleSelector, (StyleMap, Style), StyleMap, Style]((s, m) => (s, m), Seq("StyleMap", "Style")) ^^ "multiExtractorStyleSelector"
-  implicit val renderer: Renderer[StyleSelector] = rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
-  implicit val rendererSeq: Renderer[Seq[StyleSelector]] = sequenceRenderer[StyleSelector] ^^ "rendererStyleSelectors"
+  implicit val renderer: Renderer[StyleSelector] =
+    rendererSuper2[StyleSelector, Style, StyleMap] ^^ "rendererStyleSelector"
+  implicit val rendererSeq: Renderer[Seq[StyleSelector]] =
+    sequenceRenderer[StyleSelector] ^^ "rendererStyleSelectors"
 }
 
 /**
@@ -2547,9 +2950,10 @@ case class StyleSelectorData(kmlData: KmlData)
  */
 object StyleSelectorData extends Extractors with Renderers {
   private val applyFunction: KmlData => StyleSelectorData = new StyleSelectorData(_)
-  val extractorPartial: Extractor[KmlData => StyleSelectorData] = extractorPartial0[KmlData, StyleSelectorData](applyFunction) ^^ "extractorKD2StyleSelectorData"
-  implicit val extractor: Extractor[StyleSelectorData] = extractorPartial[KmlData, StyleSelectorData](extractorPartial) ^^ "extractorStyleSelectorData"
-  implicit val renderer: Renderer[StyleSelectorData] = renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
+  implicit val extractor: Extractor[StyleSelectorData] =
+    extractorPartial[KmlData, StyleSelectorData](extractorPartial0[KmlData, StyleSelectorData](applyFunction)) ^^ "extractorStyleSelectorData"
+  implicit val renderer: Renderer[StyleSelectorData] =
+    renderer0Super(applyFunction)(_.kmlData) ^^ "rendererStyleSelectorData"
 }
 
 /**
@@ -2605,8 +3009,10 @@ object SubStyle extends Extractors with Renderers {
     multiExtractor6[SubStyle, (BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle), BalloonStyle, ListStyle, PolyStyle, LineStyle, IconStyle, LabelStyle](
       (p1, p2, p3, p4, p5, p6) => (p1, p2, p3, p4, p5, p6), Seq("BalloonStyle", "ListStyle", "PolyStyle", "LineStyle", "IconStyle", "LabelStyle")
     ) ^^ "multiExtractorSubStyle"
-  implicit val renderer: Renderer[SubStyle] = rendererSuper6[SubStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererSubStyle"
-  implicit val rendererSeq: Renderer[Seq[SubStyle]] = sequenceRenderer[SubStyle] ^^ "rendererSubStyles"
+  implicit val renderer: Renderer[SubStyle] =
+    rendererSuper6[SubStyle, IconStyle, ListStyle, BalloonStyle, LabelStyle, LineStyle, PolyStyle] ^^ "rendererSubStyle"
+  implicit val rendererSeq: Renderer[Seq[SubStyle]] =
+    sequenceRenderer[SubStyle] ^^ "rendererSubStyles"
 }
 
 /**
@@ -2631,23 +3037,24 @@ case class SubStyleData(kmlData: KmlData)
  */
 object SubStyleData extends Extractors with Renderers {
   private val applyFunction: KmlData => SubStyleData = new SubStyleData(_)
-  val extractorPartial: Extractor[KmlData => SubStyleData] = extractorPartial0[KmlData, SubStyleData](applyFunction)
-  implicit val extractor: Extractor[SubStyleData] = extractorPartial[KmlData, SubStyleData](extractorPartial) ^^ "extractorSubStyleData"
-  implicit val renderer: Renderer[SubStyleData] = renderer0Super(apply)(_.kmlData) ^^ "rendererSubStyleData"
+  implicit val extractor: Extractor[SubStyleData] =
+    extractorPartial[KmlData, SubStyleData](extractorPartial0(applyFunction)) ^^ "extractorSubStyleData"
+  implicit val renderer: Renderer[SubStyleData] =
+    renderer0Super(apply)(_.kmlData) ^^ "rendererSubStyleData"
 }
 
 /**
- * Class Tessellate which is a Boolean.
+ * Tessellate represents a case class with a Boolean value, extending the Mergeable trait.
+ *
+ * Instances of Tessellate can be merged using the `merge` method, provided the internal
+ * Boolean state is compatible. The merge operation will return a new Tessellate instance
+ * encapsulated in an Option if the merge criteria are satisfied, otherwise it returns None.
  *
  * CONSIDER making this part of GeometryData.
  *
- * CONSIDER making the member have type Int (but mean Boolean) rather than String.
- *
- * TODO this (and similar case classes with "$") define the member as CharSequence. It should be String, unless we make a special KmlBoolean object.
- *
- * @param $ the value.
+ * @param $ a Boolean value encapsulated by the Tessellate instance.
  */
-case class Tessellate($: CharSequence) extends Mergeable[Tessellate] {
+case class Tessellate($: Boolean) extends Mergeable[Tessellate] {
   def merge(t: Tessellate, mergeName: Boolean = true): Option[Tessellate] = ($, t.$) match {
     case (a, b) if a == b => Some(Tessellate(a))
     case _ => None
@@ -2666,18 +3073,18 @@ object Tessellate extends Extractors with Renderers {
   import Renderers._
 
   implicit val extractor: Extractor[Tessellate] = extractor10(apply) ^^ "extractorTessellate"
-  implicit val extractorOpt: Extractor[Option[Tessellate]] = extractorOption[Tessellate]
+  implicit val extractorOpt: Extractor[Option[Tessellate]] = extractor.lift ^^ "extractorOptionTessellate"
   implicit val renderer: Renderer[Tessellate] = renderer1(apply) ^^ "rendererTessellate"
-  implicit val rendererOpt: Renderer[Option[Tessellate]] = optionRenderer[Tessellate]
+  implicit val rendererOpt: Renderer[Option[Tessellate]] = renderer.lift ^^ "rendererOptionTessellate"
 }
 
 /**
  * TextColor
  * Used by BalloonStyle.
  *
- * @param $ the color.
+ * @param $ a hexadecimal string that defines the color of Text.
  */
-case class TextColor($: CharSequence)
+case class TextColor($: Hex4)
 
 /**
  * The TextColor object provides extractor and renderer capabilities for the TextColor case class.
@@ -2693,9 +3100,7 @@ case class TextColor($: CharSequence)
  */
 object TextColor extends Extractors with Renderers {
 
-  import Renderers._
-
-  implicit val extractorOpt: Extractor[Option[TextColor]] = extractor10(apply).lift ^^ "extractMaybeTextColor"
+  implicit val extractorOpt: Extractor[Option[TextColor]] = extractor10(apply).lift ^^ "extractOptionTextColor"
   implicit val rendererOpt: Renderer[Option[TextColor]] = renderer1(apply).lift ^^ "rendererOptionTextColor"
 }
 
@@ -2722,10 +3127,35 @@ object Tilt extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractor: Extractor[Tilt] = extractor10(apply)
-  implicit val extractorOpt: Extractor[Option[Tilt]] = extractorOption[Tilt]
-  implicit val renderer: Renderer[Tilt] = renderer1(apply)
-  implicit val rendererOpt: Renderer[Option[Tilt]] = optionRenderer[Tilt]
+  implicit val extractor: Extractor[Tilt] = extractor10(apply) ^^ "extractorTilt"
+  implicit val extractorOpt: Extractor[Option[Tilt]] = extractor.lift ^^ "extractorOptionTilt"
+  implicit val renderer: Renderer[Tilt] = renderer1(apply) ^^ "rendererTilt"
+  implicit val rendererOpt: Renderer[Option[Tilt]] = renderer.lift ^^ "rendererOptionTilt"
+}
+
+/**
+ * ViewRefreshMode which has values "never" , "onStop", "onRequest" or "onRegion".
+ * Used by Link, Icon.
+ *
+ * @param $ the mode of View Refresh
+ */
+case class ViewRefreshMode($: ViewRefreshEnum.Value)
+
+
+/**
+ * Companion object for the ViewRefreshMode case class.
+ * Provides extractors and renderers for handling ViewRefreshMode instances.
+ *
+ * Contains implicit values for:
+ * - Extracting a ViewRefreshMode instance.
+ * - Extracting an optional ViewRefreshMode instance.
+ * - Rendering a ViewRefreshMode instance.
+ * - Rendering an optional ViewRefreshMode instance.
+ */
+object ViewRefreshMode extends Extractors with Renderers {
+
+  implicit val extractorOpt: Extractor[Option[ViewRefreshMode]] = extractor10(apply).lift ^^ "extractMaybeViewRefreshMode"
+  implicit val rendererOpt: Renderer[Option[ViewRefreshMode]] = renderer1(apply).lift ^^ "rendererOptionViewRefreshMode"
 }
 
 /**
@@ -2748,17 +3178,17 @@ case class ViewVolume(leftFov:Longitude, rightFov: Longitude, bottomFov: Latitud
  * Provides implicit instances for Extractor and Renderer typeclasses to facilitate
  */
 object ViewVolume extends Extractors with Renderers {
-  implicit val extractor: Extractor[ViewVolume] = extractor50(apply)
-  implicit val renderer: Renderer[ViewVolume] = renderer5(apply)
+  implicit val extractor: Extractor[ViewVolume] = extractor50(apply) ^^ "extractorViewVolume"
+  implicit val renderer: Renderer[ViewVolume] = renderer5(apply) ^^ "rendererViewVolume"
 }
 
 /**
  * A case class representing visibility in KML documents.
  *
- * This case class encapsulates a `CharSequence` value that signifies visibility attributes in KML data.
+ * This case class encapsulates a `Boolean` value that signifies visibility attributes in KML data.
  * Visibility settings often dictate whether a specific KML element should be displayed in a viewer.
  */
-case class Visibility($: CharSequence)
+case class Visibility($: Boolean)
 
 /**
  * Companion object for the `Visibility` case class.
@@ -2773,8 +3203,8 @@ object Visibility extends Extractors with Renderers {
 
   import Renderers._
 
-  implicit val extractorOpt: Extractor[Option[Visibility]] = extractor10(apply).lift
-  implicit val rendererOpt: Renderer[Option[Visibility]] = renderer1(apply).lift
+  implicit val extractorOpt: Extractor[Option[Visibility]] = extractor10(apply).lift ^^ "extractorOptionVisibility"
+  implicit val rendererOpt: Renderer[Option[Visibility]] = renderer1(apply).lift ^^ "rendererOptionVisibility"
 }
 
 /**

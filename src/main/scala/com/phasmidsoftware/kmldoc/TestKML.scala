@@ -6,12 +6,24 @@ import com.phasmidsoftware.core.FP.tryNotNull
 import com.phasmidsoftware.kmldoc.KMLCompanion.renderKMLToPrintStream
 import com.phasmidsoftware.render.{Format, FormatText}
 import com.phasmidsoftware.xml.Extractor.extractMulti
+import org.slf4j.{Logger, LoggerFactory}
+
 import java.io.PrintStream
 import java.net.URL
-import org.slf4j.{Logger, LoggerFactory}
 import scala.util.Try
 import scala.xml.{Elem, XML}
 
+/**
+ * An application to render and format KML content from a specified resource file
+ * and output the result to the standard console.
+ *
+ * This program utilizes an effectful process to load, render, and format the KML
+ * content using library methods, then writes the formatted output to the standard
+ * output stream.
+ * The rendering and formatting logic is provided by `renderKMLToPrintStream`.
+ *
+ * Contains the main entry point for execution using the `App` trait.
+ */
 object TestKML extends App {
 
   import cats.effect.unsafe.implicits.global
@@ -22,7 +34,8 @@ object TestKML extends App {
 }
 
 /**
- * Companion object for the `KML` class. Provides utility methods for loading, rendering,
+ * Companion helper object for the `KML` class.
+ * Provides utility methods for loading, rendering,
  * and manipulating KML objects and their features.
  *
  * CONSIDER merging this with object `KML`.

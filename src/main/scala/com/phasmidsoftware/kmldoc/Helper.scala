@@ -5,22 +5,20 @@ import com.phasmidsoftware.kmldoc.KmlEdit.editFeatures
 import com.phasmidsoftware.kmldoc.KmlRenderers.sequenceRendererFormatted
 import com.phasmidsoftware.render._
 import com.phasmidsoftware.xml.Extractor
+
 import scala.reflect.ClassTag
-import scala.util.Success
 import scala.util.matching.Regex
+import scala.util.{Success, Try}
 import scala.xml.NamespaceBinding
 
 /**
- * The Helper object provides a collection of utility functions and methods
- * designed to facilitate common tasks and simplify code implementation.
- *
- * It serves as a central location for reusable helper logic, aiming to promote
- * code modularity and reduce code duplication throughout the application.
+ * The Helper object does nothing other than provide a name for this module.
  */
 object Helper
 
 /**
  * Case class Coordinate to represent a three-dimensional point.
+ * Although this is part of the KML spec, it is treated somewhat differently than the others.
  *
  * @param long longitude.
  * @param lat  latitude.
@@ -68,8 +66,6 @@ object Coordinate {
   private val longLatAlt: Regex = """^\s*([\d\-\.]+),\s*([\d\-\.]+),\s*([\d\-\.]+)\s*$""".r
 //    private val longLatAlt: Regex = """^\s*(((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)),\s*((-)?(\d+(\.\d*)?)))\s*""".r
 
-
-
   /**
    * Parses a coordinate string and converts it into a `Coordinate` instance,
    * if the string matches the expected format.
@@ -88,9 +84,95 @@ object Coordinate {
 }
 
 /**
+ * Represents a color in the RGBA hexadecimal format using four bytes.
+ *
+ * @param alpha The alpha (transparency) component of the color, represented as a byte.
+ * @param red   The red component of the color, represented as a byte.
+ * @param green The green component of the color, represented as a byte.
+ * @param blue  The blue component of the color, represented as a byte.
+ *
+ *              Overrides the `toString` method to return the color as a hexadecimal string with each byte formatted as a two-digit hexadecimal number.
+ */
+case class Hex4(alpha: Byte, red: Byte, green: Byte, blue: Byte) {
+  override def toString: String = f"$alpha%02x$red%02x$green%02x$blue%02x"
+}
+
+/**
+ * Companion object for the `Hex4` case class that provides utility methods and functionality
+ * for working with `Hex4` instances, including creation, parsing, and rendering.
+ */
+object Hex4 {
+
+  /**
+   * Constructs a `Hex4` instance using the specified alpha, red, green, and blue color components.
+   *
+   * @param alpha the alpha component represented as a string
+   * @param red   the red component represented as a string
+   * @param green the green component represented as a string
+   * @param blue  the blue component represented as a string
+   * @return a `Hex4` instance created from the provided color component values
+   */
+  def apply(alpha: String, red: String, green: String, blue: String): Hex4 = Hex4(byte(alpha), byte(red), byte(green), byte(blue))
+
+  /**
+   * Constructs a `Hex4` instance by parsing a single string containing the concatenated
+   * two-character hexadecimal representations of the alpha, red, green, and blue components.
+   *
+   * @param s A string containing exactly 8 characters, where the first two characters
+   *          represent the alpha component, the next two represent the red component,
+   *          the following two represent the green component, and the last two represent the blue component.
+   * @return A `Hex4` instance created from the parsed hexadecimal component values.
+   */
+  def apply(s: String): Hex4 = apply(s.substring(0, 2), s.substring(2, 4), s.substring(4, 6), s.substring(6, 8))
+
+  /**
+   * Provides an implicit `Extractor[Hex4]` instance for converting a `CharSequence` into
+   * a `Hex4` instance. The conversion is performed by mapping the `CharSequence` to its string
+   * representation and then creating a `Hex4` using the string constructor of `Hex4`.
+   *
+   * This extractor is named "extractorHex4".
+   */
+  implicit val extractor: Extractor[Hex4] =
+    implicitly[Extractor[CharSequence]].map(s => Hex4(s.toString)) ^^ "extractorHex4"
+  /**
+   * An implicit `Renderer` instance for the `Hex4` type.
+   *
+   * This renderer transforms a `Hex4` object into its hexadecimal string representation
+   * by invoking the overridden `toString` method of `Hex4`. The process is wrapped in a `Try`
+   * to handle potential exceptions during rendering.
+   *
+   * The `^^` operator is used to assign the name "rendererHex4" to the renderer instance.
+   */
+  implicit val renderer: Renderer[Hex4] = Renderer[Hex4] {
+    (t, _, _) => Try(t.toString)
+  } ^^ "rendererHex4"
+
+  /**
+   * Parses a hexadecimal string to a byte value.
+   *
+   * @param w the string representing a two-character hexadecimal value
+   * @return the byte value corresponding to the parsed hexadecimal string
+   */
+  private def byte(w: String): Byte = Integer.parseInt(w, 16).toByte
+}
+
+/**
  * Trait to define the property of owning features.
  */
 trait HasFeatures {
+  /**
+   * Represents a sequence of `Feature` objects associated with a given entity.
+   * This field is part of classes or traits that extend `HasFeatures`.
+   *
+   * Features are core abstract elements defined under the `Feature` trait,
+   * which is a sub-type of `KmlObject` and serves as a super-type for elements
+   * such as `Placemark` and `Container`.
+   * They encapsulate KML-specific entities
+   * and their behaviors, including the ability to edit with regard to sibling features.
+   *
+   * The `features` sequence typically includes all such `Feature` subtypes relevant
+   * to the containing object.
+   */
   val features: Seq[Feature]
 }
 
@@ -221,4 +303,9 @@ object KmlRenderers extends Renderers {
   // TODO refactor the sequenceRendererFormatted method so that its parameter is a Format=>Format function.
 }
 
+/**
+ * Represents an exception specific to KML processing errors.
+ *
+ * @param str A message describing the details of the exception.
+ */
 case class KmlException(str: String) extends Exception(str)
