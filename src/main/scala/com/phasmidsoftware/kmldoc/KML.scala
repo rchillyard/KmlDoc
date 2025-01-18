@@ -1071,6 +1071,34 @@ object Fill extends Extractors with Renderers {
 }
 
 /**
+ * A case class representing FlyToView in KML documents.
+ *
+ * This case class encapsulates a `Boolean` value that signifies FlyToView attributes in KML data.
+ * FlyToView settings often dictate A value of 1 causes Google Earth to fly to the view of the LookAt or Camera in the NetworkLinkControl (if it exists).
+ */
+case class FlyToView($: Boolean)
+
+/**
+ * Companion object for the `FlyToView` case class.
+ *
+ * This object provides implicits and utilities for serializing and deserializing `FlyToView` instances.
+ * It extends traits `Extractors` and `Renderers` to support extraction and rendering functionalities.
+ *
+ * Implicit extractors and renderers are provided for both `FlyToView` and `Option[FlyToView]`, enabling their usage
+ * in data processing pipelines that require standardized extraction or rendering logic.
+ */
+object FlyToView extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[FlyToView] = extractor10(apply) ^^ "extractorFlyToView"
+  implicit val extractorOpt: Extractor[Option[FlyToView]] = extractor10(apply).lift ^^ "extractorOptionFlyToView"
+  implicit val renderer: Renderer[FlyToView] = renderer1(apply) ^^ "rendererFlyToView"
+  implicit val rendererOpt: Renderer[Option[FlyToView]] = renderer1(apply).lift ^^ "rendererOptionFlyToView"
+}
+
+
+/**
  * Case class Folder: subelement of Container.
  * See [[https://developers.google.com/kml/documentation/kmlreference#container Folder]].
  *
@@ -2451,8 +2479,37 @@ case class RefreshMode($: RefreshModeEnum.Value)
  */
 object RefreshMode extends Extractors with Renderers {
 
+  implicit val extractor: Extractor[RefreshMode] = extractor10(apply) ^^ "extractRefreshMode"
   implicit val extractorOpt: Extractor[Option[RefreshMode]] = extractor10(apply).lift ^^ "extractOptionRefreshMode"
+  implicit val renderer: Renderer[RefreshMode] = renderer1(apply) ^^ "rendererRefreshMode"
   implicit val rendererOpt: Renderer[Option[RefreshMode]] = renderer1(apply).lift ^^ "rendererOptionRefreshMode"
+}
+
+/**
+ * A case class representing RefreshVisibility in KML documents.
+ *
+ * This case class encapsulates a `Boolean` value that signifies RefreshVisibility attributes in KML data.
+ * RefreshVisibility settings often dictate when the NetworkLink is refreshed, whether a specific KML element should be displayed in a viewer.
+ */
+case class RefreshVisibility($: Boolean)
+
+/**
+ * Companion object for the `RefreshVisibility` case class.
+ *
+ * This object provides implicits and utilities for serializing and deserializing `RefreshVisibility` instances.
+ * It extends traits `Extractors` and `Renderers` to support extraction and rendering functionalities.
+ *
+ * Implicit extractors and renderers are provided for both `RefreshVisibility` and `Option[RefreshVisibility]`, enabling their usage
+ * in data processing pipelines that require standardized extraction or rendering logic.
+ */
+object RefreshVisibility extends Extractors with Renderers {
+
+  import Renderers._
+
+  implicit val extractor: Extractor[RefreshVisibility] = extractor10(apply)^^ "extractorRefreshVisibility"
+  implicit val extractorOpt: Extractor[Option[RefreshVisibility]] = extractor10(apply).lift ^^ "extractorOptionRefreshVisibility"
+  implicit val renderer: Renderer[RefreshVisibility] = renderer1(apply) ^^ "rendererRefreshVisibility"
+  implicit val rendererOpt: Renderer[Option[RefreshVisibility]] = renderer1(apply).lift ^^ "rendererOptionRefreshVisibility"
 }
 
 /**
@@ -3094,7 +3151,7 @@ object ViewVolume extends Extractors with Renderers {
 /**
  * A case class representing visibility in KML documents.
  *
- * This case class encapsulates a `CharSequence` value that signifies visibility attributes in KML data.
+ * This case class encapsulates a `Boolean` value that signifies visibility attributes in KML data.
  * Visibility settings often dictate whether a specific KML element should be displayed in a viewer.
  */
 case class Visibility($: Boolean)
