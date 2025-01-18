@@ -771,7 +771,7 @@ object Plural extends JavaTokenParsers {
    * @return a `Parser[String]` that parses plural forms and returns the reversed representation
    *         of the input string if successful, or a failure message for invalid inputs.
    */
-  private def plural: Parser[String] = plural1 | plural2 | endsInS | failure("not plural") ^^ { w: String => w.reverse }
+  private def plural: Parser[String] = plural1 | plural2 | endsInS | failure("not plural") ^^ { (w: String) => w.reverse }
 
   /**
    * Parses a string that begins with the character 's' and continues with a valid root.
@@ -790,7 +790,7 @@ object Plural extends JavaTokenParsers {
    * @return a `Parser[String]` that matches strings starting with "sei", followed by a valid root,
    *         and produces a transformed string with 'y' prepended to the root.
    */
-  private def plural1: Parser[String] = "sei" ~> root ^^ { w: String => s"y$w" }
+  private def plural1: Parser[String] = "sei" ~> root ^^ { (w: String) => s"y$w" }
 
   /**
    * Parses a (reversed) string that begins with the sequence "ice" preceded by a valid root.
@@ -800,7 +800,7 @@ object Plural extends JavaTokenParsers {
    * @return a `Parser[String]` that matches strings starting with "eci" followed by a valid root,
    *         and returns the transformed string with "esuo" prepended to the root.
    */
-  private def plural2: Parser[String] = "eci" ~> root ^^ { w: String => s"esuo$w" }
+  private def plural2: Parser[String] = "eci" ~> root ^^ { (w: String) => s"esuo$w" }
 
   /**
    * Matches specific singular terms that end in the character "s".
