@@ -11,6 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.matching.Regex
+import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
 
@@ -261,21 +262,28 @@ object Extractor {
    *           Required: implicit evidence of type MultiExtractor[P].
    * @return a Try[P].
    */
-  def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] = {
-    val explicitChildren: NodeSeq = node / member
-    if (explicitChildren.nonEmpty || TagProperties.mustMatch(member))
-      extractMulti(explicitChildren) // requires implicit MultiExtractor[P]
-    else
-      extractAll(node) match {
-        case Success(Nil) =>
-          extractChildless(node, member)
-        case Success(x) =>
-          logger.debug(s"extractChildren extracted $x using extractAll")
-          Success(x)
-        case Failure(x) =>
-          Failure(x)
-      }
-  }
+  def extractChildren[P: MultiExtractor](member: String)(node: Node): Try[P] =
+    member match {
+      case Plural(tag) =>
+        logger.debug(s"extractChildren with tag=$tag (where member=$member) for ${renderNode(node)}")
+        val explicitChildren: NodeSeq = node / tag
+        if (explicitChildren.nonEmpty || TagProperties.mustMatch(tag)) // TODO unite Plural and TagProperties
+          extractMulti(explicitChildren) // requires implicit MultiExtractor[P]
+        else Failure(XmlException(s"extractChildren: no children matched any of $tag (singular of $member) in ${renderNode(node)}"))
+      case _ =>
+        val explicitChildren: NodeSeq = node / member
+        if (explicitChildren.nonEmpty || TagProperties.mustMatch(member))
+          extractMulti(explicitChildren) // requires implicit MultiExtractor[P]
+        else extractAll(node) match {
+          case Success(Nil) =>
+            extractChildless(node, member)
+          case Success(x) =>
+            logger.debug(s"extractChildren extracted $x using extractAll")
+            Success(x)
+          case Failure(x) =>
+            Failure(x)
+        }
+    }
 
   /**
    * Extracts childless nodes of a given type from the specified parent XML `node`.
@@ -296,7 +304,7 @@ object Extractor {
       extractMulti(nodeSeq)
     }
     else {
-      logger.warn(s"extractChildren: no children matched any of $ts in ${renderNode(node)}")
+      logger.warn(s"extractChildless: no children matched any of $ts in ${renderNode(node)}")
       Try(Nil.asInstanceOf[P])
     }
   }
@@ -360,7 +368,7 @@ object Extractor {
       case attribute(x) =>
         s"attribute: $x" -> extractAttribute[P](node, x)
       // NOTE child nodes are extracted using extractChildren, not here, but if the plural-sounding name is present in node, then we are OK
-      case plural(x) if (node \ field).isEmpty =>
+      case Plural(x) if (node \ field).isEmpty =>
         // NOTE: TESTME: this mechanism is to allow for field names to end in "s" without being plural (such as OuterBoundaryIs).
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
       // NOTE optional members such that the name begins with "maybe"
@@ -390,11 +398,6 @@ object Extractor {
       case _ if optional => Failure(new NoSuchFieldException)
       case _ => Failure(XmlException(s"failure to retrieve unique attribute $x from node ${renderNode(node)}"))
     }
-
-  /**
-   * Regular expression to match a plural name, viz. ...s
-   */
-  val plural: Regex = """(\w+)s""".r
 
   /**
    * Regular expression to match an attribute name, viz. _...
@@ -560,7 +563,8 @@ case class MultiExtractorBase[P: Extractor](range: Range) extends MultiExtractor
   def extract(nodeSeq: NodeSeq): Try[Seq[P]] =
     sequenceForgiving(logWarning)(nodeSeq map Extractor.extract[P]) match {
       case x@Success(ps) if range.contains(ps.size) => x
-      case Success(ps) => Failure(XmlException(
+      case Success(ps) =>
+        Failure(XmlException(
         s"""MultiExtractorBase.extract: the number (${ps.size}) of elements extracted is not in the required range: $range
            |Consider changing the Range in the appropriate call to multiExtractorBase.""".stripMargin))
       case x@Failure(_) => x
@@ -715,7 +719,110 @@ object ChildNames {
   def translate(member: String): Seq[String] =
     map.getOrElse(member,
       member match {
-        case Extractor.plural(x) => Seq(x)
+        case Plural(x) => Seq(x)
         case _ => map.getOrElse(member, Seq(member))
       })
+}
+
+/**
+ * The `Plural` object is a parser utility extending `JavaTokenParsers` to analyze a given string
+ * and determine its plural or singular nature based on specific patterns.
+ *
+ * It provides the following primary functionality:
+ *
+ * - The `unapply` method evaluates if a string represents a plural form. It attempts to parse the input
+ * as both singular (that ends with `s`) and plural in reverse.
+ * - Definitions of multiple helper `Parser` methods to define the behavior for detecting specific plural
+ * or singular cases:
+ *   - `singularEndsInS`: Identifies certain patterns of singular words that end in `s`.
+ *   - `plural`: Consists of combined patterns (`plural1`, `plural2`, `endsInS`, or fails a match).
+ *   - `plural1`, `plural2`: Encodes specific reverse transformations for certain plural endings.
+ *   - `endsInS`: Matches plural strings ending in `s` followed by a root word.
+ *   - `root`: Matches a generic alphanumeric word boundary.
+ *
+ * The parsing logic uses compositional and pattern-matching techniques to identify and reverse strings as needed.
+ */
+object Plural extends JavaTokenParsers {
+  /**
+   * Attempts to extract the root of a plural word from a given string.
+   *
+   * The method first checks if the string matches specific singular forms that end in "s".
+   * If it does, it returns `None`.
+   * If not, it attempts to parse the reversed string as plural based on defined patterns.
+   * If successful, it returns the root of the plural word.
+   *
+   * @param s the input string to be evaluated, which can be either singular or plural.
+   * @return an `Option` containing the root of the plural word if the input is parsed as plural;
+   *         otherwise, returns `None`.
+   */
+  def unapply(s: String): Option[String] = parseAll(singularEndsInS, s) match {
+    case Success(_, _) => None
+    case _ =>
+      parseAll(plural, s.reverse) match {
+        case Success(x, _) => Some(x.reverse)
+        case _ => None
+      }
+  }
+
+  /**
+   * Attempts to parse a string as a plural form based on predefined patterns.
+   *
+   * The method combines multiple sub-parsers, including `plural1`, `plural2`, and `endsInS`,
+   * to identify different plural forms.
+   * If no match is found, it returns a failure indicating that the string is not plural.
+   * The resulting string is reversed as part of the parsing process.
+   *
+   * @return a `Parser[String]` that parses plural forms and returns the reversed representation
+   *         of the input string if successful, or a failure message for invalid inputs.
+   */
+  private def plural: Parser[String] = plural1 | plural2 | endsInS | failure("not plural") ^^ { w: String => w.reverse }
+
+  /**
+   * Parses a string that begins with the character 's' and continues with a valid root.
+   * This method leverages the `~>` operator to combine the fixed prefix "s"
+   * with a subsequent `root` parser.
+   *
+   * @return a `Parser[String]` that successfully parses strings starting with "s" followed by a root.
+   */
+  def endsInS: Parser[String] = "s" ~> root
+
+  /**
+   * Parses a string that begins with the sequence "sei" and continues with a valid root.
+   * This method combines the fixed prefix "sei" with the subsequent `root` parser
+   * and applies a transformation to prepend the character 'y' to the parsed root.
+   *
+   * @return a `Parser[String]` that matches strings starting with "sei", followed by a valid root,
+   *         and produces a transformed string with 'y' prepended to the root.
+   */
+  private def plural1: Parser[String] = "sei" ~> root ^^ { w: String => s"y${w}" }
+
+  /**
+   * Parses a (reversed) string that begins with the sequence "ice" preceded by a valid root.
+   * This method uses the `~>` operator to match the fixed suffix "ice" and a `root` parser.
+   * Upon successful parsing, it transforms the parsed root by appending "ouse" to it.
+   *
+   * @return a `Parser[String]` that matches strings starting with "eci" followed by a valid root,
+   *         and returns the transformed string with "esuo" prepended to the root.
+   */
+  private def plural2: Parser[String] = "eci" ~> root ^^ { w: String => s"esuo${w}" }
+
+  /**
+   * Matches specific singular terms that end in the character "s".
+   * TODO coordinate this with TagProperties
+   *
+   * This method defines a parser that matches predefined strings commonly
+   * recognized as singular but ending in "s". These include specific terms
+   * such as "innerBoundaryIs", "coordinates", "features", "StyleSelectors", and "Styles".
+   *
+   * @return a `Parser[String]` that matches one of the predefined singular terms ending in "s".
+   */
+  private def singularEndsInS: Parser[String] = "innerBoundaryIs" | "coordinates" | "features" | "StyleSelectors" | "Styles"
+
+  /**
+   * Parses a valid root string composed of word characters (letters, digits, or underscores).
+   * This parser uses a regular expression to match sequences of one or more word characters.
+   *
+   * @return a `Parser[String]` that matches and captures a root string consisting of word characters.
+   */
+  private def root: Parser[String] = """\w+""".r
 }

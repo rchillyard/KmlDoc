@@ -135,6 +135,37 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
 
   }
 
+  behavior of "Plural"
+
+  it should "match success" in {
+    val result = Plural.parseAll(Plural.endsInS, "oranges".reverse)
+    result should matchPattern { case Plural.Success("egnaro", _) => }
+  }
+
+  it should "match orange" in {
+    "oranges" match {
+      case Plural(s) => s shouldBe "orange"
+    }
+  }
+
+  it should "match empty" in {
+    "empties" match {
+      case Plural(s) => s shouldBe "empty"
+    }
+  }
+
+  it should "not match innerBoundaryIs" in {
+    "innerBoundaryIs" match {
+      case Plural(s) => fail("should not match")
+      case _ =>
+    }
+  }
+
+  it should "match mouse" in {
+    "mice" match {
+      case Plural(s) => s shouldBe "mouse"
+    }
+  }
   //  it should "extractMulti" in {
   //    val xml = <xml><junk>1</junk></xml>
   //    implicit val xxx: MultiExtractor[Int] = (nodeSeq: NodeSeq) => ???
