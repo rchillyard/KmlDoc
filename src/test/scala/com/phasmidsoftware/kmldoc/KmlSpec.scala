@@ -19,7 +19,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
   behavior of "renderers"
 
   it should "render Open" in {
-    val target = Open("1")
+    val target = Open("1" == "1")
     val wy = TryUsing(StateR())(sr => Renderer.render[Open](target, FormatXML(), sr))
     wy.isSuccess shouldBe true
     wy.get shouldBe "<Open>1</Open>"

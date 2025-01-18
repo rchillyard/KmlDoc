@@ -1905,7 +1905,7 @@ object LookAt extends Extractors with Renderers {
  *
  * @param $ the content represented as a CharSequence
  */
-case class Open($: CharSequence)
+case class Open($: Boolean)
 
 /**
  * Companion object for the `Open` case class.
