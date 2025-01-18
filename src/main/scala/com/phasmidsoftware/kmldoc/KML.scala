@@ -917,7 +917,7 @@ object DrawOrder extends Extractors with Renderers {
  *
  * @param $ the value.
  */
-case class Extrude($: CharSequence)
+case class Extrude($: Boolean)
 
 /**
  * The `Extrude` object serves as a companion to the `Extrude` case class.
@@ -1048,7 +1048,7 @@ object FeatureData extends Extractors with Renderers {
  *
  * @param boolean whether to fill or not.
  */
-case class Fill(boolean: Int)
+case class Fill(boolean: Boolean)
 
 /**
  * The `Fill` object provides extractor and renderer implementations for the `Fill` case class.
@@ -1955,7 +1955,7 @@ object OuterBoundaryIs extends Extractors with Renderers {
  *
  * @param boolean whether to outline or not.
  */
-case class Outline(boolean: Int)
+case class Outline(boolean: Boolean)
 
 /**
  * The `Outline` object provides implicit extractors and renderers for the `Outline` type.
