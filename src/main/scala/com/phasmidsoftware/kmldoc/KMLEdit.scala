@@ -497,7 +497,7 @@ trait Mergeable[T] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: T, mergeName: Boolean = true): Option[T]
+  infix def merge(t: T, mergeName: Boolean = true): Option[T]
 }
 
 /**
@@ -516,7 +516,7 @@ object Mergeable {
    * @return Seq[T] with only one element.
    */
   def mergeSequence[T <: Mergeable[T]](ts: Seq[T])(fail: => T): Seq[T] =
-    Seq(ts reduce[T] ((t1, t2) => (t1 merge t2).getOrElse(fail)))
+    Seq(ts reduce ((t1, t2) => (t1 merge t2).getOrElse(fail)))
 
   /**
    * Method to merge two Optional values of the same type.

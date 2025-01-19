@@ -20,7 +20,7 @@ object Reflection {
    * @param dropLast if true, then we expect to find one extra declared field.
    * @return an Array of String.
    */
-  def extractFieldNames(classTag: ClassTag[_], dropLast: Boolean): Array[String] = {
+  def extractFieldNames(classTag: ClassTag[?], dropLast: Boolean): Array[String] = {
     val clazz = classTag.runtimeClass
     try {
       // NOTE: copy methods have the form copy$default$N(), we need to sort them in order, but must account for the fact
@@ -52,7 +52,7 @@ object Reflection {
    * @param classTag rhw class tag.
    * @return an Array of String.
    */
-  def extractFieldNames(classTag: ClassTag[_]): Array[String] = extractFieldNames(classTag, dropLast = false)
+  def extractFieldNames(classTag: ClassTag[?]): Array[String] = extractFieldNames(classTag, dropLast = false)
 
 }
 

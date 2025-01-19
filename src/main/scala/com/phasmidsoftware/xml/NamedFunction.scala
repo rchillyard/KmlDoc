@@ -262,7 +262,7 @@ object NamedFunction {
      *         separated by a "+" symbol
      */
     def combineNames2[T0, T1](t0n: NamedFunction[T0], t1n: NamedFunction[T1]): String =
-        name(t0n) + "+" + name(t1n)
+        t0n.name + "+" + t1n.name
 
     /**
      * Combines the names of three given `NamedFunction` instances into a single string.
@@ -273,7 +273,7 @@ object NamedFunction {
      * @return a string representing the combined names of the three `NamedFunction` instances.
      */
     def combineNames3[T0, T1, T2](t0n: NamedFunction[T0], t1n: NamedFunction[T1], t2n: NamedFunction[T2]): String =
-        combineNames2(t0n, t1n) + "+" + name(t2n)
+        combineNames2(t0n, t1n) + "+" + t2n.name
 
     /**
      * Combines the names of four `NamedFunction` instances into a single string.
@@ -288,7 +288,7 @@ object NamedFunction {
      * @return a string representing the combined names of the four `NamedFunction` instances
      */
     def combineNames4[T0, T1, T2, T3](t0n: NamedFunction[T0], t1n: NamedFunction[T1], t2n: NamedFunction[T2], t3n: NamedFunction[T3]): String =
-        combineNames3(t0n, t1n, t2n) + "+" + name(t3n)
+        combineNames3(t0n, t1n, t2n) + "+" + t3n.name
 
     /**
      * Combines the names of five `NamedFunction` instances into a single string.
@@ -301,7 +301,7 @@ object NamedFunction {
      * @return a string representation of the combined names of the five instances.
      */
     def combineNames5[T0, T1, T2, T3, T4](t0n: NamedFunction[T0], t1n: NamedFunction[T1], t2n: NamedFunction[T2], t3n: NamedFunction[T3], t4n: NamedFunction[T4]): String =
-        combineNames4(t0n, t1n, t2n, t3n) + "+" + name(t4n)
+        combineNames4(t0n, t1n, t2n, t3n) + "+" + t4n.name
 
     /**
      * Combines the names of six `NamedFunction` instances into a single string.
@@ -317,5 +317,5 @@ object NamedFunction {
      * @return a string representing the combined names of the six `NamedFunction` instances.
      */
     def combineNames6[T0, T1, T2, T3, T4, T5](t0n: NamedFunction[T0], t1n: NamedFunction[T1], t2n: NamedFunction[T2], t3n: NamedFunction[T3], t4n: NamedFunction[T4], t5n: NamedFunction[T5]): String =
-        combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + name(t5n)
+        combineNames5(t0n, t1n, t2n, t3n, t4n) + "+" + t5n.name
 }

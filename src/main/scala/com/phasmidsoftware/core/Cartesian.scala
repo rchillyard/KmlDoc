@@ -14,7 +14,7 @@ case class Cartesian(x: Double, y: Double, z: Double) {
    * @param c The Cartesian point to subtract from this point.
    * @return A new Cartesian object representing the vector difference.
    */
-  def vector(c: Cartesian): Cartesian = {
+  infix def vector(c: Cartesian): Cartesian = {
     val f = diff(c)(_)
     Cartesian(f(_.x), f(_.y), f(_.z))
   }
@@ -25,7 +25,7 @@ case class Cartesian(x: Double, y: Double, z: Double) {
    * @param c The Cartesian point to which the distance is to be calculated.
    * @return The Euclidean distance between the current Cartesian point and the specified point.
    */
-  def distance(c: Cartesian): Double = {
+  infix def distance(c: Cartesian): Double = {
     val f = sqr(c)(_)
     math.sqrt(f(_.x) + f(_.y) + f(_.z))
   }

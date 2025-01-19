@@ -41,7 +41,7 @@ case class Coordinate(long: String, lat: String, alt: String) {
    * @return an `Option[Cartesian]` representing the vector difference if both coordinates can be converted to `Cartesian`,
    *         otherwise `None`.
    */
-  def vector(c: Coordinate): Option[Cartesian] = for (a <- this.geometry; b <- c.geometry) yield a vector b
+  infix def vector(c: Coordinate): Option[Cartesian] = for (a <- this.geometry; b <- c.geometry) yield a vector b
 
   /**
    * Calculates the distance between the current `Coordinate` instance and another given `Coordinate` instance.
@@ -54,7 +54,7 @@ case class Coordinate(long: String, lat: String, alt: String) {
    * @return an `Option[Double]` representing the Euclidean distance between the two coordinates, or `None` if the
    *         Cartesian conversion fails for either of the coordinates.
    */
-  def distance(c: Coordinate): Option[Double] = for (a <- this.geometry; b <- c.geometry) yield a distance b
+  infix def distance(c: Coordinate): Option[Double] = for (a <- this.geometry; b <- c.geometry) yield a distance b
 }
 
 /**
@@ -80,7 +80,7 @@ object Coordinate {
   }
 
   implicit val renderer: Renderer[Coordinate] = Renderer[Coordinate] { (t, _, _) => Success(s"${t.long},${t.lat},${t.alt}") } ^^ "rendererCoordinate"
-  implicit val rendererSeq: Renderer[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](KmlRenderers.FormatCoordinate) ^^ "rendererCoordinates1"
+  implicit val rendererSeq: Renderer[Seq[Coordinate]] = sequenceRendererFormatted[Coordinate](KmlRenderers.FormatCoordinate.apply) ^^ "rendererCoordinates1"
 }
 
 /**

@@ -1812,7 +1812,7 @@ trait Extractors {
    * @tparam P the underlying (MultiExtractor-enabled) type of the result.
    * @return an TagToExtractorFunc[P] based on fieldExtractor.
    */
-  private def childrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] = (tag: String) => extractChildren[P](tag)
+  private def childrenExtractor[P: MultiExtractor]: TagToExtractorFunc[P] = (tag: String) => extractChildren[P](tag)(_)
 
   /**
    * Method to yield an Extractor of `Seq[T]` where each result arises from one of the labels (tags) given.
@@ -1860,7 +1860,7 @@ trait Extractors {
    * @return an Extractor[R].
    */
   def extractorAlia3[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor]: Extractor[R] =
-    none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]])
+    none[R].|[P0]().|[P1]().|[P2]()
 
   /**
    * Method to yield an Extractor which can choose from four other extractors.
@@ -1917,7 +1917,7 @@ trait Extractors {
    * @return an Extractor[R].
    */
   def extractorAlia6[R, P0 <: R : Extractor, P1 <: R : Extractor, P2 <: R : Extractor, P3 <: R : Extractor, P4 <: R : Extractor, P5 <: R : Extractor]: Extractor[R] =
-    none[R].|[P0]()(implicitly[Extractor[P0]]).|[P1]()(implicitly[Extractor[P1]]).|[P2]()(implicitly[Extractor[P2]]).|[P3]()(implicitly[Extractor[P3]]).|[P4]()(implicitly[Extractor[P4]]).|[P5]()(implicitly[Extractor[P5]])
+    none[R].|[P0]().|[P1]().|[P2]().|[P3]().|[P4]().|[P5]()
 
   /**
    * Applies the function wrapped within a Try to a unit value.
@@ -1979,7 +1979,7 @@ object Extractors extends Extractors {
   /**
    * Optional String extractor.
    */
-  implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[CharSequence] flatMap (xo => Success(xo map (_.toString)))
+  implicit val extractorOptionalString: Extractor[Option[String]] = extractorOption[CharSequence].flatMap(xo => Success(xo map (_.toString)))
 
   /**
    * Method to extract an optional value of type `P` from the provided `NodeSeq`.
@@ -2009,7 +2009,7 @@ object Extractors extends Extractors {
    * @tparam T an iterable type.
    * @return a TagToExtractorFunc of `Seq[T]`
    */
-  def tagToSequenceExtractorFunc[T <: Iterable[_]](fExtractor: TagToSequenceExtractorFunc[T]): TagToExtractorFunc[Seq[T]] =
+  def tagToSequenceExtractorFunc[T <: Iterable[?]](fExtractor: TagToSequenceExtractorFunc[T]): TagToExtractorFunc[Seq[T]] =
     (label: String) => if (fExtractor.valid(label)) fExtractor(label) else none
 
   /**

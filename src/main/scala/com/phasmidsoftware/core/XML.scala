@@ -26,7 +26,7 @@ case class Text($: CharSequence) extends Mergeable[Text] {
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Text, mergeName: Boolean = true): Option[Text] = ($, t.$) match {
+  infix def merge(t: Text, mergeName: Boolean = true): Option[Text] = ($, t.$) match {
     case (c1: CDATA, c2: CDATA) => c1 merge c2 map (Text(_))
     case _ => Some(Text($.toString + " " + t.$.toString))
   }
@@ -141,7 +141,7 @@ case class CDATA(content: String, pre: String, post: String) extends CharSequenc
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: CDATA, mergeName: Boolean = true): Option[CDATA] = Some(CDATA(content + separator(post, t.pre) + t.content, pre, t.post))
+  infix def merge(t: CDATA, mergeName: Boolean = true): Option[CDATA] = Some(CDATA(content + separator(post, t.pre) + t.content, pre, t.post))
 
   /**
    * Concatenates two strings and replaces newline characters with "<br>".
@@ -192,7 +192,7 @@ object CDATA {
    * @return an `Option` containing the CDATA instance if the node matches the CDATA pattern; otherwise, `None`.
    */
   def unapply(node: Node): Option[CDATA] = node.child match {
-    case Seq(pre, PCData(x), post) => Some(CDATA(x, pre.text, post.text))
+    case Seq(pre: Node, PCData(x), post: Node) => Some(CDATA(x, pre.text, post.text))
     case Seq(PCData(x)) => Some(CDATA(x))
     case _ => None
   }

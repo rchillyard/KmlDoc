@@ -132,8 +132,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
                 text.$.asInstanceOf[CDATA].content shouldBe expectedText
                 val wy = TryUsing(StateR())(sr => Renderer.render(b, FormatXML(), sr))
                 wy.isSuccess shouldBe true
-                val expectedBalloonStyle =
-                  """<BalloonStyle>
+                val expectedBalloonStyle = """<BalloonStyle>
                     |  <text>
                     |<![CDATA[
                     |          <b>$[name]</b>
@@ -1329,8 +1328,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             pairs.size shouldBe 2
             pairs.head match {
               case Pair(key, styleUrl) =>
-                key shouldBe "normal"
-                styleUrl shouldBe "#icon-22-nodesc-normal"
+                key.toString shouldBe "normal"
+                styleUrl.toString shouldBe "#icon-22-nodesc-normal"
             }
         }
       case Failure(x) => fail(x)

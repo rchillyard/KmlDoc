@@ -83,7 +83,7 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
       <junk>1</junk>
     </xml>
     implicit val xxx: MultiExtractor[Seq[Int]] = multiExtractorBase[Int](Positive)
-    val target: Extractor[Seq[Int]] = extractChildren[Seq[Int]]("junk")
+    val target: Extractor[Seq[Int]] = extractChildren[Seq[Int]]("junk")(_)
     target.extract(xml) shouldBe Success(Seq(1))
   }
 

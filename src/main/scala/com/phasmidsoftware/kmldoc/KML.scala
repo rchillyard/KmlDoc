@@ -40,7 +40,7 @@ case class KmlData(__id: Option[String]) extends Mergeable[KmlData] {
    * @param k a KmlData object.
    * @return the merged value of KmlData.
    */
-  def merge(k: KmlData, mergeName: Boolean = true): Option[KmlData] = Some(KmlData(mergeStringsDelimited(__id, k.__id)("#")))
+  infix def merge(k: KmlData, mergeName: Boolean = true): Option[KmlData] = Some(KmlData(mergeStringsDelimited(__id, k.__id)("#")))
 }
 
 /**
@@ -725,7 +725,7 @@ case class Coordinates(coordinates: Seq[Coordinate]) extends Mergeable[Coordinat
    * @param mergeName a boolean indicating whether to merge the names of the two `Coordinates` instances. Defaults to true.
    * @return an `Option` containing the resulting merged `Coordinates`, or `None` if the merge cannot be performed.
    */
-  def merge(other: Coordinates, mergeName: Boolean = true): Option[Coordinates] = {
+  infix def merge(other: Coordinates, mergeName: Boolean = true): Option[Coordinates] = {
     KMLCompanion.logger.info(s"merge $this with $other")
     // CONSIDER rejuvenating the following code to try to deal automatically with inversions.
 //    val xo = vector
@@ -1201,7 +1201,7 @@ case class GeometryData(maybeExtrude: Option[Extrude], maybeAltitudeMode: Option
    * @param mergeName a Boolean flag indicating whether to merge names (default is true).
    * @return an Option of GeometryData, representing the merged result, or None if merging fails.
    */
-  def merge(g: GeometryData, mergeName: Boolean = true): Option[GeometryData] =
+  infix def merge(g: GeometryData, mergeName: Boolean = true): Option[GeometryData] =
     for {
       k <- kmlData merge g.kmlData
     } yield GeometryData(mergeOptionsBiased(maybeExtrude, g.maybeExtrude), mergeOptionsBiased(maybeAltitudeMode, g.maybeAltitudeMode))(k)
@@ -2252,7 +2252,7 @@ case class Placemark(Geometry: Seq[Geometry])(val featureData: FeatureData) exte
    * @param t the object to be merged with this.
    * @return the merged value of T.
    */
-  def merge(t: Placemark, mergeName: Boolean = true): Option[Placemark] = {
+  infix def merge(t: Placemark, mergeName: Boolean = true): Option[Placemark] = {
     logger.info(s"joinPlacemarks: $name, ${t.name} with mergeName=$mergeName")
     val los: Seq[Option[Geometry]] = for (gp <- this.Geometry; gq <- t.Geometry) yield gp.merge(gq)
     val gs: Seq[Geometry] = los filter (_.isDefined) map (_.get)
@@ -3055,7 +3055,7 @@ object SubStyleData extends Extractors with Renderers {
  * @param $ a Boolean value encapsulated by the Tessellate instance.
  */
 case class Tessellate($: Boolean) extends Mergeable[Tessellate] {
-  def merge(t: Tessellate, mergeName: Boolean = true): Option[Tessellate] = ($, t.$) match {
+  infix def merge(t: Tessellate, mergeName: Boolean = true): Option[Tessellate] = ($, t.$) match {
     case (a, b) if a == b => Some(Tessellate(a))
     case _ => None
   }

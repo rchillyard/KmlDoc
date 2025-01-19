@@ -38,7 +38,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer1" in {
     object MyRenderers extends Renderers {
-      val rendererGreeting: Renderer[Greeting] = renderer1(Greeting)
+      val rendererGreeting: Renderer[Greeting] = renderer1.apply(Greeting)
     }
     val wy = TryUsing(StateR())(sr => MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatText(1), sr))
       wy shouldBe Success("Greeting{Hello}")
@@ -46,7 +46,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer2A" in {
     object ComplexRenderers extends Renderers {
-      val rendererComplex: Renderer[Complex] = renderer2(Complex)
+      val rendererComplex: Renderer[Complex] = renderer2.apply(Complex)
     }
     val wy = TryUsing(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatText(0), sr))
       wy shouldBe Success("""Complex{r="1" i="-1"}""")
@@ -54,7 +54,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer2B" in {
     object KVRenderers extends Renderers {
-      val rendererKV: Renderer[KV] = renderer2(KV)
+      val rendererKV: Renderer[KV] = renderer2.apply(KV)
     }
     val wy = TryUsing(StateR())(sr => KVRenderers.rendererKV.render(KV("a", -1), FormatText(0), sr))
     wy shouldBe Success("""KV{k="a" v="-1"}""")
@@ -62,7 +62,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer4" in {
     object KVVVRenderers extends Renderers {
-      val rendererKVVV: Renderer[KVVV] = renderer4(KVVV)
+      val rendererKVVV: Renderer[KVVV] = renderer4.apply(KVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatText(0), sr))
     wy shouldBe Success("""KVVV{k="a" v="-1" b="0" x="3.141592653589793"}""")
@@ -109,7 +109,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer5" in {
     object KVVVRenderers extends Renderers {
-      val rendererKVVV: Renderer[KVVVV] = renderer5(KVVVV)
+      val rendererKVVV: Renderer[KVVVV] = renderer5.apply(KVVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatText(0), sr))
     wy shouldBe Success("""KVVVV{k="a" v="-1" b="0" x="3.141592653589793" l="42"}""")
@@ -131,7 +131,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer3" in {
     object KVVRenderers extends Renderers {
-      val rendererKVV: Renderer[KVV] = renderer3(KVV)
+      val rendererKVV: Renderer[KVV] = renderer3.apply(KVV)
     }
     val wy = TryUsing(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatText(0), sr))
     wy shouldBe Success("""KVV{k="a" v="-1" b="0"}""")
@@ -154,7 +154,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer1" in {
     object MyRenderers extends Renderers {
-      val rendererGreeting: Renderer[Greeting] = renderer1(Greeting)
+      val rendererGreeting: Renderer[Greeting] = renderer1.apply(Greeting)
     }
     val wy = TryUsing(StateR())(sr => MyRenderers.rendererGreeting.render(Greeting("Hello"), FormatXML(), sr))
     wy shouldBe Success("<Greeting>Hello</Greeting>")
@@ -198,7 +198,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer2A" in {
     object ComplexRenderers extends Renderers {
-      val rendererComplex: Renderer[Complex] = renderer2(Complex)
+      val rendererComplex: Renderer[Complex] = renderer2.apply(Complex)
     }
     val wy = TryUsing(StateR())(sr => ComplexRenderers.rendererComplex.render(Complex(1, -1), FormatXML(), sr))
     wy shouldBe Success("<Complex r=\"1\" i=\"-1\"></Complex>")
@@ -206,7 +206,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer2B" in {
     object KVRenderers extends Renderers {
-      val rendererKV: Renderer[KV] = renderer2(KV)
+      val rendererKV: Renderer[KV] = renderer2.apply(KV)
     }
     val wy = TryUsing(StateR())(sr => KVRenderers.rendererKV.render(KV("a", -1), FormatXML(), sr))
     wy shouldBe Success("""<KV k="a" v="-1"></KV>""")
@@ -214,7 +214,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer4" in {
     object KVVVRenderers extends Renderers {
-      val rendererKVVV: Renderer[KVVV] = renderer4(KVVV)
+      val rendererKVVV: Renderer[KVVV] = renderer4.apply(KVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVV("a", -1, _b = false, math.Pi), FormatXML(), sr))
     wy shouldBe Success("""<KVVV k="a" v="-1" b="0" x="3.141592653589793"></KVVV>""")
@@ -245,7 +245,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer5" in {
     object KVVVRenderers extends Renderers {
-      val rendererKVVV: Renderer[KVVVV] = renderer5(KVVVV)
+      val rendererKVVV: Renderer[KVVVV] = renderer5.apply(KVVVV)
     }
     val wy = TryUsing(StateR())(sr => KVVVRenderers.rendererKVVV.render(KVVVV("a", -1, _b = false, math.Pi, 42L), FormatXML(), sr))
     wy shouldBe Success("""<KVVVV k="a" v="-1" b="0" x="3.141592653589793" l="42"></KVVVV>""")
@@ -267,7 +267,7 @@ class RenderersSpec extends AnyFlatSpec with should.Matchers {
 
   it should "renderer3" in {
     object KVVRenderers extends Renderers {
-      val rendererKVV: Renderer[KVV] = renderer3(KVV)
+      val rendererKVV: Renderer[KVV] = renderer3.apply(KVV)
     }
     val wy = TryUsing(StateR())(sr => KVVRenderers.rendererKVV.render(KVV("a", -1, _b = false), FormatXML(), sr))
     wy shouldBe Success("""<KVV k="a" v="-1" b="0"></KVV>""")
