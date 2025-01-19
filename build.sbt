@@ -2,17 +2,11 @@ ThisBuild / organization := "com.phasmidsoftware"
 
 name := "TableParser"
 
-ThisBuild / version := "1.1.4-SNAPSHOT"
+ThisBuild / version := "1.0.4"
 
-ThisBuild / scalaVersion := "2.13.14"
-
-lazy val core = project
+ThisBuild / scalaVersion := "2.13.16"
 
 name := "KMLDoc"
-
-version := "1.0.4"
-
-scalaVersion := "2.13.16"
 
 Compile / doc / scalacOptions ++= Seq("-explaintypes", "-Vimplicits", "-implicits-debug", "-implicits-show-all", "-unchecked", "-feature", "-Xcheckinit", "-deprecation", "-Ywarn-dead-code", "-Ywarn-value-discard", "-Ywarn-unused", "-deprecation")
 
