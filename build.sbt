@@ -1,4 +1,12 @@
-organization := "com.phasmidsoftware"
+ThisBuild / organization := "com.phasmidsoftware"
+
+name := "TableParser"
+
+ThisBuild / version := "1.1.4-SNAPSHOT"
+
+ThisBuild / scalaVersion := "2.13.14"
+
+lazy val core = project
 
 name := "KMLDoc"
 
@@ -9,6 +17,8 @@ scalaVersion := "2.13.16"
 Compile / doc / scalacOptions ++= Seq("-explaintypes", "-Vimplicits", "-implicits-debug", "-implicits-show-all", "-unchecked", "-feature", "-Xcheckinit", "-deprecation", "-Ywarn-dead-code", "-Ywarn-value-discard", "-Ywarn-unused", "-deprecation")
 
 lazy val scalaModules = "org.scala-lang.modules"
+
+resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies += scalaModules %% "scala-xml" % "2.3.0"
 
