@@ -1,7 +1,7 @@
 package com.phasmidsoftware.core
 
 import com.phasmidsoftware.kmldoc.Mergeable
-import com.phasmidsoftware.xml.{Extractor, Extractors}
+import com.phasmidsoftware.xml.{Extractor, Extractors, NodeParser}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -39,8 +39,8 @@ case class Text($: CharSequence) extends Mergeable[Text] {
    */
   def matches(name: String): Boolean = $ match {
     case c: CDATA => c.content == name
+    case "" => false
     case x: CharSequence => x.toString == name
-    case _ => false
   }
 
   override def equals(obj: Any): Boolean = obj match {
@@ -57,7 +57,7 @@ object Text extends Extractors {
   /**
    * Text extractor.
    */
-  implicit val extractor: Extractor[Text] = extractor10(apply)
+  implicit val extractor: Extractor[Text] = extractor10(apply) ^^ "text extractor"
 
   /**
    * Optional text extractor.
@@ -191,10 +191,19 @@ object CDATA {
    * @param node the XML node to be analyzed for CDATA content.
    * @return an `Option` containing the CDATA instance if the node matches the CDATA pattern; otherwise, `None`.
    */
-  def unapply(node: Node): Option[CDATA] = node.child match {
-    case Seq(pre: Node, PCData(x), post: Node) => Some(CDATA(x, pre.text, post.text))
-    case Seq(PCData(x)) => Some(CDATA(x))
-    case _ => None
+  def unapply(node: Node): Option[CDATA] = {
+    // TODO revert this to the way it was previously (V1_0_4)
+    val (spaces, nodes) = node.child partition (node => NodeParser.allWhiteSpace(node.text))
+    nodes.toList match {
+      case Seq(pre: Node, PCData(x), post: Node) =>
+        Some(CDATA(x, pre.text, post.text))
+      case Seq(PCData(x)) =>
+        Some(CDATA(x))
+      case PCData(x) :: _ =>
+        Some(CDATA(x)) // ASP ignore tail
+      case x =>
+        None
+    }
   }
 
   /**
