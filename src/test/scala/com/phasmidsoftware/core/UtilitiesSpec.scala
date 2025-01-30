@@ -3,7 +3,8 @@ package com.phasmidsoftware.core
 import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import scala.util._
+
+import scala.util.*
 
 class UtilitiesSpec extends AnyFlatSpec with should.Matchers {
 

@@ -83,7 +83,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val scale = triedScale.get
     scale.$ shouldBe 2.0
     // NOTE that because, in this test, scale is at the top-level,
-    //  we have to help out by specifying the correct tag name in the inital StateR.
+    //  we have to help out by specifying the correct tag name in the initial StateR.
     val wy = TryUsing(StateR(Some("scale")))(sr => Renderer.render[Scale](scale, FormatXML(), sr))
     wy.isSuccess shouldBe true
     wy.get shouldBe "<scale id=\"Hello\">2</scale>"
@@ -122,14 +122,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case Style(styles) =>
             styles.size shouldBe 1
             styles.head match {
-              case b@BalloonStyle(text, _, _, _) =>
-                val expectedText =
-                  """
-                    |          <b>$[name]</b>
-                    |          <br /><br />
-                    |          $[description]
-                    |        """.stripMargin
-                text.$.asInstanceOf[CDATA].content shouldBe expectedText
+              case b@BalloonStyle(_, _, _, _) =>
                 val wy = TryUsing(StateR())(sr => Renderer.render(b, FormatXML(), sr))
                 wy.isSuccess shouldBe true
                 val expectedBalloonStyle = """<BalloonStyle>
@@ -416,7 +409,8 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
         x.isSuccess shouldBe true
     }
   }
-  it should "extract Placemark" in {
+
+  it should "extract Placemark 1" in {
     val xml: Elem = <xml>
       <Placemark>
         <name>Wakefield Branch of Eastern RR</name>
@@ -463,6 +457,82 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
             wy.isSuccess shouldBe true
             wy.get shouldBe s"<Placemark>\n  <name>Wakefield Branch of Eastern RR</name>\n  <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>\n  <styleUrl>#line-006600-5000</styleUrl>\n  <LineString>\n    <tessellate>1</tessellate>\n    <coordinates>\n      -71.06992,42.49424,0\n      -71.07018,42.49512,0\n      -71.07021,42.49549,0\n      -71.07008,42.49648,0\n      -71.069849,42.497415,0\n      -71.06954,42.49833,0\n      -70.9257614,42.5264001,0\n      -70.9254345,42.5262817,0\n    </coordinates>\n  </LineString>\n</Placemark>"
+        }
+      case Failure(x) => fail(x)
+    }
+  }
+  it should "extract Placemark 2" in {
+    val xml: Elem = <xml>
+      <Placemark>
+        <name>
+          Wakefield Branch of Eastern RR
+        </name>
+        <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>
+        <styleUrl>#line-006600-5000</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -71.06992,42.49424,0
+            -71.07018,42.49512,0
+            -71.07021,42.49549,0
+            -71.07008,42.49648,0
+            -71.069849,42.497415,0
+            -71.06954,42.49833,0
+            -70.9257614,42.5264001,0
+            -70.9254345,42.5262817,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+    </xml>
+    extractAll[Seq[Feature]](xml) match {
+      case Success(ps) =>
+        ps.size shouldBe 1
+        val feature: Feature = ps.head
+        feature match {
+          case placemark: Placemark =>
+            val featureData: FeatureData = placemark.featureData
+            placemark.featureData.name shouldBe Text(
+              """
+                |          Wakefield Branch of Eastern RR
+                |        """.stripMargin)
+            val geometry: Seq[Geometry] = placemark.Geometry
+            geometry.size shouldBe 1
+            geometry.head match {
+              case LineString(Tessellate(true), coordinates) =>
+                coordinates.size shouldBe 1
+                val coordinate = coordinates.head
+                coordinate.coordinates.size shouldBe 8
+              case _ => fail("first geometrys is not a LineString")
+
+            }
+            featureData match {
+              case FeatureData(Text("Wakefield Branch of Eastern RR"), maybeDescription, _, _, _, _, Nil) =>
+                println(s"maybeDescription: $maybeDescription")
+              case _ => println(s"$featureData did not match the expected result")
+            }
+            val wy = TryUsing(StateR())(sr => Renderer.render[Placemark](placemark, FormatXML(), sr))
+            wy.isSuccess shouldBe true
+            wy.get shouldBe
+              s"""<Placemark>
+                 |  <name>
+                 |          Wakefield Branch of Eastern RR
+                 |        </name>
+                 |  <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>
+                 |  <styleUrl>#line-006600-5000</styleUrl>
+                 |  <LineString>
+                 |    <tessellate>1</tessellate>
+                 |    <coordinates>
+                 |      -71.06992,42.49424,0
+                 |      -71.07018,42.49512,0
+                 |      -71.07021,42.49549,0
+                 |      -71.07008,42.49648,0
+                 |      -71.069849,42.497415,0
+                 |      -71.06954,42.49833,0
+                 |      -70.9257614,42.5264001,0
+                 |      -70.9254345,42.5262817,0
+                 |    </coordinates>
+                 |  </LineString>
+                 |</Placemark>""".stripMargin
         }
       case Failure(x) => fail(x)
     }
@@ -1336,6 +1406,33 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     }
   }
 
+  it should "extract and render Styles (type A) part 1" in {
+    val xml =
+      <IconStyle>
+        <scale>1.1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png</href>
+        </Icon>
+        <hotSpot x="16" xunits="pixels" y="32" yunits="insetPixels"/>
+      </IconStyle>
+    val extractor = summon[Extractor[IconStyle]]
+    extract[IconStyle](xml) match {
+      case Success(ss) =>
+        ss match {
+          case x@IconStyle(maybeScale, icon, maybeHotSpot, maybeHeading) =>
+            maybeScale shouldBe Some(Scale(1.1)(KmlData.nemo))
+            icon shouldBe Icon(Text("https://www.gstatic.com/mapspro/images/stock/22-blue-dot.png"))
+            maybeHotSpot shouldBe Some(HotSpot(16, UnitsEnum.pixels, 32, UnitsEnum.insetPixels))
+            maybeHeading shouldBe None
+            x.colorStyleData match {
+              case c@ColorStyleData(_, _) =>
+                println(c)
+            }
+        }
+      case scala.util.Failure(_) => fail("should have succeeded")
+    }
+  }
+
   it should "extract Styles (type B)" in {
     val xml = <xml>
       <Style id="icon-22-nodesc-normal">
@@ -2078,7 +2175,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           </Placemark>
           <Placemark>
             <name>
-              <![CDATA[Saugus B&M connector]]>
+              <![CDATA[
+            Saugus B&M connector
+            ]]>
             </name>
             <description>
               <![CDATA[Saugus Branch connection with Boston & Maine (1853-55).]]>

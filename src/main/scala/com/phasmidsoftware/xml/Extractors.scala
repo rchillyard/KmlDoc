@@ -74,7 +74,7 @@ trait Extractors {
    * @tparam P the underlying type for which there must be evidence of `Extractor[P]`.
    * @return a new `MultiExtractor` instance for sequences of type `P`.
    */
-  def multiExtractorBase[P: Extractor](range: Range): MultiExtractor[Seq[P]] = new MultiExtractorBase[P](range)
+  def multiExtractorBase[P: Extractor](range: Range): MultiExtractor[Seq[P]] = new MultiExtractorBase[P](range) ^^ s"multiExtractorBase with range $range"
 
   /**
    * Method to yield a `MultiExtractor` of `Seq[T]` such that `T` is the super-type of `P0`.
@@ -88,7 +88,7 @@ trait Extractors {
    * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P]` and `ClassTag[P]`.
    * @return `MultiExtractor of Seq[T]`.
    */
-  def multiExtractor1[T, U <: Product, P0 <: T : Extractor : ClassTag](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+  def multiExtractor1[T, U <: Product, P0 <: T : {Extractor, ClassTag}](construct: P0 => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     nodeSeq =>
       labels match {
         case label :: Nil => sequence(extractElementsByLabel[P0](nodeSeq, label))
@@ -107,7 +107,7 @@ trait Extractors {
    * @tparam P0 the first subtype of `T`, for which there must be implicit evidence of `Extractor[P]` and `ClassTag[P]`.
    * @return MultiExtractor of `Seq[T]`.
    */
-  def subclassExtractor1[T, U <: Product, P0 <: T : Extractor : ClassTag](construct: P0 => U, labels: Seq[String]): SubclassExtractor[T] =
+  def subclassExtractor1[T, U <: Product, P0 <: T : {Extractor, ClassTag}](construct: P0 => U, labels: Seq[String]): SubclassExtractor[T] =
     new SubclassExtractor[T](labels)(multiExtractor1(construct, labels))
 
   /**
@@ -121,7 +121,7 @@ trait Extractors {
    * @tparam P1 the second (Extractor-enabled) subtype of T.
    * @return MultiExtractor of `Seq[T]`.
    */
-  def multiExtractor2[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+  def multiExtractor2[T, U <: Product, P0 <: T : {Extractor, ClassTag}, P1 <: T : {Extractor, ClassTag}](construct: (P0, P1) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     nodeSeq =>
       labels match {
         case label :: fs =>
@@ -145,7 +145,7 @@ trait Extractors {
    * @tparam P2 the third (Extractor-enabled) subtype of T.
    * @return MultiExtractor of `Seq[T]`.
    */
-  def multiExtractor3[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+  def multiExtractor3[T, U <: Product, P0 <: T : {Extractor, ClassTag}, P1 <: T : {Extractor, ClassTag}, P2 <: T : {Extractor, ClassTag}](construct: (P0, P1, P2) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     nodeSeq =>
       labels match {
         case label :: fs =>
@@ -168,7 +168,7 @@ trait Extractors {
    * @tparam P3 the fourth (Extractor-enabled) subtype of T.
    * @return MultiExtractor of `Seq[T]`.
    */
-  def multiExtractor4[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag, P3 <: T : Extractor : ClassTag](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+  def multiExtractor4[T, U <: Product, P0 <: T : {Extractor, ClassTag}, P1 <: T : {Extractor, ClassTag}, P2 <: T : {Extractor, ClassTag}, P3 <: T : {Extractor, ClassTag}](construct: (P0, P1, P2, P3) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     nodeSeq =>
       labels match {
         case label :: fs =>
@@ -191,7 +191,7 @@ trait Extractors {
    * @tparam P4 the fifth (Extractor-enabled) subtype of T.
    * @return MultiExtractor of `Seq[T]`.
    */
-  def multiExtractor5[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag, P3 <: T : Extractor : ClassTag, P4 <: T : Extractor : ClassTag](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+  def multiExtractor5[T, U <: Product, P0 <: T : {Extractor, ClassTag}, P1 <: T : {Extractor, ClassTag}, P2 <: T : {Extractor, ClassTag}, P3 <: T : {Extractor, ClassTag}, P4 <: T : {Extractor, ClassTag}](construct: (P0, P1, P2, P3, P4) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     nodeSeq =>
       labels match {
         case label :: fs =>
@@ -215,7 +215,7 @@ trait Extractors {
    * @tparam P5 the sixth (Extractor-enabled) subtype of T.
    * @return MultiExtractor of `Seq[T]`.
    */
-  def multiExtractor6[T, U <: Product, P0 <: T : Extractor : ClassTag, P1 <: T : Extractor : ClassTag, P2 <: T : Extractor : ClassTag, P3 <: T : Extractor : ClassTag, P4 <: T : Extractor : ClassTag, P5 <: T : Extractor : ClassTag](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
+  def multiExtractor6[T, U <: Product, P0 <: T : {Extractor, ClassTag}, P1 <: T : {Extractor, ClassTag}, P2 <: T : {Extractor, ClassTag}, P3 <: T : {Extractor, ClassTag}, P4 <: T : {Extractor, ClassTag}, P5 <: T : {Extractor, ClassTag}](construct: (P0, P1, P2, P3, P4, P5) => U, labels: Seq[String]): MultiExtractor[Seq[T]] =
     nodeSeq =>
       labels match {
         case label :: fs =>
@@ -1994,7 +1994,7 @@ object Extractors extends Extractors {
    * @return a `Try[P]` containing the extracted value or an error if extraction fails.
    */
   def extractOptional[P: Extractor](nodeSeq: NodeSeq): Try[P] =
-    nodeSeq.headOption map extract[P] match {
+    nodeSeq.headOption map extract[P] match { // ASP violation
       case Some(value) if nodeSeq.tail.isEmpty => value
       case Some(_) => Failure(XmlException(s"extractOptional: logic error: too many elements for optional value"))
       case None => Success(None.asInstanceOf[P])
