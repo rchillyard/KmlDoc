@@ -446,18 +446,11 @@ object Extractor {
      * @param node the XML `Node` to extract the `CharSequence` from.
      * @return a `Try` containing a `CharSequence` if successfully extracted, or a `Failure` with an `XmlException` if decoding fails.
      */
-    def extract(node: Node): Try[CharSequence] =
-      node match {
-        case x: xml.Text =>
-          Success(x.data)
-        case CDATA(x) =>
-          Success(x)
-        case _ =>
-          // TODO settle this
-          val nodes = node.child.toSeq filterNot (n => NodeParser.allWhiteSpace(n.text))
-          nodes match {
-            case Seq(x) => // ASP violation
-              Success(x.text)
+    def extract(node: Node): Try[CharSequence] = node match {
+      case CDATA(x) => Success(x)
+      case x: xml.Text => Success(x.data)
+      case _ => node.child.toSeq match {
+        case Seq(x) => Success(x.text)
         case x => Failure(XmlException(s"charSequenceExtractor: cannot decode text node: $node: $x"))
       }
     }

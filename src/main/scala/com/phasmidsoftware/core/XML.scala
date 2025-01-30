@@ -1,11 +1,11 @@
 package com.phasmidsoftware.core
 
 import com.phasmidsoftware.kmldoc.Mergeable
-import com.phasmidsoftware.xml.{Extractor, Extractors, NodeParser}
+import com.phasmidsoftware.xml.{Extractor, Extractors}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
-import scala.xml.{Node, PCData}
+import scala.xml.{Atom, Node}
 
 /**
  * The `XML` object does nothing other than give a name to this module.
@@ -191,20 +191,14 @@ object CDATA {
    * @param node the XML node to be analyzed for CDATA content.
    * @return an `Option` containing the CDATA instance if the node matches the CDATA pattern; otherwise, `None`.
    */
-  def unapply(node: Node): Option[CDATA] = {
-    // TODO revert this to the way it was previously (V1_0_4)
-    val (spaces, nodes) = node.child partition (node => NodeParser.allWhiteSpace(node.text))
-    nodes.toList match {
+  def unapply(node: Node): Option[CDATA] = node.child match {
       case Seq(pre: Node, PCData(x), post: Node) =>
         Some(CDATA(x, pre.text, post.text))
       case Seq(PCData(x)) =>
         Some(CDATA(x))
-      case PCData(x) :: _ =>
-        Some(CDATA(x)) // ASP ignore tail
-      case x =>
-        None
+      case _ =>
+      None
     }
-  }
 
   /**
    * Trims trailing spaces from the given string using a `StringBuilder`.
@@ -217,6 +211,56 @@ object CDATA {
     SmartBuffer.trimStringBuilder(sb)
     sb.toString()
   }
+}
+
+/**
+ * This class borrowed from Scala XML library as we rely on it but it is no longer used by Scala 3.
+ *
+ * This class (which is not used by all XML parsers, but always used by the
+ * XHTML one) represents parseable character data, which appeared as CDATA
+ * sections in the input and is to be preserved as CDATA section in the output.
+ *
+ * @author Burak Emir
+ */
+// Note: used by the Scala compiler (before Scala 3).
+class PCData(data: String) extends Atom[String](data) {
+
+  /**
+   * Returns text, with some characters escaped according to the XML
+   * specification.
+   *
+   * @param sb the input string buffer associated to some XML element
+   * @return the input string buffer with the formatted CDATA section
+   */
+  override def buildString(sb: StringBuilder): StringBuilder = {
+    val dataStr: String = data.replaceAll("]]>", "]]]]><![CDATA[>")
+    sb.append(s"<![CDATA[$dataStr]]>")
+  }
+}
+
+/**
+ * This singleton object contains the `apply`and `unapply` methods for
+ * convenient construction and deconstruction.
+ * Taken from scala.xml.PCData object.
+ *
+ * @author Burak Emir
+ *
+ *         Note: used by the Scala compiler (before Scala 3).
+ */
+object PCData {
+  def apply(data: String): PCData = new PCData(data)
+
+  // NOTE that this pattern never succeeds if there is a newline in the text.
+  private val pcdataPattern = """(.*[<>&]+.*)/s""".r
+
+  def unapply(node: Node): Option[String] =
+    node.text match {
+      case pcdataPattern(data) =>
+        Some(data)
+      case x: String if x.contains('<') | x.contains('>') | x.contains('&') =>
+        Some(x)
+      case _ => None
+    }
 }
 
 /**

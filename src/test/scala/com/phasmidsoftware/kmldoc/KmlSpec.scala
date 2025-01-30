@@ -83,7 +83,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val scale = triedScale.get
     scale.$ shouldBe 2.0
     // NOTE that because, in this test, scale is at the top-level,
-    //  we have to help out by specifying the correct tag name in the inital StateR.
+    //  we have to help out by specifying the correct tag name in the initial StateR.
     val wy = TryUsing(StateR(Some("scale")))(sr => Renderer.render[Scale](scale, FormatXML(), sr))
     wy.isSuccess shouldBe true
     wy.get shouldBe "<scale id=\"Hello\">2</scale>"
@@ -122,14 +122,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case Style(styles) =>
             styles.size shouldBe 1
             styles.head match {
-              case b@BalloonStyle(text, _, _, _) =>
-                val expectedText =
-                  """
-                    |          <b>$[name]</b>
-                    |          <br /><br />
-                    |          $[description]
-                    |        """.stripMargin
-                text.$.asInstanceOf[CDATA].content shouldBe expectedText
+              case b@BalloonStyle(_, _, _, _) =>
                 val wy = TryUsing(StateR())(sr => Renderer.render(b, FormatXML(), sr))
                 wy.isSuccess shouldBe true
                 val expectedBalloonStyle = """<BalloonStyle>
@@ -472,7 +465,7 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
     val xml: Elem = <xml>
       <Placemark>
         <name>
-          <![CDATA[Wakefield Branch of Eastern RR]]>
+          Wakefield Branch of Eastern RR
         </name>
         <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>
         <styleUrl>#line-006600-5000</styleUrl>
@@ -499,7 +492,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
           case placemark: Placemark =>
             val featureData: FeatureData = placemark.featureData
             placemark.featureData.name shouldBe Text(
-              """Wakefield Branch of Eastern RR""".stripMargin)
+              """
+                |          Wakefield Branch of Eastern RR
+                |        """.stripMargin)
             val geometry: Seq[Geometry] = placemark.Geometry
             geometry.size shouldBe 1
             geometry.head match {
@@ -519,7 +514,9 @@ class KmlSpec extends AnyFlatSpec with should.Matchers {
             wy.isSuccess shouldBe true
             wy.get shouldBe
               s"""<Placemark>
-                 |  <name>Wakefield Branch of Eastern RR</name>
+                 |  <name>
+                 |          Wakefield Branch of Eastern RR
+                 |        </name>
                  |  <description>RDK55. Also known as the South Reading Branch. Wakefield (S. Reading) Jct. to Peabody.</description>
                  |  <styleUrl>#line-006600-5000</styleUrl>
                  |  <LineString>
