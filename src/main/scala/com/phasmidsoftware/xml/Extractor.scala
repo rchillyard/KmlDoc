@@ -1,8 +1,8 @@
 package com.phasmidsoftware.xml
 
+import com.phasmidsoftware.core.*
 import com.phasmidsoftware.core.FP.{sequence, sequenceForgiving}
 import com.phasmidsoftware.core.Utilities.{lensFilter, renderNode}
-import com.phasmidsoftware.core._
 import com.phasmidsoftware.flog.Flog
 import com.phasmidsoftware.xml.Extractors.extractOptional
 import com.phasmidsoftware.xml.NamedFunction.name
@@ -39,7 +39,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    * @tparam U the underlying type of the result.
    * @return an `Extractor[U]`.
    */
-  def map[U](f: T => U): Extractor[U] = (node: Node) => self.extract(node) map f
+  def map[U](f: T => U): Extractor[U] = Extractor { (node: Node) => self.extract(node) map f } ^^ s"map of $self"
 
   /**
    * Method to `flatMap` this `Extractor[T]` into an `Extractor[U]`.
@@ -48,7 +48,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    * @tparam U the underlying type of the result.
    * @return an `Extractor[U]`.
    */
-  def flatMap[U](f: T => Try[U]): Extractor[U] = (node: Node) => self.extract(node) flatMap f
+  def flatMap[U](f: T => Try[U]): Extractor[U] = Extractor { (node: Node) => self.extract(node) flatMap f } ^^ s"flatMap of $self"
 
   /**
    * Method to create an `Extractor[T]` such that, if this `Extractor[T]` fails, then we invoke the (implicit) `Extractor[P]` instead.
@@ -67,7 +67,7 @@ trait Extractor[T] extends NamedFunction[Extractor[T]] {
    *
    * @return an `Extractor[Option[T]]`, which extracts an `Option[T]` from a `Node`.
    */
-  def lift: Extractor[Option[T]] = (node: Node) => self.extract(node) map Some.apply
+  def lift: Extractor[Option[T]] = Extractor { (node: Node) => self.extract(node) map Some.apply } ^^ s"optional extractor of $self"
 
   /**
    * Method to create an `Extractor[P]` which instantiates a `Try[T]` but treats it as a `Try[P]` where `P` is a super-class of `T`.
@@ -203,7 +203,7 @@ object Extractor {
    * @tparam T The type of the value to be extracted, constrained by the provided Extractor context.
    * @return A function that takes a Node and returns a tuple containing the key and a Try wrapper with either the extracted value or an exception if the extraction fails.
    */
-  def extractorKeyValuePair[T: Extractor](k: String): Node => (String, Try[T]) =
+  private def extractorKeyValuePair[T: Extractor](k: String): Node => (String, Try[T]) =
     node => doExtractField[T](k, node)
 
   /**
@@ -214,7 +214,7 @@ object Extractor {
    * @tparam T The type of the value to be extracted, for which an implicit `Extractor` must be available.
    * @return A function that takes a `Node` and returns a `Try[T]` representing the result of the extraction and processing.
    */
-  def extractorByKey[T: Extractor](k: String)(f: PartialFunction[(String, Try[T]), Try[T]]): Node => Try[T] =
+  private def extractorByKey[T: Extractor](k: String)(f: PartialFunction[(String, Try[T]), Try[T]]): Node => Try[T] =
     node => f(extractorKeyValuePair[T](k).apply(node))
 
   /**
@@ -241,7 +241,7 @@ object Extractor {
         val message = s"fieldExtractor(field=$field) using (${implicitly[Extractor[P]].name}): (field type = $m)"
         Failure(MissingFieldException(message, m, x))
     }
-  })
+  }) ^^ s"fieldExtractor of $field"
 
   /**
    * Method to extract child elements from a node.
@@ -369,11 +369,11 @@ object Extractor {
         s"plural:" -> Failure(XmlException(s"extractField: incorrect usage for plural field: $x. Use extractChildren instead."))
       // NOTE optional members such that the name begins with "maybe"
       case optional(x) =>
-        s"optional: $x" -> extractOptional[P](node / x)
+        s"optional: $x" -> extractOptional[P](node / x) // CONSIDER using \\ like singleton below
       // NOTE this is the default case which is used for a singleton entity (plural entities would be extracted using extractChildren).
       // TODO Issue #21 why would we be looking for a singleton LinearRing in a node which is an extrude node?
       case x =>
-        s"singleton: $x" -> extractSingleton[P](node / x)
+        s"singleton: $x" -> (extractSingleton[P](node / x) orElse extractSingleton[P](node \\ x))
     }
 
   /**
@@ -428,7 +428,7 @@ object Extractor {
   /**
    * Unit extractor.
    */
-  implicit val unitExtractor: Extractor[Unit] = Extractor(Success(()))
+  implicit val unitExtractor: Extractor[Unit] = Extractor(Success(())) ^^ "unitExtractor"
 
   /**
    * CharSequence extractor.
@@ -447,49 +447,92 @@ object Extractor {
      * @return a `Try` containing a `CharSequence` if successfully extracted, or a `Failure` with an `XmlException` if decoding fails.
      */
     def extract(node: Node): Try[CharSequence] = node match {
-      case x: xml.Text => Success(x.data)
       case CDATA(x) => Success(x)
+      case x: xml.Text => Success(x.data)
       case _ => node.child.toSeq match {
         case Seq(x) => Success(x.text)
         case x => Failure(XmlException(s"charSequenceExtractor: cannot decode text node: $node: $x"))
       }
     }
-  }
 
+    override def toString: String = "charSequenceExtractor"
+  }
   /**
    * Int extractor.
    */
-  implicit val intExtractor: Extractor[Int] = charSequenceExtractor flatMap {
-    case w: String => Success(w.toInt)
-    case x => Failure(XmlException(s"cannot convert $x to an Int"))
-  }
+  implicit val intExtractor: Extractor[Int] = (charSequenceExtractor flatMap {
+    w => NodeParser.tryParse(NodeParser.parseInt, w)
+  }) ^^ "intExtractor"
 
   /**
    * Boolean extractor.
+   * TODO use NodeParser.tryParse
    */
-  implicit val booleanExtractor: Extractor[Boolean] = charSequenceExtractor flatMap {
+  implicit val booleanExtractor: Extractor[Boolean] = (charSequenceExtractor flatMap {
     case "1" | "true" | "T" | "Y" => Success(true)
     case _: String => Success(false)
-    case x => Failure(XmlException(s"cannot convert $x to a Boolean"))
-  }
+    case x =>
+      Failure(XmlException(s"cannot convert $x to a Boolean"))
+  }) ^^ "booleanExtractor"
 
   /**
    * Double extractor.
    */
-  implicit val doubleExtractor: Extractor[Double] = charSequenceExtractor flatMap {
-    case w: String => Success(w.toDouble)
-    case x => Failure(XmlException(s"cannot convert $x to a Double"))
-  }
+  implicit val doubleExtractor: Extractor[Double] = (charSequenceExtractor flatMap {
+    w => NodeParser.tryParse(NodeParser.parseDouble, w)
+  }) ^^ "doubleExtractor"
 
   /**
    * Long extractor.
+   * TODO use NodeParser.tryParse
    */
-  implicit val longExtractor: Extractor[Long] = charSequenceExtractor flatMap {
+  implicit val longExtractor: Extractor[Long] = (charSequenceExtractor flatMap {
     case w: String => Success(w.toLong)
     case x => Failure(XmlException(s"cannot convert $x to a Long"))
-  }
+  }) ^^ "longExtractor"
 
   val logger: Logger = LoggerFactory.getLogger(Extractor.getClass)
+}
+
+/**
+ * Object NodeParser provides a functionality to parse strings into integers using the JavaTokenParsers.
+ * In particular, these parsers do not "see" white space.
+ * This object leverages the built-in parser combinators to interpret and transform input data.
+ */
+object NodeParser extends JavaTokenParsers {
+  def tryParse[T](p: Parser[T], cs: java.lang.CharSequence): Try[T] =
+    parse(p, cs) match {
+      case Success(x, _) => scala.util.Success(x)
+      case Failure(msg, _) => scala.util.Failure(XmlException(s"tryParse `$cs` failure because $msg"))
+      case Error(msg, _) => scala.util.Failure(XmlException(s"tryParse `$cs` error because $msg"))
+    }
+
+  def allWhiteSpace(w: String): Boolean = {
+    val result = !tryParse("""^\S+""".r, w).isSuccess
+    result
+  }
+
+  /**
+   * Parses a numeric string into an integer.
+   *
+   * This method utilizes the `floatingPointNumber` parser from the `JavaTokenParsers` to parse
+   * a numeric string and transforms the result into an `Int`. Only numeric strings that can be
+   * successfully converted to integers are valid inputs; otherwise, a parsing failure will occur.
+   *
+   * @return a `NodeParser[Int]` that processes a numeric string and converts it into an integer.
+   */
+  def parseInt: Parser[Int] = floatingPointNumber ^^ (_.toInt)
+
+  /**
+   * Parses a numeric string into a double-precision floating-point number.
+   *
+   * This method leverages the `floatingPointNumber` parser from the `JavaTokenParsers` to interpret
+   * a numeric string and transform it into a `Double`. Only valid numeric strings that can be
+   * converted to doubles will succeed; otherwise, a parsing failure will occur.
+   *
+   * @return a `NodeParser[Double]` that processes a numeric string and converts it into a double.
+   */
+  def parseDouble: Parser[Double] = floatingPointNumber ^^ (_.toDouble)
 }
 
 /**
@@ -535,7 +578,7 @@ object MultiExtractor {
    * @tparam T the underlying type of the MultiExtractor required.
    * @return a MultiExtractor[T].
    */
-  def createLazy[T](tm: => MultiExtractor[T]): MultiExtractor[T] = (nodes: NodeSeq) => tm.extract(nodes)
+  def createLazy[T](tm: => MultiExtractor[T]): MultiExtractor[T] = MultiExtractor { (nodes: NodeSeq) => tm.extract(nodes) } ^^ "lazy extractor for $tm"
 }
 
 /**

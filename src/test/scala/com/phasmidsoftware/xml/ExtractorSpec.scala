@@ -70,10 +70,18 @@ class ExtractorSpec extends AnyFlatSpec with should.Matchers {
     target.extract(<junk>X</junk>) should matchPattern { case Failure(_) => }
   }
 
-  it should "fieldExtractor" in {
+  it should "fieldExtractor 1" in {
     val xml = <xml>
       <junk>1</junk>
     </xml>
+    val target = fieldExtractor[Int]("junk")
+    target.extract(xml) shouldBe Success(1)
+  }
+
+  it should "fieldExtractor 2" in {
+    val xml = <junk>
+      1
+    </junk>
     val target = fieldExtractor[Int]("junk")
     target.extract(xml) shouldBe Success(1)
   }
